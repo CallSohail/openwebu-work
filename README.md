@@ -1,24 +1,40 @@
 # Open WebUI Extensions
 
-A structured collection of reusable Open WebUI extensions, organized by the extension type that Open WebUI actually loads.
+A structured collection of reusable Open WebUI Tools and Functions.
 
-This repository is intended for plugins that are useful beyond one deployment. Code committed here should use generic configuration, avoid environment-specific secrets or URLs, and include enough documentation for another administrator to install and review it safely.
+The goal is simple: keep each extension portable, documented, and safe to review before it is installed on an Open WebUI server.
 
-## Repository layout
+## Extensions
+
+| Extension | Type | Version | Status | Purpose |
+| --- | --- | --- | --- | --- |
+| [Study Mode](functions/filters/study-mode/) | Filter | 1.0.0 | Stable | Guided learning, Socratic tutoring, adaptive pacing, native `ask_user` support, and interactive quizzes |
+| [RAGFlow Advanced Connector](tools/ragflow/) | Tool | 3.0.0 | Stable | RAGFlow retrieval, dataset discovery, document search, and configurable retrieval controls |
+
+## Repository structure
 
 ```text
 .
+├── README.md
+├── LICENSE
+├── SECURITY.md
+├── CONTRIBUTING.md
+├── CHANGELOG.md
+├── RELEASING.md
+│
 ├── tools/
 │   ├── README.md
 │   └── ragflow/
 │       ├── README.md
 │       └── ragflow.py
+│
 └── functions/
     ├── README.md
     ├── filters/
     │   ├── README.md
     │   └── study-mode/
     │       ├── README.md
+    │       ├── CHANGELOG.md
     │       └── study_mode.py
     ├── pipes/
     │   └── README.md
@@ -28,70 +44,71 @@ This repository is intended for plugins that are useful beyond one deployment. C
         └── README.md
 ```
 
-## Extension catalog
+## Extension types
 
-| Extension | Type | Version | What it does | Tags |
-| --- | --- | --- | --- | --- |
-| [Study Mode](functions/filters/study-mode/) | Filter | 1.0.0 | Adds guided learning, Socratic tutoring, adaptive pacing, native `ask_user` support, and an interactive quiz experience | `filter`, `study-mode`, `education`, `ask-user`, `rich-ui` |
-| [RAGFlow Advanced Connector](tools/ragflow/) | Tool | 3.0.0 | Connects Open WebUI models to RAGFlow retrieval APIs with configurable search and retrieval behavior | `tool`, `rag`, `ragflow`, `retrieval` |
+- **Tool**: gives a model a callable capability, such as an API or data source.
+- **Filter**: intercepts or transforms requests, streams, or completed responses.
+- **Pipe**: exposes a custom model, provider, router, or full workflow.
+- **Action**: adds a user-triggered operation to a chat message.
+- **Event**: reacts to Open WebUI lifecycle or system events.
 
-## Choosing the right extension type
-
-- **Tool**: give a model a capability it can call, such as an API or data source.
-- **Filter**: inspect or modify messages before, during, or after model generation.
-- **Pipe**: expose a custom model, provider, router, or full workflow.
-- **Action**: add a user-triggered button to a chat message.
-- **Event**: react to Open WebUI system events such as signups, startup, configuration changes, or chat lifecycle events.
+Each category has its own README with the intended use and directory convention.
 
 ## Installation
 
-Each extension has its own README with installation and configuration instructions. In general:
+Each extension has a dedicated README with its setup steps. In general:
 
 - Tools are imported from **Workspace > Tools**.
 - Functions are imported from **Admin Panel > Functions**.
-- Review every plugin before importing it.
-- Configure secrets through Valves or environment-backed settings, never by hard-coding credentials in source files.
+- Review source code before enabling an extension.
+- Put credentials and deployment-specific settings in Valves or environment-backed configuration, never directly in source files.
 
 ## Compatibility
 
-The repository targets current Open WebUI plugin APIs. Individual plugins declare their minimum supported Open WebUI version in their source metadata and README.
+The repository follows current Open WebUI plugin APIs. Individual extensions declare their own compatibility requirements.
+
+Study Mode currently declares **Open WebUI 0.11.1 or newer** because its interactive quiz experience uses the current Filter event and Rich UI APIs.
 
 ## Security
 
-Open WebUI Tools and Functions execute Python on the Open WebUI server. Treat every plugin as trusted server-side code. Review source before installation and restrict Tool/Function management to trusted administrators.
+Open WebUI Tools and Functions execute Python on the Open WebUI server. Treat extensions as trusted server-side code.
 
-No deployment-specific credentials, private endpoints, institutional email addresses, or private infrastructure details should be committed to this repository.
+This repository should not contain:
 
-See [SECURITY.md](SECURITY.md) for repository security guidance.
+- API keys or passwords;
+- private endpoints or internal IP addresses;
+- personal or institutional email addresses;
+- user data or private documents;
+- deployment-specific secrets.
 
-## Versioning
+See [SECURITY.md](SECURITY.md) for the repository policy.
 
-Plugins use semantic versioning independently. A change to one plugin does not require every other plugin to change version.
+## Versioning and releases
 
-Recommended Git tag pattern:
+Extensions are versioned independently using semantic versioning.
+
+Recommended Git tag format:
 
 ```text
 <plugin-name>-v<version>
 ```
 
-For example:
+Examples:
 
 ```text
 study-mode-v1.0.0
 ragflow-v3.0.0
 ```
 
+See [RELEASING.md](RELEASING.md) for the release checklist, tag convention, and suggested GitHub repository topics.
+
 ## Contributing
 
-Keep each extension self-contained in its own directory with:
+See [CONTRIBUTING.md](CONTRIBUTING.md) for the extension structure, documentation checklist, security expectations, and versioning rules.
 
-```text
-plugin-name/
-├── README.md
-└── plugin_name.py
-```
+## Changelog
 
-The README should explain purpose, compatibility, installation, configuration, permissions, testing, and known limitations.
+Repository-level changes are tracked in [CHANGELOG.md](CHANGELOG.md). Extensions may also keep their own changelog beside the implementation.
 
 ## License
 
