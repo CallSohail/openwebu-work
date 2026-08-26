@@ -62,6 +62,8 @@ Open WebUI Tools and Functions execute Python on the Open WebUI server. Treat ev
 
 No deployment-specific credentials, private endpoints, institutional email addresses, or private infrastructure details should be committed to this repository.
 
+See [SECURITY.md](SECURITY.md) for repository security guidance.
+
 ## Versioning
 
 Plugins use semantic versioning independently. A change to one plugin does not require every other plugin to change version.
@@ -90,3 +92,7 @@ plugin-name/
 ```
 
 The README should explain purpose, compatibility, installation, configuration, permissions, testing, and known limitations.
+
+## License
+
+Released under the [MIT License](LICENSE).
