@@ -2,10 +2,8 @@ name: Apply Quick Actions theme icon fix
 
 on:
   push:
-    branches:
-      - fix/quick-actions-theme-icon
-    paths:
-      - .github/workflows/quick-actions-theme-icon-fix.yml
+    branches: [fix/quick-actions-theme-icon]
+    paths: [.github/workflows/quick-actions-theme-icon-fix.yml]
 
 permissions:
   contents: write
@@ -18,58 +16,54 @@ jobs:
         uses: actions/checkout@v4
         with:
           ref: fix/quick-actions-theme-icon
-          persist-credentials: true
 
-      - name: Apply Quick Actions v3.0.1 icon fix
-        shell: python
+      - name: Patch Quick Actions metadata and icon
         run: |
+          python3 - <<'PY'
           from pathlib import Path
 
-          source = Path("functions/actions/quick-actions/quick_actions.py")
-          text = source.read_text(encoding="utf-8")
-
-          old_version = "version: 3.0.0"
-          new_version = "version: 3.0.1"
-          old_icon = "icon_url: https://cdn.jsdelivr.net/npm/@tabler/icons@3.31.0/icons/outline/sparkles.svg"
-          new_icon = "icon_url: https://raw.githubusercontent.com/CallSohail/openwebu-work/main/functions/actions/quick-actions/quick-actions-icon.svg"
-
+          source = Path('functions/actions/quick-actions/quick_actions.py')
+          text = source.read_text(encoding='utf-8')
+          old_version = 'version: 3.0.0'
+          old_icon = 'icon_url: https://cdn.jsdelivr.net/npm/@tabler/icons@3.31.0/icons/outline/sparkles.svg'
+          new_icon = 'icon_url: https://raw.githubusercontent.com/CallSohail/openwebu-work/main/functions/actions/quick-actions/quick-actions-icon.svg'
           if text.count(old_version) != 1:
-              raise SystemExit(f"Expected exactly one {old_version!r} in quick_actions.py")
+              raise SystemExit('Unexpected Quick Actions version metadata')
           if text.count(old_icon) != 1:
-              raise SystemExit("Expected exactly one current Quick Actions icon_url")
+              raise SystemExit('Unexpected Quick Actions icon metadata')
+          text = text.replace(old_version, 'version: 3.0.1', 1)
+          text = text.replace(old_icon, new_icon, 1)
+          source.write_text(text, encoding='utf-8')
 
-          text = text.replace(old_version, new_version, 1).replace(old_icon, new_icon, 1)
-          source.write_text(text, encoding="utf-8")
-
-          icon = Path("functions/actions/quick-actions/quick-actions-icon.svg")
+          icon = Path('functions/actions/quick-actions/quick-actions-icon.svg')
           icon.write_text('''<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" role="img" aria-label="Quick Actions">
-            <rect width="24" height="24" rx="6" fill="#2563EB"/>
-            <path fill="#FFFFFF" d="M12 3.7l1.22 3.08 3.08 1.22-3.08 1.22L12 12.3l-1.22-3.08L7.7 8l3.08-1.22L12 3.7Z"/>
-            <path fill="#FFFFFF" d="M17.25 12.25l.78 1.97 1.97.78-1.97.78-.78 1.97-.78-1.97-1.97-.78 1.97-.78.78-1.97Z"/>
-            <circle cx="7" cy="16.5" r="1.25" fill="#FFFFFF"/>
-          </svg>\n''', encoding="utf-8")
+          <rect width="24" height="24" rx="6" fill="#2563EB"/>
+          <path fill="#FFFFFF" d="M12 3.7l1.22 3.08 3.08 1.22-3.08 1.22L12 12.3l-1.22-3.08L7.7 8l3.08-1.22L12 3.7Z"/>
+          <path fill="#FFFFFF" d="M17.25 12.25l.78 1.97 1.97.78-1.97.78-.78 1.97-.78-1.97-1.97-.78 1.97-.78.78-1.97Z"/>
+          <circle cx="7" cy="16.5" r="1.25" fill="#FFFFFF"/>
+          </svg>\n''', encoding='utf-8')
 
-          changelog = Path("functions/actions/quick-actions/CHANGELOG.md")
-          changes = changelog.read_text(encoding="utf-8")
-          heading = "# Changelog\n"
-          entry = """
+          changelog = Path('functions/actions/quick-actions/CHANGELOG.md')
+          changes = changelog.read_text(encoding='utf-8')
+          if '## 3.0.1' not in changes:
+              entry = '''# Changelog
 
 ## 3.0.1
 
 - Fixed the toolbar icon becoming difficult to see in Open WebUI dark/OLED themes.
-- Replaced the monochrome external Tabler icon with a theme-independent hosted Quick Actions icon that remains visible in light and dark mode.
-"""
-          if "## 3.0.1" not in changes:
-              if not changes.startswith(heading):
-                  raise SystemExit("Unexpected Quick Actions changelog format")
-              changes = heading + entry + changes[len(heading):]
-              changelog.write_text(changes, encoding="utf-8")
+- Replaced the monochrome external icon with a theme-independent hosted Quick Actions icon that remains visible in light and dark mode.
+'''
+              prefix = '# Changelog\n'
+              if not changes.startswith(prefix):
+                  raise SystemExit('Unexpected changelog format')
+              changes = entry + changes[len(prefix):]
+              changelog.write_text(changes, encoding='utf-8')
 
-          workflow = Path(".github/workflows/quick-actions-theme-icon-fix.yml")
-          workflow.unlink()
+          Path('.github/workflows/quick-actions-theme-icon-fix.yml').unlink()
+          PY
 
-      - name: Validate patched Python
-        run: python -m py_compile functions/actions/quick-actions/quick_actions.py
+      - name: Validate Quick Actions
+        run: python3 -m py_compile functions/actions/quick-actions/quick_actions.py
 
       - name: Commit patch back to branch
         run: |
