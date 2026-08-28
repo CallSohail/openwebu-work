@@ -1,56 +1,48 @@
 # Study Mode
 
 **Type:** Filter Function  
-**Version:** 1.0.0  
+**Version:** 1.1.0  
 **Minimum Open WebUI:** 0.11.1  
+**Author:** Muhammad Sohail  
 **Tags:** `filter`, `study-mode`, `education`, `tutoring`, `ask-user`, `rich-ui`, `quiz`
 
-Study Mode turns an existing Open WebUI model into an interactive tutor without replacing the underlying model. The core tutoring behavior works with ordinary text-capable models, while models with reliable Native tool calling can also use Open WebUI's built-in `ask_user` experience.
+Study Mode turns an existing Open WebUI model into an interactive tutor without replacing the underlying model. Core tutoring is prompt-driven and works with ordinary text-capable models. Models with reliable Native tool calling can additionally use Open WebUI's built-in `ask_user` experience.
 
-## Features
+## Highlights
 
 - Adaptive, Guided, Socratic, Explain-then-Practice, and Quiz teaching styles
 - Beginner, Intermediate, Advanced, and automatic learner levels
-- Adaptive, slow, normal, and fast pacing
-- Adaptive, guide-first, hints-first, and direct-answer policies
-- Progressive hints and misconception correction
-- Understanding checks and practice prompts
-- Grounding instructions for attached course materials
-- Optional native `ask_user` clarification
-- Interactive multiple-choice quiz cards using Rich UI
-- Hidden quiz transport so machine JSON is not exposed in the chat
+- Configurable pacing and answer-reveal behavior
+- Progressive hints, misconception correction, examples, and understanding checks
+- Grounding instructions for attached course material
+- Optional native `ask_user` clarification with normal-text fallback
+- Interactive multiple-choice Rich UI with hidden machine transport
 - Randomized answer positions with correct-answer remapping
-- Per-question hints and immediate answer feedback
-- Previous and next navigation
-- Copy-quiz control
-- Native progress feedback while a quiz is prepared
-- Final scoring, mistake review, follow-up study, and new-quiz actions
-- Brief, accessible perfect-score celebration
-- Graceful fallback when native tools or Rich UI generation fail
-
-## Why it is a Filter
-
-Study Mode is intended to work with models already configured in Open WebUI.
-
-```text
-Existing model + Study Mode Filter = tutoring behavior
-```
-
-That means the same Filter can be attached to different local or remote models without creating a separate model entry for each one.
+- Per-question hints, corrections, explanations, scoring, and mistake review
+- Multilingual quiz-intent detection for common English, French, Spanish, German, Italian, Portuguese, Dutch, Urdu, and Arabic requests
+- More tolerant quiz parsing for smaller/local models, with optional Strict mode
+- Optional MathJax 3.2.2 rendering for LaTeX expressions
+- Keyboard shortcuts for answering and navigation
+- Fullscreen quiz control
+- Standalone HTML export from the quiz iframe
+- Scoped system-prompt integration designed to coexist with existing model prompts
+- Stream/status cleanup hardening and script-safe JSON escaping
 
 ## Installation
 
-1. Open Open WebUI as an administrator.
-2. Go to **Admin Panel > Functions**.
-3. Create or import a Function.
-4. Paste the contents of `study_mode.py`.
-5. Save and enable the Function.
-6. Attach the Filter to the models where Study Mode should be available.
-7. Optionally configure it as a default Filter for selected models.
+1. Open **Admin Panel > Functions** in Open WebUI.
+2. Create or import a Function.
+3. Paste the contents of `study_mode.py`.
+4. Save and enable the Function.
+5. Attach the Filter to the models where Study Mode should be available.
+6. Open the administrator Valves and choose the quiz/UI behavior you want.
+7. Users can adjust their learning preferences through User Valves.
 
 ## Recommended model configuration
 
-Study Mode itself does not require tool calling. For the richer clarification flow, configure compatible models with:
+Study Mode does **not** require tool calling for its core tutoring behavior.
+
+For compatible models, the richer clarification flow can use:
 
 ```text
 Function Calling: Native
@@ -58,11 +50,43 @@ Builtin Tools: On
 Ask User: On
 ```
 
-If `ask_user` is unavailable or the model cannot call tools reliably, the Filter instructs the model to use a concise normal-text clarification instead of failing the learning session.
+If `ask_user` is unavailable or the selected model cannot call tools reliably, Study Mode falls back to ordinary conversational clarification.
 
-## User configuration
+Quiz Rich UI is also independent of native function calling. The model only needs to follow the quiz-transport instruction well enough to produce the structured quiz payload.
 
-Study Mode exposes `UserValves` so the learning experience can be adjusted without editing the Filter.
+## Administrator Valves
+
+Important v1.1 settings include:
+
+| Setting | Recommended default | Purpose |
+| --- | --- | --- |
+| System prompt integration | Merge | Append the scoped Study Mode overlay to an existing system message for broad provider compatibility. Separate mode is available for setups that prefer multiple system messages. |
+| Interactive quiz UI | On | Render validated quizzes as Rich UI cards. |
+| Maximum quiz questions | 20 | Hard cap accepted by the renderer. |
+| Quiz schema tolerance | Compatible | Repairs a limited set of common structured-output variations from local/smaller models while still validating the quiz. |
+| Multilingual quiz detection | On | Detect common quiz requests in several languages. |
+| MathJax | Off | Render LaTeX through pinned MathJax 3.2.2. Opt-in because strict iframe CSP or offline deployments may block external scripts. |
+| Keyboard shortcuts | On | Enable keyboard-first quiz operation. |
+| Fullscreen button | On | Request browser fullscreen where the Rich UI iframe policy allows it. |
+| Export HTML | On | Download a standalone HTML snapshot of the quiz client-side. |
+| Hidden quiz transport | On | Keep machine JSON out of the visible response/reasoning UI. |
+| Quiz card only | On | Show the interactive quiz rather than the transport text when rendering succeeds. |
+| Randomize options | On | Shuffle each question independently and remap the correct answer. |
+| Quiz progress status | On | Show quiz preparation progress and always finalize the status. |
+
+### Compatible vs Strict quiz parsing
+
+`Compatible` is intended for local and smaller instruction-tuned models that sometimes produce almost-correct structured output. It can normalize a bounded set of variations, including string-only options, alternative answer fields, missing optional quiz metadata, trailing commas, and some malformed LaTeX backslashes.
+
+It still validates question structure, answer count, unique option identifiers, the correct answer, maximum quiz length, and text length limits before rendering.
+
+`Strict` requires the documented quiz schema and is useful when the selected model follows JSON instructions reliably.
+
+This improves compatibility but does not guarantee that every model will generate a valid quiz. Model instruction-following quality still matters.
+
+## User Valves
+
+Users can configure:
 
 | Setting | Purpose |
 | --- | --- |
@@ -70,41 +94,60 @@ Study Mode exposes `UserValves` so the learning experience can be adjusted witho
 | Learner level | Auto, Beginner, Intermediate, or Advanced |
 | Pace | Adaptive, Slow, Normal, or Fast |
 | Answer policy | Adaptive, Guide me first, Hints first, or Direct answers allowed |
-| Prefer Ask User | Prefer Open WebUI's native `ask_user` when an important clarification is needed |
-| Check understanding | Add short comprehension checks at useful points |
-| Use analogies | Use analogies when they genuinely clarify a concept |
-| Use course materials | Prioritize attached or retrieved learning material when relevant |
-| Personalize with Memory | Allow relevant existing learning memories to inform tutoring when Memory tools are available |
-| One question at a time | Keep interactive learning focused on a single learner-facing question |
-| Quiz setup | Ask for missing quiz settings or use configured defaults |
-| Default quiz count | Number of questions used when the learner does not provide one |
+| Prefer Ask User | Use native `ask_user` when available for material clarifications |
+| Check understanding | Add short comprehension checks where useful |
+| Use analogies | Use analogies only when they clarify the concept |
+| Use course materials | Prioritize attached/retrieved learning material |
+| Personalize with Memory | Allow relevant existing learning context when Memory tools are available |
+| One question at a time | Keep interactive tutoring focused |
+| Quiz setup | Ask for missing count/difficulty or use defaults |
+| Default quiz count | Default number of quiz questions |
 | Default quiz difficulty | Adaptive, Easy, Medium, or Hard |
 
-## Administrator configuration
+## Quiz keyboard shortcuts
 
-Administrator `Valves` control behavior that should remain consistent across users.
+When keyboard shortcuts are enabled:
 
-Important controls include:
+```text
+A-E or 1-5   Select an answer
+Left Arrow   Previous question
+Right Arrow  Next question
+Enter        Continue / finish after answering
+H            Toggle hint
+F            Toggle fullscreen when available
+```
 
-- Rich UI quiz rendering
-- maximum accepted quiz size
-- hidden quiz transport
-- quiz-card-only rendering
-- per-question Hint control
-- Copy quiz control
-- answer option randomization
-- quiz preparation status
-- preparation and completion status text
-- perfect-score celebration
-- course-material grounding
-- general Study Mode status updates
+Shortcuts are ignored while the user is typing in an input-like control.
+
+## Math and LaTeX
+
+MathJax is intentionally **off by default**. When enabled, the quiz iframe loads the pinned MathJax 3.2.2 `tex-chtml` build and renders common inline/display LaTeX delimiters.
+
+If the Open WebUI iframe Content Security Policy blocks the CDN, the network is unavailable, or the script fails to load, the quiz remains usable and shows the original LaTeX text rather than breaking the card.
+
+For privacy-sensitive or offline deployments, leave MathJax disabled or self-host/allow the required resource through your deployment policy before enabling it.
+
+## HTML export
+
+The Export HTML control creates a browser `Blob` from the rendered quiz and downloads it from inside the Rich UI iframe. It does not write a file on the Open WebUI server.
+
+The exported HTML is a snapshot of the quiz UI. Browser or iframe download policy may disable the feature in hardened deployments.
+
+## Existing system prompts
+
+Study Mode is a scoped overlay, not a replacement system prompt. Version 1.1 adds explicit integration behavior because users may already have complex Modelfiles, model system prompts, or other active Filters.
+
+Default **Merge** mode preserves the existing system text and appends the Study Mode instructions. **Separate** mode adds another system message after existing leading system messages.
+
+The prompt also scopes interactive quiz JSON rules to actual quiz-generation turns so an unrelated base instruction is less likely to conflict with quiz transport requirements. No prompt-composition strategy can resolve every contradictory system prompt, so heavily customized deployments should test their model/Filter order.
 
 ## Interactive quiz flow
 
-A typical multiple-choice quiz session looks like this:
-
 ```text
 User requests a quiz
+        |
+        v
+Detect quiz intent / use Quiz style
         |
         v
 Collect missing preferences with ask_user when available
@@ -113,13 +156,13 @@ Collect missing preferences with ask_user when available
 Show "Preparing your quiz..."
         |
         v
-Model produces a structured quiz specification
+Model produces structured quiz data
         |
         v
-Filter suppresses machine transport
+Suppress machine transport while streaming
         |
         v
-Validate quiz data
+Strict or Compatible validation
         |
         +---- invalid ----> Restore a readable model response
         |
@@ -129,13 +172,11 @@ Validate quiz data
 Persistent Rich UI quiz card
         |
         v
-Hints, answer feedback, navigation, scoring
+Hints / keyboard / navigation / feedback / scoring
         |
         v
-Review mistakes / continue studying / new quiz
+Review mistakes / continue studying / new quiz / export
 ```
-
-The Rich UI renderer randomizes option order independently for every question and remaps the correct answer after shuffling. This avoids predictable answer positions without relying on the model to randomize them correctly.
 
 ## Example tests
 
@@ -145,25 +186,13 @@ The Rich UI renderer randomizes option order independently for every question an
 Teach me MQTT.
 ```
 
-Expected behavior: explain at an appropriate level, use examples where useful, then check understanding when that adds value.
-
 ### Socratic problem solving
 
-Set the teaching style to Socratic, then ask:
+Set the teaching style to Socratic:
 
 ```text
 Help me solve x^2 - 5x + 6 = 0.
 ```
-
-Expected behavior: guide the learner toward the factorization rather than immediately dumping the final roots.
-
-### Explain then Practice
-
-```text
-Teach me Python inheritance.
-```
-
-Expected behavior: concept, small example, practice, then feedback.
 
 ### Interactive quiz
 
@@ -171,58 +200,55 @@ Expected behavior: concept, small example, practice, then feedback.
 Quiz me on Python OOP.
 ```
 
-Expected behavior: collect missing quiz preferences when useful, show the preparation status, then render the interactive quiz card.
+French detection example:
+
+```text
+Fais-moi un quiz sur les réseaux informatiques.
+```
+
+### LaTeX quiz
+
+Enable **MathJax**, then try:
+
+```text
+Give me a 5-question medium algebra quiz. Use LaTeX for the equations.
+```
 
 ### Course material
 
-Attach a study document, then ask:
+Attach a study document:
 
 ```text
-Study this material with me.
+Study this material with me, then quiz me on the important concepts.
 ```
 
-Expected behavior: treat the supplied material as the primary source and organize it into a learning path instead of automatically producing a long generic summary.
+## Compatibility and limitations
 
-## Compatibility
-
-The core tutoring behavior is prompt-driven and works across text-capable models. Exact instruction-following quality still depends on the selected model.
-
-Native `ask_user` requires a model that can produce correct native function calls. Study Mode treats `ask_user` as an enhancement, not a hard dependency.
-
-The interactive quiz renderer depends on the current Open WebUI Filter event and Rich UI APIs, so this release declares Open WebUI **0.11.1** as its minimum supported version.
-
-## Privacy
-
-This public implementation contains no deployment-specific institutional names, private endpoints, internal email addresses, API keys, or private infrastructure details.
-
-The Filter does not automatically create or modify user memories. When Memory-based personalization is enabled, the prompt allows relevant existing learning context to be used, while memory writes remain an explicit user-controlled action.
+- Core tutoring works with text-capable models, but quality depends on instruction following.
+- Native `ask_user` requires reliable Native function calling; it is an enhancement, not a dependency.
+- Compatible parsing increases tolerance for local-model structured output but cannot turn arbitrary prose or fundamentally invalid questions into a safe quiz.
+- Fullscreen, HTML downloads, and MathJax can be restricted by browser, iframe sandbox, network, or Open WebUI CSP configuration.
+- Quiz state lives in the rendered interaction; v1.1 is not a permanent learning analytics database.
+- Automatic long-term mastery tracking is not included.
 
 ## Security
 
-Open WebUI Functions execute Python inside the Open WebUI server process. Review the code before importing it and restrict Function management to trusted administrators.
+Open WebUI Functions execute Python inside the Open WebUI server process. Review source before enabling community Functions and restrict Function management to trusted administrators.
 
-The quiz renderer validates model-produced quiz data and renders it through a controlled template rather than treating arbitrary model output as trusted HTML.
+Quiz data is validated and length-bounded before rendering. Model-provided question/answer text is inserted as text rather than trusted HTML. Script-embedded JSON escapes `<`, `>`, `&`, U+2028, and U+2029. The renderer does not use `eval()` or `new Function()`.
 
-## Known limitations
-
-- Tutoring quality depends on the instruction-following ability of the selected model.
-- `ask_user` cannot be guaranteed on models that do not support reliable Native tool calling.
-- Rich UI quiz generation relies on the model producing a valid structured quiz payload. Invalid payloads fall back to a readable response rather than rendering a broken card.
-- Quiz state lives in the rendered interaction. It is not intended to be a permanent learning analytics database.
-- Automatic long-term mastery tracking is not included in version 1.0.0.
+MathJax is the only optional external browser dependency introduced in v1.1 and is disabled by default.
 
 ## Changelog
 
-See [CHANGELOG.md](CHANGELOG.md) for Study Mode release notes.
+See [CHANGELOG.md](CHANGELOG.md).
 
 ## Versioning
 
-This public release line starts at **1.0.0** and follows semantic versioning.
-
-Recommended Git tag:
+Recommended Git tag for this release:
 
 ```text
-study-mode-v1.0.0
+study-mode-v1.1.0
 ```
 
 ## License
