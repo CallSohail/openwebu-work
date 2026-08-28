@@ -1,6 +1,6 @@
 """
 title: Quick Actions
-author: Open WebUI Community
+author: Muhammad Sohail
 version: 3.0.0
 required_open_webui_version: 0.11.1
 icon_url: https://cdn.jsdelivr.net/npm/@tabler/icons@3.31.0/icons/outline/sparkles.svg
