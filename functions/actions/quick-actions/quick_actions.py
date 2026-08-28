@@ -1,9 +1,9 @@
 """
 title: Quick Actions
 author: Muhammad Sohail
-version: 3.0.0
+version: 3.0.1
 required_open_webui_version: 0.11.1
-icon_url: https://cdn.jsdelivr.net/npm/@tabler/icons@3.31.0/icons/outline/sparkles.svg
+icon_url: https://raw.githubusercontent.com/CallSohail/openwebu-work/main/functions/actions/quick-actions/quick-actions-icon.svg
 """
 
 from __future__ import annotations

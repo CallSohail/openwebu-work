@@ -1,5 +1,10 @@
 # Changelog
 
+## 3.0.1
+
+- Fixed the toolbar icon becoming difficult to see in Open WebUI dark/OLED themes.
+- Replaced the monochrome external icon with a theme-independent hosted Quick Actions icon that remains visible in light and dark mode.
+
 ## 3.0.0
 
 - Added Humanize section with five writing transformations.
