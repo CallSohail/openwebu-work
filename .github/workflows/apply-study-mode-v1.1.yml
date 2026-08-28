@@ -1,0 +1,91 @@
+name: Apply Study Mode 1.1 patch
+
+on:
+  push:
+    branches:
+      - feature/study-mode-v1.1
+    paths:
+      - .github/workflows/apply-study-mode-v1.1.yml
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out branch
+        uses: actions/checkout@v4
+        with:
+          ref: feature/study-mode-v1.1
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install runtime dependency
+        run: python -m pip install "pydantic>=2,<3"
+
+      - name: Apply Study Mode patch
+        run: python .github/scripts/patch_study_mode_v1_1.py
+
+      - name: Compile and smoke-test
+        run: |
+          set -euo pipefail
+          python -m py_compile functions/filters/study-mode/study_mode.py
+          python - <<'PY'
+          import importlib.util
+          import sys
+          from pathlib import Path
+
+          path=Path('functions/filters/study-mode/study_mode.py')
+          spec=importlib.util.spec_from_file_location('study_mode',path)
+          module=importlib.util.module_from_spec(spec)
+          sys.modules[spec.name]=module
+          spec.loader.exec_module(module)
+          f=module.Filter()
+          u=f.UserValves()
+          assert f._looks_like_quiz_request([{'role':'user','content':'Fais-moi un quiz sur Python'}],u,True)
+          assert f._looks_like_quiz_request([{'role':'user','content':'Mettimi alla prova su SQL'}],u,True)
+          raw='<!-- STUDY_MODE_QUIZ_START {"title":"T","topic":"X","questions":[{"question":"2+2?","options":["3","4"],"answer":"4"}]} STUDY_MODE_QUIZ_END -->'
+          quiz=f._extract_quiz(raw)
+          assert quiz and quiz['questions'][0]['correct']=='B'
+          safe=f._safe_json_for_script({'x':'<>&\u2028\u2029'})
+          assert '<' not in safe and '>' not in safe and '&' not in safe
+          assert '\\u2028' in safe and '\\u2029' in safe
+          f.valves.quiz_mathjax=True
+          js=f._quiz_feature_addon_js()
+          assert 'mathjax@3.2.2' in js and 'fullscreenBtn' in js and 'exportBtn' in js and 'keydown' in js
+          print('Study Mode smoke tests passed')
+          PY
+
+      - name: Validate addon JavaScript
+        run: |
+          python - <<'PY'
+          import importlib.util
+          import sys
+          from pathlib import Path
+          path=Path('functions/filters/study-mode/study_mode.py')
+          spec=importlib.util.spec_from_file_location('study_mode',path)
+          module=importlib.util.module_from_spec(spec)
+          sys.modules[spec.name]=module
+          spec.loader.exec_module(module)
+          f=module.Filter()
+          f.valves.quiz_mathjax=True
+          Path('/tmp/study-mode-addon.js').write_text(f._quiz_feature_addon_js(),encoding='utf-8')
+          PY
+          node --check /tmp/study-mode-addon.js
+
+      - name: Remove temporary patch files
+        run: |
+          rm -f .github/scripts/patch_study_mode_v1_1.py
+          rm -f .github/workflows/apply-study-mode-v1.1.yml
+
+      - name: Commit patched Study Mode
+        run: |
+          git config user.name "Muhammad Sohail"
+          git config user.email "soh887045@gmail.com"
+          git add -A
+          git commit -m "feat: harden Study Mode quiz experience"
+          git push origin HEAD:feature/study-mode-v1.1
