@@ -8,8 +8,8 @@ The goal is simple: keep each extension portable, documented, and safe to review
 
 | Extension | Type | Version | Status | Purpose |
 | --- | --- | --- | --- | --- |
-| [Study Mode](functions/filters/study-mode/) | Filter | 1.0.0 | Stable | Guided learning, Socratic tutoring, adaptive pacing, native `ask_user` support, and interactive quizzes |
-| [Quick Actions](functions/actions/quick-actions/) | Action | 3.0.0 | Stable | Compact context-aware response transformations, Humanize actions, verification, creation workflows, English/French UI, and user/team custom actions |
+| [Study Mode](functions/filters/study-mode/) | Filter | 1.1.0 | Stable | Guided learning, Socratic tutoring, adaptive pacing, native `ask_user`, multilingual interactive quizzes, LaTeX/keyboard/fullscreen/export options, and local-model compatibility hardening |
+| [Quick Actions](functions/actions/quick-actions/) | Action | 3.0.1 | Stable | Compact context-aware response transformations, Humanize actions, verification, creation workflows, English/French UI, and user/team custom actions |
 | [RAGFlow Advanced Connector](tools/ragflow/) | Tool | 3.0.0 | Stable | RAGFlow retrieval, dataset discovery, document search, and configurable retrieval controls |
 
 ## Repository structure
@@ -36,6 +36,7 @@ The goal is simple: keep each extension portable, documented, and safe to review
     │   └── study-mode/
     │       ├── README.md
     │       ├── CHANGELOG.md
+    │       ├── test_study_mode.py
     │       └── study_mode.py
     ├── pipes/
     │   └── README.md
@@ -44,6 +45,7 @@ The goal is simple: keep each extension portable, documented, and safe to review
     │   └── quick-actions/
     │       ├── README.md
     │       ├── CHANGELOG.md
+    │       ├── quick-actions-icon.svg
     │       └── quick_actions.py
     └── events/
         └── README.md
@@ -72,7 +74,7 @@ Each extension has a dedicated README with its setup steps. In general:
 
 The repository follows current Open WebUI plugin APIs. Individual extensions declare their own compatibility requirements.
 
-Study Mode and Quick Actions currently declare **Open WebUI 0.11.1 or newer** because they use the current Function event APIs and interactive browser-side UI capabilities.
+Study Mode and Quick Actions currently declare **Open WebUI 0.11.1 or newer** because they use current Function event APIs and interactive browser-side UI capabilities.
 
 ## Security
 
@@ -101,8 +103,8 @@ Recommended Git tag format:
 Examples:
 
 ```text
-study-mode-v1.0.0
-quick-actions-v3.0.0
+study-mode-v1.1.0
+quick-actions-v3.0.1
 ragflow-v3.0.0
 ```
 

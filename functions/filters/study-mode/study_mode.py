@@ -1,13 +1,14 @@
 """
 title: Study Mode
-author: CallSohail
-version: 1.0.0
+author: Muhammad Sohail
+version: 1.1.0
 description: Model-agnostic Study Mode filter for Open WebUI with guided learning, Socratic tutoring, native ask_user support, interactive quizzes, hidden quiz transport, randomized answer positions, progress status, hints, quiz copy controls, and accessible perfect-score feedback.
 required_open_webui_version: 0.11.1
 icon_url: https://cdn.jsdelivr.net/npm/@tabler/icons@3.31.0/icons/outline/school.svg
 """
 
 from typing import Literal, Optional, Any
+import ast
 import json
 import re
 import time
@@ -57,6 +58,14 @@ class Filter:
             ge=3000,
             le=24000,
             description="Safety cap for the injected Study Mode instruction.",
+        )
+        system_prompt_integration: Literal["merge", "separate"] = Field(
+            default="merge",
+            description="Merge is safest across providers; Separate keeps Study Mode as another scoped system message.",
+            json_schema_extra={"input":{"type":"select","options":[
+                {"value":"merge","label":"Merge with existing system prompt"},
+                {"value":"separate","label":"Separate scoped system message"},
+            ]}},
         )
         interactive_quiz_ui: bool = Field(
             default=True,
@@ -126,6 +135,18 @@ class Filter:
             max_length=120,
             description="Completion status used when the interactive quiz is ready.",
         )
+        quiz_schema_tolerance: Literal["compatible", "strict"] = Field(
+            default="compatible",
+            description="Compatible repairs common local-model quiz JSON variations after validation; Strict requires the documented schema.",
+            json_schema_extra={"input":{"type":"select","options":[
+                {"value":"compatible","label":"Compatible"},{"value":"strict","label":"Strict schema"},
+            ]}},
+        )
+        multilingual_quiz_detection: bool = Field(default=True, description="Recognize common quiz requests in several languages.")
+        quiz_mathjax: bool = Field(default=False, description="Opt in to pinned MathJax 3.2.2 rendering for LaTeX. Gracefully falls back to raw LaTeX if blocked by CSP/network.")
+        quiz_keyboard_shortcuts: bool = Field(default=True, description="A-E/1-5 answer, Left/Right navigate, Enter continue, H hint, F fullscreen.")
+        quiz_fullscreen_button: bool = Field(default=True, description="Show a fullscreen quiz control when browser/iframe permissions allow it.")
+        quiz_export_html: bool = Field(default=True, description="Show a standalone HTML download control inside the Rich UI iframe.")
 
     class UserValves(BaseModel):
         style: Literal[
@@ -485,6 +506,9 @@ class Filter:
 {self._MARKER}
 You are in Study Mode. Your goal is to help the learner build durable understanding, not merely produce an answer.
 
+SCOPE AND COMPATIBILITY
+Treat Study Mode as a task-specific overlay. Preserve unrelated existing system/model instructions. Apply quiz JSON transport rules only on turns that actually generate an interactive multiple-choice quiz; never force quiz formatting on ordinary tutoring or other tasks. Higher-priority platform safety and access rules remain in force.
+
 CORE TEACHING BEHAVIOR
 1. Start from the learner's goal and current understanding. Do not ask unnecessary setup questions when the request is already clear.
 2. Break difficult ideas into manageable steps. Explain in layers: simple first, then more depth when useful.
@@ -590,6 +614,8 @@ STUDY_MODE_QUIZ_END -->
 
 Rules for the quiz specification:
 - Valid strict JSON only inside the hidden block. No Markdown fences inside it.
+- For smaller/local models, prioritize a valid complete schema over extra prose; keep explanations and hints concise if needed.
+- If LaTeX is used, JSON-escape backslashes (for example `\\(` in JSON so decoded text contains `\(`).
 - Use 2 to 5 answer options per question. Four is preferred.
 - Exactly one option must be defensibly correct.
 - `correct` must exactly match an option id.
@@ -606,37 +632,28 @@ Rules for the quiz specification:
 For free-response Socratic teaching, normal explanations, flashcards, or one-question-at-a-time tutoring, do NOT use this quiz block."""
 
     @staticmethod
-    def _looks_like_quiz_request(messages: list[dict], user_valves: "Filter.UserValves") -> bool:
-        if user_valves.style == "quiz":
-            return True
-        phrases = (
-            "quiz", "test me", "mcq", "multiple choice", "practice questions",
-            "exam questions", "question me", "mock test", "mock exam",
-        )
-        # Inspect the most recent user turns so the follow-up after native ask_user
-        # still inherits quiz transport suppression.
-        checked = 0
-        for message in reversed(messages):
-            if not isinstance(message, dict) or message.get("role") != "user":
-                continue
-            content = message.get("content", "")
-            if isinstance(content, str):
-                text = content.lower()
-            elif isinstance(content, list):
-                parts = []
-                for item in content:
-                    if isinstance(item, dict):
-                        value = item.get("text") or item.get("content")
-                        if isinstance(value, str):
-                            parts.append(value)
-                text = " ".join(parts).lower()
-            else:
-                text = ""
-            if any(p in text for p in phrases):
-                return True
-            checked += 1
-            if checked >= 4:
-                break
+    def _looks_like_quiz_request(messages: list[dict], user_valves: "Filter.UserValves", multilingual: bool = True) -> bool:
+        if user_valves.style == "quiz": return True
+        phrases=(
+            "quiz","test me","mcq","multiple choice","practice questions","exam questions","mock test","mock exam",
+            "qcm","fais moi un quiz","interroge moi","testez moi","choix multiple","questions d examen","examen blanc",
+            "cuestionario","hazme un quiz","ponme a prueba","opcion multiple","preguntas de examen",
+            "teste mich","frag mich ab","prufungsfragen","probeprufung",
+            "mettimi alla prova","interrogami","scelta multipla","domande d esame",
+            "teste me","multipla escolha","perguntas de exame","simulado",
+            "overhoor me","meerkeuze","oefenvragen","examenvragen",
+            "کوئز","ٹیسٹ","مجھے ٹیسٹ کرو","اختبار","اختيار من متعدد",
+        ) if multilingual else ("quiz","test me","mcq","multiple choice","practice questions","exam questions","mock test","mock exam")
+        table=str.maketrans({"é":"e","è":"e","ê":"e","ë":"e","à":"a","á":"a","â":"a","ä":"a","ã":"a","ç":"c","í":"i","ï":"i","ó":"o","ö":"o","õ":"o","ú":"u","ü":"u","ñ":"n","ß":"ss","’":" ","'":" ","-":" "})
+        checked=0
+        for m in reversed(messages):
+            if not isinstance(m,dict) or m.get("role")!="user": continue
+            c=m.get("content","")
+            if isinstance(c,list): c=" ".join(str(x.get("text") or x.get("content") or "") for x in c if isinstance(x,dict))
+            t=re.sub(r"\s+"," ",str(c).casefold().translate(table)).strip()
+            if any(x in t for x in phrases): return True
+            checked+=1
+            if checked>=4: break
         return False
 
     @staticmethod
@@ -649,101 +666,115 @@ For free-response Socratic teaching, normal explanations, flashcards, or one-que
                 return message
         return None
 
-    def _extract_quiz(self, content: str) -> Optional[dict]:
-        if not isinstance(content, str):
-            return None
-        match = self._QUIZ_RE.search(content)
-        if not match:
-            return None
+    @staticmethod
+    def _balanced_json_object(text: str) -> Optional[str]:
+        start=text.find("{") if isinstance(text,str) else -1
+        while start>=0:
+            depth=0; quote=None; esc=False
+            for i in range(start,len(text)):
+                ch=text[i]
+                if quote:
+                    if esc: esc=False
+                    elif ch=="\\": esc=True
+                    elif ch==quote: quote=None
+                    continue
+                if ch in ('"',"'"): quote=ch
+                elif ch=="{": depth+=1
+                elif ch=="}":
+                    depth-=1
+                    if depth==0: return text[start:i+1]
+            start=text.find("{",start+1)
+        return None
 
-        raw = match.group(1).strip()
-        if raw.startswith("```"):
-            raw = re.sub(r"^```(?:json)?\s*", "", raw, flags=re.IGNORECASE)
-            raw = re.sub(r"\s*```$", "", raw)
+    def _load_quiz_object(self, raw: str) -> Optional[dict]:
+        raw=re.sub(r"^```(?:json)?\s*|\s*```$","",raw.strip(),flags=re.I)
+        tries=[raw]
+        if self.valves.quiz_schema_tolerance=="compatible":
+            fixed=raw.replace("“",'"').replace("”",'"')
+            fixed=re.sub(r'\\(?!["\\/bfnrtu])',r'\\\\',fixed)
+            fixed=re.sub(r",\s*([}\]])",r"\1",fixed)
+            if fixed!=raw: tries.append(fixed)
+        for x in tries:
+            try:
+                v=json.loads(x)
+                if isinstance(v,dict): return v
+            except Exception: pass
+        if self.valves.quiz_schema_tolerance=="compatible":
+            for x in tries:
+                try:
+                    v=ast.literal_eval(x)
+                    if isinstance(v,dict): return v
+                except Exception: pass
+        return None
 
-        try:
-            quiz = json.loads(raw)
-        except Exception:
-            return None
+    @staticmethod
+    def _answer_id(value: Any, options: list[dict]) -> Optional[str]:
+        if isinstance(value,bool): return None
+        if isinstance(value,int):
+            if value==0 and options: return options[0]["id"]
+            return options[value-1]["id"] if 1<=value<=len(options) else None
+        if not isinstance(value,str): return None
+        v=value.strip()
+        for o in options:
+            if o["id"].casefold()==v.casefold() or o["text"].casefold()==v.casefold(): return o["id"]
+        m=re.match(r"^([A-Ea-e1-5])(?:[\).:\s]|$)",v)
+        if m:
+            t=m.group(1)
+            if t.isdigit():
+                i=int(t)-1
+                return options[i]["id"] if 0<=i<len(options) else None
+            for o in options:
+                if o["id"].casefold()==t.casefold(): return o["id"]
+        return None
 
-        if not isinstance(quiz, dict):
-            return None
-        title = quiz.get("title")
-        topic = quiz.get("topic")
-        difficulty = quiz.get("difficulty")
-        questions = quiz.get("questions")
-        if not isinstance(title, str) or not title.strip():
-            return None
-        if not isinstance(topic, str) or not topic.strip():
-            return None
-        if not isinstance(difficulty, str):
-            return None
-        if not isinstance(questions, list) or not questions:
-            return None
-        if len(questions) > self.valves.max_quiz_questions:
-            return None
-
-        normalized_questions = []
-        for index, question in enumerate(questions, start=1):
-            if not isinstance(question, dict):
-                return None
-            text = question.get("question")
-            options = question.get("options")
-            correct = question.get("correct")
-            explanation = question.get("explanation")
-            hint = question.get("hint", "")
-            if not isinstance(text, str) or not text.strip():
-                return None
-            if not isinstance(options, list) or not (2 <= len(options) <= 5):
-                return None
-            if not isinstance(correct, str) or not correct.strip():
-                return None
-            if not isinstance(explanation, str) or not explanation.strip():
-                return None
-            if not isinstance(hint, str):
-                hint = ""
-
-            normalized_options = []
-            option_ids = set()
-            for opt in options:
-                if not isinstance(opt, dict):
-                    return None
-                oid = opt.get("id")
-                otext = opt.get("text")
-                if not isinstance(oid, str) or not oid.strip():
-                    return None
-                if not isinstance(otext, str) or not otext.strip():
-                    return None
-                oid = oid.strip()[:8]
-                if oid in option_ids:
-                    return None
-                option_ids.add(oid)
-                normalized_options.append({"id": oid, "text": otext.strip()[:1000]})
-
-            correct = correct.strip()[:8]
-            if correct not in option_ids:
-                return None
-
-            normalized_questions.append(
-                {
-                    "id": str(question.get("id") or f"q{index}")[:64],
-                    "question": text.strip()[:3000],
-                    "options": normalized_options,
-                    "correct": correct,
-                    "explanation": explanation.strip()[:3000],
-                    "hint": (
-                        hint.strip()[:1500]
-                        or "Focus on the key concept being tested and eliminate options that do not fit its definition or behavior."
-                    ),
-                }
-            )
-
-        return {
-            "title": title.strip()[:200],
-            "topic": topic.strip()[:200],
-            "difficulty": difficulty.strip()[:50],
-            "questions": normalized_questions,
-        }
+    def _extract_quiz(self, content: str, *, allow_unmarked: bool = True) -> Optional[dict]:
+        if not isinstance(content,str): return None
+        m=self._QUIZ_RE.search(content)
+        raw=m.group(1).strip() if m else (self._balanced_json_object(content) if allow_unmarked and self.valves.quiz_schema_tolerance=="compatible" else None)
+        if not raw: return None
+        quiz=self._load_quiz_object(raw)
+        if not isinstance(quiz,dict): return None
+        qs=quiz.get("questions")
+        if self.valves.quiz_schema_tolerance=="compatible" and not isinstance(qs,list): qs=quiz.get("items")
+        if not isinstance(qs,list) or not qs or len(qs)>self.valves.max_quiz_questions: return None
+        title=quiz.get("title"); topic=quiz.get("topic"); diff=quiz.get("difficulty")
+        if self.valves.quiz_schema_tolerance=="strict":
+            if not isinstance(title,str) or not title.strip() or not isinstance(topic,str) or not topic.strip() or not isinstance(diff,str): return None
+        else:
+            title=title if isinstance(title,str) and title.strip() else "Study quiz"
+            topic=topic if isinstance(topic,str) and topic.strip() else title
+            diff=diff if isinstance(diff,str) and diff.strip() else "adaptive"
+        out=[]
+        for i,q in enumerate(qs,1):
+            if not isinstance(q,dict): return None
+            qt=q.get("question")
+            if self.valves.quiz_schema_tolerance=="compatible" and not isinstance(qt,str): qt=q.get("text") or q.get("prompt")
+            opts=q.get("options")
+            if not isinstance(qt,str) or not qt.strip() or not isinstance(opts,list) or not 2<=len(opts)<=5: return None
+            no=[]; ids=set()
+            for j,o in enumerate(opts):
+                if isinstance(o,str) and self.valves.quiz_schema_tolerance=="compatible": oid=chr(65+j); ot=o
+                elif isinstance(o,dict):
+                    oid=o.get("id"); ot=o.get("text")
+                    if self.valves.quiz_schema_tolerance=="compatible": oid=oid if isinstance(oid,str) and oid.strip() else (o.get("label") or chr(65+j)); ot=ot if isinstance(ot,str) else (o.get("content") or o.get("value"))
+                else: return None
+                if not isinstance(oid,str) or not oid.strip() or not isinstance(ot,str) or not ot.strip(): return None
+                oid=oid.strip()[:8]
+                if oid in ids: oid=chr(65+j)
+                if oid in ids: return None
+                ids.add(oid); no.append({"id":oid,"text":ot.strip()[:1000]})
+            cv=q.get("correct")
+            if self.valves.quiz_schema_tolerance=="compatible" and cv is None:
+                for k in ("answer","correct_answer","correctAnswer","solution"):
+                    if k in q: cv=q[k]; break
+            correct=self._answer_id(cv,no)
+            if correct is None: return None
+            ex=q.get("explanation"); hint=q.get("hint")
+            if self.valves.quiz_schema_tolerance=="strict" and (not isinstance(ex,str) or not ex.strip()): return None
+            if not isinstance(ex,str) or not ex.strip(): ex=f"The correct answer is {correct}: "+next(o["text"] for o in no if o["id"]==correct)+"."
+            if not isinstance(hint,str): hint=""
+            out.append({"id":str(q.get("id") or f"q{i}")[:64],"question":qt.strip()[:3000],"options":no,"correct":correct,"explanation":ex.strip()[:3000],"hint":hint.strip()[:1500] or "Focus on the key concept and eliminate options that do not fit its definition or behavior."})
+        return {"title":str(title).strip()[:200],"topic":str(topic).strip()[:200],"difficulty":str(diff).strip()[:50],"questions":out}
 
     @staticmethod
     def _safe_json_for_script(data: dict) -> str:
@@ -752,6 +783,8 @@ For free-response Socratic teaching, normal explanations, flashcards, or one-que
             .replace("&", "\\u0026")
             .replace("<", "\\u003c")
             .replace(">", "\\u003e")
+            .replace("\u2028", "\\u2028")
+            .replace("\u2029", "\\u2029")
         )
 
     def _render_quiz_embed(self, quiz: dict) -> str:
@@ -910,17 +943,17 @@ function render() {{
   const q=quiz.questions[index]; el('title').textContent=quiz.title||quiz.topic||'Study quiz'; el('progress').textContent=`${{index+1}} of ${{quiz.questions.length}}`; el('question').textContent=q.question;
   el('prev').disabled=index===0; el('nextTop').disabled=index===quiz.questions.length-1; el('feedback').className='feedback'; el('feedback').textContent=''; el('hint').className='hint'; el('hint').textContent=q.hint||'';
   el('hintBtn').style.display=SHOW_HINT?'grid':'none'; el('copyBtn').style.display=SHOW_COPY?'grid':'none';
-  const box=el('options'); box.innerHTML=''; q.options.forEach(opt=>{{ const btn=document.createElement('button'); btn.className='option'; btn.type='button'; const badge=document.createElement('span'); badge.className='badge'; badge.textContent=opt.id; const txt=document.createElement('span'); txt.textContent=opt.text; btn.append(badge,txt); btn.onclick=()=>choose(opt.id); box.appendChild(btn); }});
+  const box=el('options'); box.replaceChildren(); q.options.forEach(opt=>{{ const btn=document.createElement('button'); btn.className='option'; btn.type='button'; const badge=document.createElement('span'); badge.className='badge'; badge.textContent=opt.id; const txt=document.createElement('span'); txt.textContent=opt.text; btn.append(badge,txt); btn.onclick=()=>choose(opt.id); box.appendChild(btn); }});
   if(answers[index]) applyAnswer(); el('nextBtn').disabled=!answers[index]; el('nextBtn').textContent=index===quiz.questions.length-1?'Finish':'Next'; positionTooltips(); reportHeight();
 }}
 function choose(id) {{ if(answers[index]) return; answers[index]=id; applyAnswer(); el('nextBtn').disabled=false; reportHeight(); }}
-function applyAnswer() {{ const q=quiz.questions[index],chosen=answers[index]; [...el('options').querySelectorAll('.option')].forEach(btn=>{{ const id=btn.querySelector('.badge').textContent; btn.disabled=true; if(id===q.correct)btn.classList.add('correct'); else if(id===chosen)btn.classList.add('wrong'); }}); const good=chosen===q.correct; el('feedback').className='feedback show'; el('feedback').innerHTML=''; const strong=document.createElement('strong'); strong.className=good?'good':'bad'; strong.textContent=good?'Correct.':'Not quite.'; const span=document.createElement('span'); span.textContent=' '+q.explanation; el('feedback').append(strong,span); }}
+function applyAnswer() {{ const q=quiz.questions[index],chosen=answers[index]; [...el('options').querySelectorAll('.option')].forEach(btn=>{{ const id=btn.querySelector('.badge').textContent; btn.disabled=true; if(id===q.correct)btn.classList.add('correct'); else if(id===chosen)btn.classList.add('wrong'); }}); const good=chosen===q.correct; el('feedback').className='feedback show'; el('feedback').replaceChildren(); const strong=document.createElement('strong'); strong.className=good?'good':'bad'; strong.textContent=good?'Correct.':'Not quite.'; const span=document.createElement('span'); span.textContent=' '+q.explanation; el('feedback').append(strong,span); }}
 function go(delta) {{ const n=index+delta; if(n<0||n>=quiz.questions.length)return; index=n; render(); }}
 function perfectCelebration() {{
   if(celebrated || !CELEBRATE_PERFECT || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
   celebrated=true;
   const layer=el('celebration');
-  layer.innerHTML='';
+  layer.replaceChildren();
   const count=30;
   for(let i=0;i<count;i++) {{
     const p=document.createElement('span');
@@ -936,7 +969,7 @@ function perfectCelebration() {{
     p.style.setProperty('--size',`${{4+(i%4)*1.4}}px`);
     layer.appendChild(p);
   }}
-  setTimeout(()=>{{layer.innerHTML='';}},1900);
+  setTimeout(()=>{{layer.replaceChildren();}},1900);
 }}
 function finish() {{
   el('quizView').style.display='none';
@@ -950,7 +983,7 @@ function finish() {{
     ? `Congratulations. You answered all ${{quiz.questions.length}} questions correctly.`
     : `You answered ${{correct}} of ${{quiz.questions.length}} correctly.`;
   const mistakes=quiz.questions.map((q,i)=>({{q,i}})).filter(x=>answers[x.i]!==x.q.correct);
-  el('mistakes').innerHTML='';
+  el('mistakes').replaceChildren();
   mistakes.forEach(x=>{{ const d=document.createElement('div'); d.className='mistake'; d.textContent=`${{x.i+1}}. ${{x.q.question}}`; el('mistakes').appendChild(d); }});
   el('reviewBtn').style.display=mistakes.length?'inline-block':'none';
   el('studyBtn').style.display=mistakes.length?'inline-block':'none';
@@ -967,15 +1000,36 @@ el('studyBtn').onclick=()=>{{const weak=quiz.questions.filter((q,i)=>answers[i]!
 el('newQuizBtn').onclick=()=>submitPrompt(`Quiz me again on ${{quiz.topic}}. Use a new set of questions and adapt the difficulty based on my previous attempt.`);
 render();
 </script>
+<script>
+{self._quiz_feature_addon_js()}
+</script>
 </body>
 </html>"""
 
+    def _quiz_feature_addon_js(self) -> str:
+        cfg=self._safe_json_for_script({"keyboard":bool(self.valves.quiz_keyboard_shortcuts),"fullscreen":bool(self.valves.quiz_fullscreen_button),"exportHtml":bool(self.valves.quiz_export_html),"mathjax":bool(self.valves.quiz_mathjax)})
+        js=r"""
+(function(){
+const cfg=__CFG__,controls=document.querySelector('.controls');if(!controls)return;const NS='http://www.w3.org/2000/svg';
+function ib(id,label,tip,paths){const b=document.createElement('button');b.type='button';b.className='iconbtn';b.id=id;b.setAttribute('aria-label',label);b.dataset.tip=tip;const svg=document.createElementNS(NS,'svg');svg.setAttribute('viewBox','0 0 24 24');paths.forEach(d=>{const p=document.createElementNS(NS,'path');p.setAttribute('d',d);svg.appendChild(p)});b.appendChild(svg);controls.appendChild(b);return b}
+let fs=null,ex=null,snap='';
+if(cfg.fullscreen){fs=ib('fullscreenBtn','Toggle fullscreen','Fullscreen (F)',['M8 3H3v5','M16 3h5v5','M8 21H3v-5','M16 21h5v-5']);fs.onclick=async()=>{try{if(document.fullscreenElement)await document.exitFullscreen();else if(document.documentElement.requestFullscreen)await document.documentElement.requestFullscreen()}catch(_){}};document.addEventListener('fullscreenchange',()=>{positionTooltip(fs);reportHeight()})}
+if(cfg.exportHtml){ex=ib('exportBtn','Export quiz as HTML','Export HTML',['M12 3v12','m7 10 5 5 5-5','M5 21h14']);setTimeout(()=>{snap='<!doctype html>\n'+document.documentElement.outerHTML},0);ex.onclick=()=>{try{const blob=new Blob([snap||('<!doctype html>\n'+document.documentElement.outerHTML)],{type:'text/html;charset=utf-8'}),url=URL.createObjectURL(blob),a=document.createElement('a'),name=(quiz.title||quiz.topic||'study-quiz').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'').slice(0,60)||'study-quiz';a.href=url;a.download=name+'.html';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000)}catch(_){}}}
+function math(){if(!cfg.mathjax||!window.MathJax||typeof window.MathJax.typesetPromise!=='function')return;try{if(typeof window.MathJax.typesetClear==='function')window.MathJax.typesetClear([el('card')]);window.MathJax.typesetPromise([el('card')]).then(()=>reportHeight()).catch(()=>{})}catch(_){}}
+if(cfg.mathjax){try{window.MathJax=window.MathJax||{tex:{inlineMath:[['\\(','\\)'],['$','$']],displayMath:[['\\[','\\]'],['$$','$$']]}};const x=document.createElement('script');x.src='https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-chtml.js';x.defer=true;x.referrerPolicy='no-referrer';x.onload=math;x.onerror=()=>{};document.head.appendChild(x);const r=render;render=function(){r();setTimeout(math,0)};const a=applyAnswer;applyAnswer=function(){a();setTimeout(math,0)};const f=finish;finish=function(){f();setTimeout(math,0)}}catch(_){}}
+if(cfg.keyboard)document.addEventListener('keydown',e=>{if(e.defaultPrevented||e.ctrlKey||e.metaKey||e.altKey)return;const t=e.target;if(t&&['INPUT','TEXTAREA','SELECT'].includes(t.tagName))return;const q=quiz.questions[index];if(!q)return;let n=-1;if(/^[1-5]$/.test(e.key))n=Number(e.key)-1;else if(/^[a-eA-E]$/.test(e.key))n=e.key.toUpperCase().charCodeAt(0)-65;if(n>=0&&n<q.options.length&&!answers[index]){e.preventDefault();choose(q.options[n].id);return}if(e.key==='ArrowLeft'){e.preventDefault();go(-1)}else if(e.key==='ArrowRight'){e.preventDefault();go(1)}else if((e.key==='h'||e.key==='H')&&SHOW_HINT){e.preventDefault();el('hint').classList.toggle('show');reportHeight()}else if((e.key==='f'||e.key==='F')&&fs){e.preventDefault();fs.click()}else if(e.key==='Enter'&&answers[index]){e.preventDefault();index===quiz.questions.length-1?finish():go(1)}},true);
+[fs,ex].filter(Boolean).forEach(b=>{b.addEventListener('mouseenter',()=>positionTooltip(b));b.addEventListener('focus',()=>positionTooltip(b))});positionTooltips();reportHeight();
+})();
+"""
+        return js.replace("__CFG__",cfg,1)
+
     @staticmethod
     def _stream_key(metadata: Optional[dict]) -> Optional[str]:
-        if not isinstance(metadata, dict):
-            return None
-        key = metadata.get("study_mode_quiz_stream_key")
-        return key if isinstance(key, str) and key else None
+        if not isinstance(metadata,dict): return None
+        key=metadata.get("study_mode_quiz_stream_key")
+        if isinstance(key,str) and key: return key
+        parts=[f"{k}={metadata[k]}" for k in ("chat_id","message_id","session_id") if metadata.get(k) is not None]
+        return "study-mode:"+"|".join(parts) if parts else None
 
     def _evict_streams(self) -> None:
         now = time.monotonic()
@@ -1068,23 +1122,16 @@ render();
         return event
 
     def _inject_prompt(self, body: dict, prompt: str) -> None:
-        messages = body.setdefault("messages", [])
-        if not isinstance(messages, list):
-            body["messages"] = []
-            messages = body["messages"]
-
-        # Prefer merging into an existing string system message. This keeps a
-        # single system message for better compatibility across model providers.
-        for message in messages:
-            if message.get("role") == "system" and isinstance(
-                message.get("content"), str
-            ):
-                if self._MARKER not in message["content"]:
-                    message["content"] = f"{message['content'].rstrip()}\n\n{prompt}"
-                return
-
-        # If no compatible system message exists, add one at the beginning.
-        messages.insert(0, {"role": "system", "content": prompt})
+        messages=body.setdefault("messages",[])
+        if not isinstance(messages,list): body["messages"]=[];messages=body["messages"]
+        if any(isinstance(m,dict) and m.get("role")=="system" and isinstance(m.get("content"),str) and self._MARKER in m["content"] for m in messages): return
+        if self.valves.system_prompt_integration=="separate":
+            i=0
+            while i<len(messages) and isinstance(messages[i],dict) and messages[i].get("role")=="system": i+=1
+            messages.insert(i,{"role":"system","content":prompt});return
+        for m in messages:
+            if isinstance(m,dict) and m.get("role")=="system" and isinstance(m.get("content"),str): m["content"]=f"{m['content'].rstrip()}\n\n{prompt}";return
+        messages.insert(0,{"role":"system","content":prompt})
 
     async def inlet(
         self,
@@ -1111,20 +1158,20 @@ render();
         if (
             self.valves.interactive_quiz_ui
             and self.valves.suppress_quiz_transport
-            and self._looks_like_quiz_request(messages, user_valves)
+            and self._looks_like_quiz_request(messages, user_valves, self.valves.multilingual_quiz_detection)
             and __metadata__ is not None
         ):
             key = self._stream_key(__metadata__)
             if not key:
                 key = uuid.uuid4().hex
-                __metadata__["study_mode_quiz_stream_key"] = key
+            __metadata__["study_mode_quiz_stream_key"] = key
             self._quiz_streams[key] = {
                 "raw": "",
                 "created": time.monotonic(),
                 "progress_status_started": False,
             }
 
-        is_quiz_request = self._looks_like_quiz_request(messages, user_valves)
+        is_quiz_request = self._looks_like_quiz_request(messages, user_valves, self.valves.multilingual_quiz_detection)
 
         # Add lightweight request-local metadata for observability and for any
         # later filters in the same request chain. This does not persist learner data.
@@ -1135,6 +1182,7 @@ render();
                 "level": user_valves.level,
                 "pace": user_valves.pace,
                 "answer_policy": user_valves.answer_policy,
+                "quiz_request": is_quiz_request,
             }
 
         if __event_emitter__ is not None:
@@ -1238,7 +1286,9 @@ render();
             if isinstance(value, str) and value:
                 extra_parts.append(value)
         source = "\n".join(part for part in [buffered, *extra_parts, content_text] if part)
-        quiz = self._extract_quiz(source)
+        study_meta = __metadata__.get("study_mode", {}) if isinstance(__metadata__, dict) else {}
+        allow_unmarked = bool(isinstance(study_meta, dict) and study_meta.get("quiz_request"))
+        quiz = self._extract_quiz(source, allow_unmarked=allow_unmarked)
 
         try:
             if quiz and __event_emitter__ is not None:
@@ -1282,6 +1332,7 @@ render();
                     __event_emitter__, __metadata__, description="Quiz setup ready"
                 )
         finally:
+            await self._finish_quiz_progress_status(__event_emitter__, __metadata__, description="Study response ready")
             if key:
                 self._quiz_streams.pop(key, None)
 

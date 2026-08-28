@@ -1,0 +1,61 @@
+name: Validate Study Mode
+
+on:
+  push:
+    paths:
+      - "functions/filters/study-mode/**"
+      - ".github/workflows/validate-study-mode.yml"
+  pull_request:
+    paths:
+      - "functions/filters/study-mode/**"
+      - ".github/workflows/validate-study-mode.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install runtime dependency
+        run: python -m pip install "pydantic>=2,<3"
+
+      - name: Compile Study Mode
+        run: python -m py_compile functions/filters/study-mode/study_mode.py functions/filters/study-mode/test_study_mode.py
+
+      - name: Run regression tests
+        run: python -m unittest functions/filters/study-mode/test_study_mode.py -v
+
+      - name: Validate generated quiz JavaScript
+        run: |
+          python - <<'PY'
+          import importlib.util
+          import re
+          import sys
+          from pathlib import Path
+
+          path=Path('functions/filters/study-mode/study_mode.py')
+          spec=importlib.util.spec_from_file_location('study_mode',path)
+          module=importlib.util.module_from_spec(spec)
+          sys.modules[spec.name]=module
+          spec.loader.exec_module(module)
+          f=module.Filter()
+          f.valves.quiz_mathjax=True
+          quiz={"title":"T","topic":"X","difficulty":"easy","questions":[{"id":"q1","question":"Q?","options":[{"id":"A","text":"A"},{"id":"B","text":"B"}],"correct":"A","explanation":"E","hint":"H"}]}
+          html=f._render_quiz_embed(quiz)
+          scripts=re.findall(r'<script>(.*?)</script>',html,flags=re.S)
+          if len(scripts)<2:
+              raise SystemExit(f'Expected quiz scripts, found {len(scripts)}')
+          for i,script in enumerate(scripts):
+              Path(f'/tmp/study-mode-{i}.js').write_text(script,encoding='utf-8')
+          print(len(scripts))
+          PY
+          for file in /tmp/study-mode-*.js; do node --check "$file"; done
