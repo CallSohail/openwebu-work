@@ -727,10 +727,10 @@ For free-response Socratic teaching, normal explanations, flashcards, or one-que
                 if o["id"].casefold()==t.casefold(): return o["id"]
         return None
 
-    def _extract_quiz(self, content: str) -> Optional[dict]:
+    def _extract_quiz(self, content: str, *, allow_unmarked: bool = True) -> Optional[dict]:
         if not isinstance(content,str): return None
         m=self._QUIZ_RE.search(content)
-        raw=m.group(1).strip() if m else (self._balanced_json_object(content) if self.valves.quiz_schema_tolerance=="compatible" else None)
+        raw=m.group(1).strip() if m else (self._balanced_json_object(content) if allow_unmarked and self.valves.quiz_schema_tolerance=="compatible" else None)
         if not raw: return None
         quiz=self._load_quiz_object(raw)
         if not isinstance(quiz,dict): return None
@@ -1182,6 +1182,7 @@ if(cfg.keyboard)document.addEventListener('keydown',e=>{if(e.defaultPrevented||e
                 "level": user_valves.level,
                 "pace": user_valves.pace,
                 "answer_policy": user_valves.answer_policy,
+                "quiz_request": is_quiz_request,
             }
 
         if __event_emitter__ is not None:
@@ -1285,7 +1286,9 @@ if(cfg.keyboard)document.addEventListener('keydown',e=>{if(e.defaultPrevented||e
             if isinstance(value, str) and value:
                 extra_parts.append(value)
         source = "\n".join(part for part in [buffered, *extra_parts, content_text] if part)
-        quiz = self._extract_quiz(source)
+        study_meta = __metadata__.get("study_mode", {}) if isinstance(__metadata__, dict) else {}
+        allow_unmarked = bool(isinstance(study_meta, dict) and study_meta.get("quiz_request"))
+        quiz = self._extract_quiz(source, allow_unmarked=allow_unmarked)
 
         try:
             if quiz and __event_emitter__ is not None:

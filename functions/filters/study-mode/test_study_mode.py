@@ -61,6 +61,11 @@ STUDY_MODE_QUIZ_END -->'''
         self.assertIsNotNone(quiz)
         self.assertIn(r"\(", quiz["questions"][0]["question"])
 
+    def test_unmarked_quiz_requires_quiz_request_context(self):
+        raw = '{"questions":[{"question":"Q?","options":["A","B"],"answer":"A"}]}'
+        self.assertIsNone(self.f._extract_quiz(raw, allow_unmarked=False))
+        self.assertIsNotNone(self.f._extract_quiz(raw, allow_unmarked=True))
+
     def test_strict_mode_rejects_compatible_variant(self):
         self.f.valves.quiz_schema_tolerance = "strict"
         raw = '<!-- STUDY_MODE_QUIZ_START {"questions":[{"question":"2+2?","options":["3","4"],"answer":"4"}]} STUDY_MODE_QUIZ_END -->'
