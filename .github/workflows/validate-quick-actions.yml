@@ -1,0 +1,121 @@
+name: Validate Quick Actions
+
+on:
+  push:
+    paths:
+      - "functions/actions/quick-actions/**"
+      - ".github/workflows/validate-quick-actions.yml"
+  pull_request:
+    paths:
+      - "functions/actions/quick-actions/**"
+      - ".github/workflows/validate-quick-actions.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install runtime dependency
+        run: python -m pip install "pydantic>=2,<3"
+
+      - name: Compile and smoke-test Quick Actions
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m py_compile functions/actions/quick-actions/quick_actions.py
+          python - <<'PY'
+          import importlib.util
+          from pathlib import Path
+
+          path = Path("functions/actions/quick-actions/quick_actions.py")
+          spec = importlib.util.spec_from_file_location("quick_actions", path)
+          module = importlib.util.module_from_spec(spec)
+          spec.loader.exec_module(module)
+
+          assert len(module.ACTION_SPECS) == 48, len(module.ACTION_SPECS)
+          assert len({item.id for item in module.ACTION_SPECS}) == 48
+          missing_fr = [item.id for item in module.ACTION_SPECS if item.id not in module.FR_ACTIONS]
+          assert not missing_fr, f"Missing French translations: {missing_fr}"
+
+          human = {item.id for item in module.ACTION_SPECS if item.category == "Humanize"}
+          assert human == {
+              "humanize",
+              "humanize_professional",
+              "humanize_conversational",
+              "remove_ai_tells",
+              "match_voice",
+          }
+
+          action = module.Action()
+          user_valves = action.UserValves()
+          for context in ("general", "writing", "research", "code", "data", "long"):
+              choices, _ = action._visible_choices(context, user_valves, "en")
+              assert choices, context
+
+          custom = action._parse_custom_actions(
+              "Manager brief :: Summarize this for management.\n"
+              "Audience version :: Rewrite this for {input:Audience}.",
+              source="user",
+              limit=10,
+          )
+          assert len(custom) == 2
+          assert custom[1].needs_input is True
+          assert action._custom_input_label(custom[1].prompt) == "Audience"
+
+          for source in path.read_text(encoding="utf-8").splitlines():
+              pass
+          text = path.read_text(encoding="utf-8")
+          assert "innerHTML" not in text
+          assert "eval(" not in text
+          assert "new Function" not in text
+          print("Quick Actions Python smoke tests passed")
+          PY
+
+      - name: Validate generated browser JavaScript
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import importlib.util
+          import json
+          from pathlib import Path
+
+          path = Path("functions/actions/quick-actions/quick_actions.py")
+          spec = importlib.util.spec_from_file_location("quick_actions", path)
+          module = importlib.util.module_from_spec(spec)
+          spec.loader.exec_module(module)
+          action = module.Action()
+
+          payload = json.dumps({
+              "context": "general",
+              "choices": [],
+              "maxSuggestions": 3,
+              "timeoutMs": 1000,
+              "ui": module.UI_CATALOG["en"],
+          }, ensure_ascii=True, separators=(",", ":"))
+
+          Path("/tmp/qa-menu.js").write_text(
+              "async function check(){\n" + action._menu_js(payload) + "\n}\n",
+              encoding="utf-8",
+          )
+          Path("/tmp/qa-composer.js").write_text(
+              "async function check(){\n" + action._composer_js(json.dumps({
+                  "text": "test",
+                  "submit": False,
+                  "force": False,
+              })) + "\n}\n",
+              encoding="utf-8",
+          )
+          PY
+          node --check /tmp/qa-menu.js
+          node --check /tmp/qa-composer.js
