@@ -35,11 +35,13 @@ jobs:
           python -m py_compile functions/actions/quick-actions/quick_actions.py
           python - <<'PY'
           import importlib.util
+          import sys
           from pathlib import Path
 
           path = Path("functions/actions/quick-actions/quick_actions.py")
           spec = importlib.util.spec_from_file_location("quick_actions", path)
           module = importlib.util.module_from_spec(spec)
+          sys.modules[spec.name] = module
           spec.loader.exec_module(module)
 
           assert len(module.ACTION_SPECS) == 48, len(module.ACTION_SPECS)
@@ -72,8 +74,6 @@ jobs:
           assert custom[1].needs_input is True
           assert action._custom_input_label(custom[1].prompt) == "Audience"
 
-          for source in path.read_text(encoding="utf-8").splitlines():
-              pass
           text = path.read_text(encoding="utf-8")
           assert "innerHTML" not in text
           assert "eval(" not in text
@@ -88,11 +88,13 @@ jobs:
           python - <<'PY'
           import importlib.util
           import json
+          import sys
           from pathlib import Path
 
           path = Path("functions/actions/quick-actions/quick_actions.py")
           spec = importlib.util.spec_from_file_location("quick_actions", path)
           module = importlib.util.module_from_spec(spec)
+          sys.modules[spec.name] = module
           spec.loader.exec_module(module)
           action = module.Action()
 
