@@ -27,6 +27,19 @@ jobs:
       - name: Install runtime dependency
         run: python -m pip install "pydantic>=2,<3"
 
+      - name: Harden patcher replacement handling
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p=Path('.github/scripts/patch_study_mode_v1_1.py')
+          s=p.read_text(encoding='utf-8')
+          old='s,n=re.subn(pattern,new,s,count=1,flags=re.S)'
+          new='s,n=re.subn(pattern,lambda _m: new,s,count=1,flags=re.S)'
+          if s.count(old)!=1:
+              raise SystemExit('Unexpected patcher reg() implementation')
+          p.write_text(s.replace(old,new,1),encoding='utf-8')
+          PY
+
       - name: Apply Study Mode patch
         run: python .github/scripts/patch_study_mode_v1_1.py
 
