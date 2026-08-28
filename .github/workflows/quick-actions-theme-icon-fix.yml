@@ -35,25 +35,14 @@ jobs:
           text = text.replace(old_icon, new_icon, 1)
           source.write_text(text, encoding='utf-8')
 
-          icon = Path('functions/actions/quick-actions/quick-actions-icon.svg')
-          icon.write_text('''<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" role="img" aria-label="Quick Actions">
-          <rect width="24" height="24" rx="6" fill="#2563EB"/>
-          <path fill="#FFFFFF" d="M12 3.7l1.22 3.08 3.08 1.22-3.08 1.22L12 12.3l-1.22-3.08L7.7 8l3.08-1.22L12 3.7Z"/>
-          <path fill="#FFFFFF" d="M17.25 12.25l.78 1.97 1.97.78-1.97.78-.78 1.97-.78-1.97-1.97-.78 1.97-.78.78-1.97Z"/>
-          <circle cx="7" cy="16.5" r="1.25" fill="#FFFFFF"/>
-          </svg>\n''', encoding='utf-8')
+          icon_svg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" role="img" aria-label="Quick Actions">\n<rect width="24" height="24" rx="6" fill="#2563EB"/>\n<path fill="#FFFFFF" d="M12 3.7l1.22 3.08 3.08 1.22-3.08 1.22L12 12.3l-1.22-3.08L7.7 8l3.08-1.22L12 3.7Z"/>\n<path fill="#FFFFFF" d="M17.25 12.25l.78 1.97 1.97.78-1.97.78-.78 1.97-.78-1.97-1.97-.78 1.97-.78.78-1.97Z"/>\n<circle cx="7" cy="16.5" r="1.25" fill="#FFFFFF"/>\n</svg>\n'
+          Path('functions/actions/quick-actions/quick-actions-icon.svg').write_text(icon_svg, encoding='utf-8')
 
           changelog = Path('functions/actions/quick-actions/CHANGELOG.md')
           changes = changelog.read_text(encoding='utf-8')
           if '## 3.0.1' not in changes:
-              entry = '''# Changelog
-
-## 3.0.1
-
-- Fixed the toolbar icon becoming difficult to see in Open WebUI dark/OLED themes.
-- Replaced the monochrome external icon with a theme-independent hosted Quick Actions icon that remains visible in light and dark mode.
-'''
               prefix = '# Changelog\n'
+              entry = '# Changelog\n\n## 3.0.1\n\n- Fixed the toolbar icon becoming difficult to see in Open WebUI dark/OLED themes.\n- Replaced the monochrome external icon with a theme-independent hosted Quick Actions icon that remains visible in light and dark mode.\n'
               if not changes.startswith(prefix):
                   raise SystemExit('Unexpected changelog format')
               changes = entry + changes[len(prefix):]
