@@ -1,0 +1,39 @@
+name: Update Quick Actions author
+
+on:
+  push:
+    paths:
+      - ".github/workflows/quick-actions-author-fix.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  update-author:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          ref: fix/quick-actions-author
+          fetch-depth: 0
+
+      - name: Update author metadata
+        shell: bash
+        run: |
+          set -euo pipefail
+          file="functions/actions/quick-actions/quick_actions.py"
+          grep -q '^author: Open WebUI Community$' "$file"
+          sed -i 's/^author: Open WebUI Community$/author: Muhammad Sohail/' "$file"
+          grep -q '^author: Muhammad Sohail$' "$file"
+
+      - name: Remove temporary workflow and commit
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -f .github/workflows/quick-actions-author-fix.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add functions/actions/quick-actions/quick_actions.py .github/workflows/quick-actions-author-fix.yml
+          git commit -m "fix(quick-actions): set author to Muhammad Sohail"
+          git push origin HEAD:fix/quick-actions-author
