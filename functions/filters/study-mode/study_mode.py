@@ -687,12 +687,12 @@ For free-response Socratic teaching, normal explanations, flashcards, or one-que
         return None
 
     def _load_quiz_object(self, raw: str) -> Optional[dict]:
-        raw=re.sub(r"^```(?:json)?\\s*|\\s*```$","",raw.strip(),flags=re.I)
+        raw=re.sub(r"^```(?:json)?\s*|\s*```$","",raw.strip(),flags=re.I)
         tries=[raw]
         if self.valves.quiz_schema_tolerance=="compatible":
             fixed=raw.replace("“",'"').replace("”",'"')
-            fixed=re.sub(r'\\\\(?!["\\\\/bfnrtu])',r'\\\\\\\\',fixed)
-            fixed=re.sub(r",\\s*([}\\]])",r"\\1",fixed)
+            fixed=re.sub(r'\\(?!["\\/bfnrtu])',r'\\\\',fixed)
+            fixed=re.sub(r",\s*([}\]])",r"\1",fixed)
             if fixed!=raw: tries.append(fixed)
         for x in tries:
             try:
@@ -717,7 +717,7 @@ For free-response Socratic teaching, normal explanations, flashcards, or one-que
         v=value.strip()
         for o in options:
             if o["id"].casefold()==v.casefold() or o["text"].casefold()==v.casefold(): return o["id"]
-        m=re.match(r"^([A-Ea-e1-5])(?:[\\).:\\s]|$)",v)
+        m=re.match(r"^([A-Ea-e1-5])(?:[\).:\s]|$)",v)
         if m:
             t=m.group(1)
             if t.isdigit():

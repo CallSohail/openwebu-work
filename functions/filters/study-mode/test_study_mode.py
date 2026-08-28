@@ -66,6 +66,16 @@ STUDY_MODE_QUIZ_END -->'''
         self.assertIsNone(self.f._extract_quiz(raw, allow_unmarked=False))
         self.assertIsNotNone(self.f._extract_quiz(raw, allow_unmarked=True))
 
+    def test_compatible_parser_handles_fences_trailing_commas_and_answer_label(self):
+        raw = """<!-- STUDY_MODE_QUIZ_START
+```json
+{"title":"T","topic":"X","questions":[{"question":"Q?","options":["One","Two"],"answer":"B)",}],}
+```
+STUDY_MODE_QUIZ_END -->"""
+        quiz = self.f._extract_quiz(raw)
+        self.assertIsNotNone(quiz)
+        self.assertEqual(quiz["questions"][0]["correct"], "B")
+
     def test_strict_mode_rejects_compatible_variant(self):
         self.f.valves.quiz_schema_tolerance = "strict"
         raw = '<!-- STUDY_MODE_QUIZ_START {"questions":[{"question":"2+2?","options":["3","4"],"answer":"4"}]} STUDY_MODE_QUIZ_END -->'
