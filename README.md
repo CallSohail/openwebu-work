@@ -9,6 +9,7 @@ The goal is simple: keep each extension portable, documented, and safe to review
 | Extension | Type | Version | Status | Purpose |
 | --- | --- | --- | --- | --- |
 | [Study Mode](functions/filters/study-mode/) | Filter | 1.0.0 | Stable | Guided learning, Socratic tutoring, adaptive pacing, native `ask_user` support, and interactive quizzes |
+| [Quick Actions](functions/actions/quick-actions/) | Action | 3.0.0 | Stable | Compact context-aware response transformations, Humanize actions, verification, creation workflows, English/French UI, and user/team custom actions |
 | [RAGFlow Advanced Connector](tools/ragflow/) | Tool | 3.0.0 | Stable | RAGFlow retrieval, dataset discovery, document search, and configurable retrieval controls |
 
 ## Repository structure
@@ -39,7 +40,11 @@ The goal is simple: keep each extension portable, documented, and safe to review
     ├── pipes/
     │   └── README.md
     ├── actions/
-    │   └── README.md
+    │   ├── README.md
+    │   └── quick-actions/
+    │       ├── README.md
+    │       ├── CHANGELOG.md
+    │       └── quick_actions.py
     └── events/
         └── README.md
 ```
@@ -67,7 +72,7 @@ Each extension has a dedicated README with its setup steps. In general:
 
 The repository follows current Open WebUI plugin APIs. Individual extensions declare their own compatibility requirements.
 
-Study Mode currently declares **Open WebUI 0.11.1 or newer** because its interactive quiz experience uses the current Filter event and Rich UI APIs.
+Study Mode and Quick Actions currently declare **Open WebUI 0.11.1 or newer** because they use the current Function event APIs and interactive browser-side UI capabilities.
 
 ## Security
 
@@ -97,6 +102,7 @@ Examples:
 
 ```text
 study-mode-v1.0.0
+quick-actions-v3.0.0
 ragflow-v3.0.0
 ```
 
