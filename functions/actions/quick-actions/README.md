@@ -18,7 +18,7 @@ A compact, context-aware Action Function for Open WebUI that adds one **Quick Ac
 - Action-specific inline SVG icons
 - Context-aware suggestions without an extra model call
 - New **Humanize** section
-- Full built-in English and French catalogs for labels, descriptions, dialogs, and model instructions
+- Full built-in English, French, and German catalogs for labels, descriptions, dialogs, and model instructions
 - Admin language default plus optional per-user language override
 - Native Open WebUI multiselect Valves for enabling/hiding sections
 - Admin **Team actions** and per-user **My actions**
@@ -64,8 +64,9 @@ Admin Valves include **Language** with:
 
 - `English`
 - `Français`
+- `Deutsch`
 
-Selecting French changes the Quick Actions menu, category labels, search text, dialogs, notifications, target instructions, and all 48 built-in action prompts to French.
+Selecting French or German changes the Quick Actions menu, category labels, search text, dialogs, notifications, target instructions, and all 48 built-in action prompts to that language. The German catalog addresses users informally (`du`).
 
 Users can optionally override the admin language in User Valves. User-authored and team-authored custom instructions are intentionally **not automatically translated**; they are executed exactly as written.
 
@@ -75,7 +76,7 @@ The localization layer is catalog-based, so more languages can be added later wi
 
 The v3 configuration is deliberately smaller than v2.
 
-- **Language**: English or French
+- **Language**: English, French, or German
 - **Default behavior**: preview or send
 - **Enabled sections**: native multiselect for built-in sections
 - **Context suggestions**: on/off
@@ -95,7 +96,7 @@ Open WebUI Valves and UserValves are the native configuration mechanism for Func
 
 Each user gets a small personal configuration surface:
 
-- **Language**: inherit admin / English / French
+- **Language**: inherit admin / English / French / German
 - **Behavior**: inherit / preview / send
 - **Hidden sections**: native multiselect
 - **Suggest my actions**: pin up to two personal actions into Suggested
@@ -147,7 +148,7 @@ Protect unsent drafts: on
 Success notifications: off
 ```
 
-For a French deployment, change only **Language → Français**. Users can still override their own Quick Actions language if desired.
+For a French or German deployment, change only **Language → Français** or **Language → Deutsch**. Users can still override their own Quick Actions language if desired.
 
 ## Security and privacy design
 
@@ -166,7 +167,7 @@ For a French deployment, change only **Language → Français**. Users can still
 Before release, the implementation was checked for:
 
 - Python import/compilation
-- built-in English/French prompt coverage
+- built-in English/French/German prompt coverage
 - Humanize prompts
 - context detection
 - Valves/UserValves schema and native multiselect metadata
@@ -180,7 +181,7 @@ Before release, the implementation was checked for:
 - dark/light accessibility hooks
 - JavaScript syntax
 - cancel behavior without accidental fallback modal
-- simulated French Humanize → composer flow
+- simulated French and German Humanize → composer flow
 
 ## Upgrade notes from v2
 
