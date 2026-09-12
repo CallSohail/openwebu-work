@@ -1,5 +1,11 @@
 # Changelog
 
+## 3.1.0
+
+- Added a complete German UI, dialog, and prompt catalog for all 48 built-in actions.
+- Added `Deutsch` to the admin language default and the per-user language override.
+- Moved the remaining hardcoded prompt scaffolding into the localized backend text catalog.
+
 ## 3.0.1
 
 - Fixed the toolbar icon becoming difficult to see in Open WebUI dark/OLED themes.
