@@ -178,9 +178,11 @@ From this folder:
 ~~~bash
 python -m py_compile secure_onboarding.py
 python -m unittest -v test_secure_onboarding.py
+npm install --no-save --ignore-scripts jsdom@24
+node smoke_secure_onboarding.mjs
 ~~~
 
-The automated checks cover Python syntax, identity removal, privacy defaults, opt-in catalog disclosure, script-breakout escaping, self-contained Rich UI, link validation, sensitive metadata exclusion, permission snapshots, production gating, function-event scoping, persistent embeds, and chat ownership.
+The automated checks cover Python and embedded-JavaScript syntax, an actual DOM rendering smoke test, visible navigation/cards/dialogs, identity removal, privacy defaults, opt-in catalog disclosure, script-breakout escaping, self-contained Rich UI, link validation, sensitive metadata exclusion, permission snapshots, production gating, function-event scoping, persistent embeds, and chat ownership.
 
 A final staging run is required against the exact Open WebUI 0.11.3 deployment because the Function deliberately uses internal catalog and chat APIs.
 
