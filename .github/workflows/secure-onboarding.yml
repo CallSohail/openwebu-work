@@ -29,5 +29,9 @@ jobs:
         run: python -m pip install "pydantic>=2,<3"
       - name: Compile
         run: python -m py_compile secure_onboarding.py
+      - name: JavaScript syntax
+        run: |
+          python -c "import pathlib,re; source=pathlib.Path('secure_onboarding.py').read_text(encoding='utf-8'); scripts=re.findall(r'<script>(.*?)</script>',source,re.S); assert scripts; pathlib.Path('/tmp/secure-onboarding.js').write_text(scripts[-1],encoding='utf-8')"
+          node --check /tmp/secure-onboarding.js
       - name: Unit tests
         run: python -m unittest -v test_secure_onboarding.py
