@@ -298,7 +298,7 @@ ONBOARDING_HTML = r"""<!doctype html>
     add(p,guide({open:true,icon:'$',title:L('Sélectionner une compétence','Select a skill'),description:L('Par $ ou le menu Intégrations','With $ or the Integrations menu'),where:[L('Chat','Chat'),L('Zone de saisie','Message input'),'$'],steps:[L('Tapez $ pour ouvrir le sélecteur.','Type $ to open the picker.'),L('Choisissez une compétence visible pour votre compte.','Choose a skill visible to your account.'),L('Ajoutez votre objectif et vos contraintes.','Add your objective and constraints.'),L('Vérifiez qu’elle reste attachée au message avant envoi.','Check that it remains attached before sending.')],examples:[L('$ puis : prépare une analyse structurée de ce document.','$ then: prepare a structured analysis of this document.')] }),E('div','label',L('Compétences accessibles','Accessible skills')),resources(data.resources.skills,'skill'));return p;
   }
   function knowledgePage(){
-    var canCreate=allowed('workspace','knowledge');
+    var canCreate=allowed('workspace','knowledge')&&data.ui.show_creation_guides;
     var p=base(L('Créer et utiliser une base de connaissances','Create and use a knowledge base'),L('La connaissance ajoute vos documents comme contexte. Le sélecteur # ne montre que les bases accessibles.','Knowledge adds your documents as context. The # picker only shows accessible bases.'));
     var t=E('div','tutorials');
     if(canCreate)add(t,guide({open:true,icon:'K',title:L('Créer une base','Create a knowledge base'),description:L('Votre permission Workspace autorise la création','Your Workspace permission allows creation'),where:[L('Barre latérale','Sidebar'),L('Workspace','Workspace'),L('Knowledge','Knowledge')],steps:[L('Ouvrez Workspace puis Knowledge.','Open Workspace, then Knowledge.'),L('Cliquez sur + et donnez un nom et une description précis.','Click + and enter a precise name and description.'),L('Ajoutez les PDF, DOCX, Markdown ou autres fichiers autorisés.','Add permitted PDF, DOCX, Markdown, or other files.'),L('Attendez la fin du traitement puis vérifiez les documents.','Wait for processing, then verify the documents.'),L('Définissez les accès utilisateur/groupe; évitez Public pour les données internes.','Set user/group access; avoid Public for internal data.'),L('Dans Workspace > Models, attachez la base à un modèle si elle doit être toujours disponible.','In Workspace > Models, attach the base to a model if it should always be available.')],examples:[L('Crée une synthèse des politiques de voyage à partir de # puis cite les passages utilisés.','Summarize the travel policies from # and cite the passages used.')] }));
@@ -353,15 +353,15 @@ ONBOARDING_HTML = r"""<!doctype html>
     pages=[];push('welcome',L('Bienvenue','Welcome'),overview());
     if(data.ui.show_models)push('models',L('Modèles','Models'),modelsPage());
     push('chat',L('Bien demander','Ask well'),chatPage());
-    if(data.ui.show_prompts&&(data.resources.prompts||[]).length)push('prompts',L('Prompts','Prompts'),promptsPage());
-    if(data.ui.show_skills&&(data.resources.skills||[]).length)push('skills',L('Compétences','Skills'),skillsPage());
-    if(data.ui.show_knowledge&&((data.resources.knowledge||[]).length||allowed('workspace','knowledge')))push('knowledge',L('Connaissances','Knowledge'),knowledgePage());
-    if(enabled('notes'))push('notes',L('Notes','Notes'),notesPage());
-    if(enabled('web_search')||enabled('file_upload'))push('sources',L('Sources récentes','Current sources'),webFilesPage());
-    if(data.ui.show_tools&&(data.resources.tools||[]).length)push('tools',L('Outils','Tools'),toolsPage());
-    if(enabled('channels'))push('channels',L('Canaux','Channels'),channelsPage());
-    if(enabled('folders')||enabled('memories')||enabled('calendar')||enabled('automations'))push('organize',L('Organiser','Organize'),organizePage());
-    if(enabled('image_generation')||enabled('code_interpreter')||enabled('stt')||enabled('tts')||enabled('call')||enabled('multiple_models'))push('media',L('Créer et analyser','Create and analyze'),mediaPage());
+    if(data.ui.show_prompts&&(data.counts.prompts||0)>0)push('prompts',L('Prompts','Prompts'),promptsPage());
+    if(data.ui.show_skills&&(data.counts.skills||0)>0)push('skills',L('Compétences','Skills'),skillsPage());
+    if(data.ui.show_knowledge&&((data.counts.knowledge||0)>0||allowed('workspace','knowledge')))push('knowledge',L('Connaissances','Knowledge'),knowledgePage());
+    if(data.ui.show_notes&&enabled('notes'))push('notes',L('Notes','Notes'),notesPage());
+    if(data.ui.show_sources&&(enabled('web_search')||enabled('file_upload')))push('sources',L('Sources récentes','Current sources'),webFilesPage());
+    if(data.ui.show_tools&&(data.counts.tools||0)>0)push('tools',L('Outils','Tools'),toolsPage());
+    if(data.ui.show_channels&&enabled('channels'))push('channels',L('Canaux','Channels'),channelsPage());
+    if(data.ui.show_organization&&(enabled('folders')||enabled('memories')||enabled('calendar')||enabled('automations')))push('organize',L('Organiser','Organize'),organizePage());
+    if(data.ui.show_media&&(enabled('image_generation')||enabled('code_interpreter')||enabled('stt')||enabled('tts')||enabled('call')||enabled('multiple_models')))push('media',L('Créer et analyser','Create and analyze'),mediaPage());
     push('safety',L('Bonnes pratiques','Best practices'),safetyPage());
   }
   function render(){
@@ -454,6 +454,13 @@ class Event:
         show_tools: bool = Field(True, description="Afficher les outils et serveurs d’outils accessibles.")
         show_skills: bool = Field(True, description="Afficher les compétences accessibles, sans leurs instructions.")
         show_knowledge: bool = Field(True, description="Afficher les bases accessibles, sans leurs documents.")
+        show_notes_tutorial: bool = Field(True, description="Afficher le tutoriel Notes uniquement si la permission effective est active.")
+        show_channels_tutorial: bool = Field(True, description="Afficher le tutoriel Channels uniquement si la permission effective est active.")
+        show_sources_tutorial: bool = Field(True, description="Afficher les tutoriels fichiers et recherche web selon les permissions effectives.")
+        show_organization_tutorial: bool = Field(True, description="Afficher dossiers, mémoire, calendrier et automatisations selon les permissions.")
+        show_media_tutorial: bool = Field(True, description="Afficher image, code, voix et multi-modèles selon les permissions.")
+        show_creation_guides: bool = Field(True, description="Afficher les étapes de création lorsqu’une permission Workspace l’autorise.")
+        expose_resource_names: bool = Field(True, description="Inclure les noms et descriptions courts des ressources accessibles; désactiver pour un guide sans inventaire.")
         show_disabled_features: bool = Field(
             False, description="Afficher également les fonctions explicitement indisponibles."
         )
@@ -671,13 +678,14 @@ class Event:
 
         features = self._features_from_permissions(permissions)
         max_items = int(self.valves.max_items_per_section)
+        expose_names = bool(self.valves.expose_resource_names)
         resources = {
-            "models": [self._model_public(x) for x in models[:max_items]],
-            "prompts": [self._prompt_public(x) for x in prompts[:max_items]],
-            "tools": [self._tool_public(x) for x in tools[:max_items]],
-            "skills": [self._skill_public(x) for x in skills[:max_items]],
-            "knowledge": [self._knowledge_public(x) for x in knowledge[:max_items]],
-            "channels": [self._channel_public(x) for x in channels[:max_items]],
+            "models": [self._model_public(x) for x in models[:max_items]] if expose_names else [],
+            "prompts": [self._prompt_public(x) for x in prompts[:max_items]] if expose_names else [],
+            "tools": [self._tool_public(x) for x in tools[:max_items]] if expose_names else [],
+            "skills": [self._skill_public(x) for x in skills[:max_items]] if expose_names else [],
+            "knowledge": [self._knowledge_public(x) for x in knowledge[:max_items]] if expose_names else [],
+            "channels": [self._channel_public(x) for x in channels[:max_items]] if expose_names else [],
             "features": features,
         }
         preferred = (self.valves.preferred_welcome_model_id or "").strip()
@@ -713,6 +721,13 @@ class Event:
                 "show_tools": bool(self.valves.show_tools),
                 "show_skills": bool(self.valves.show_skills),
                 "show_knowledge": bool(self.valves.show_knowledge),
+                "show_notes": bool(self.valves.show_notes_tutorial),
+                "show_channels": bool(self.valves.show_channels_tutorial),
+                "show_sources": bool(self.valves.show_sources_tutorial),
+                "show_organization": bool(self.valves.show_organization_tutorial),
+                "show_media": bool(self.valves.show_media_tutorial),
+                "show_creation_guides": bool(self.valves.show_creation_guides),
+                "resource_names": expose_names,
             },
             "links": {
                 "support_url": self._safe_http_url(self.valves.support_url),
