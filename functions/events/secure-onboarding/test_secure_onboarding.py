@@ -105,10 +105,12 @@ class SecureOnboardingTests(unittest.TestCase):
             },
         }
 
-    def test_source_contains_no_personal_or_university_identity(self):
+    def test_source_uses_generic_configurable_identity(self):
         source = Path(MODULE.__file__).read_text(encoding="utf-8")
-        for forbidden in ("Muhammad", "Sohail", "Université", "EveGPT"):
-            self.assertNotIn(forbidden, source)
+        self.assertIn("title: Secure Dynamic Onboarding Rich UI", source)
+        self.assertIn("author: Open WebUI administrator", source)
+        self.assertIn('product_name: str = Field("AI Assistant"', source)
+        self.assertIn('organization_name: str = Field(\n            "",', source)
 
     def test_html_is_self_contained_and_escapes_script_terminators(self):
         snapshot = self.base_snapshot()
