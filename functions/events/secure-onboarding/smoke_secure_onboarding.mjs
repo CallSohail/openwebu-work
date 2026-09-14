@@ -96,17 +96,27 @@ const dom = new JSDOM(html, {
 await new Promise((resolve) => setTimeout(resolve, 50));
 
 const { document } = dom.window;
-assert.equal(document.getElementById("product").textContent, "Test Assistant");
-assert.match(document.getElementById("welcome").textContent, /Welcome/);
-assert.ok(document.querySelectorAll("#rail button").length >= 3, "navigation did not render");
+assert.equal(document.querySelector(".rail"), null, "legacy sidebar is still present");
+assert.equal(document.querySelector(".hero"), null, "legacy hero header is still present");
+assert.match(document.getElementById("stepCounter").textContent, /^1 \/ \d+$/);
+assert.ok(document.querySelectorAll("#dots .dot").length >= 4, "compact progress dots did not render");
+assert.ok(document.getElementById("skipTour").textContent.length > 0, "Skip tour is missing");
 assert.ok(document.querySelectorAll(".card").length >= 1, "tutorial cards did not render");
-assert.ok(document.getElementById("stage").textContent.trim().length > 40, "stage is blank");
+assert.ok(document.getElementById("stage").textContent.trim().length > 40, "full-width stage is blank");
 assert.equal(document.getElementById("edgePrev").disabled, true);
 assert.equal(document.getElementById("edgeNext").disabled, false);
+assert.ok(document.getElementById("back").disabled, "Back should be disabled on the first step");
+assert.ok(document.getElementById("next").textContent.length > 0, "Next label is blank");
 
 document.querySelector(".card").click();
 assert.equal(document.getElementById("backdrop").hidden, false, "detail dialog did not open");
 assert.ok(document.getElementById("modalTitle").textContent.length > 0, "dialog title is blank");
+document.getElementById("closeModal").click();
+
+document.getElementById("stepToggle").click();
+assert.equal(document.getElementById("progressPanel").hidden, false, "dot panel did not expand");
+document.querySelectorAll("#dots .dot")[1].click();
+assert.match(document.getElementById("stepCounter").textContent, /^2 \/ \d+$/);
 
 dom.window.close();
 console.log("DOM_RENDER_OK");
