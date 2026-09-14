@@ -9,11 +9,15 @@ The source contains no personal name, university name, deployment name, remote f
 - Neutral, brand-independent light and dark design.
 - Auto mode follows the browser/platform color preference.
 - Large readable typography without requiring browser zoom.
-- Compact section rail plus large previous/next arrows on both sides of the content.
-- Direction-aware page transitions and reduced-motion support.
+- Full-width, distraction-free tour with no persistent sidebar or table of contents.
+- A centered readable content column, compact step counter, collapsible clickable dot strip, and large optional side arrows.
+- Bottom Back/Next navigation, Arrow-key and Enter support, plus 200ms direction-aware transitions and reduced-motion support.
+- Dynamic content is automatically split into screens of at most three fixed-height cards; long titles and copy are line-clamped without cutting words.
 - Topic cards open accessible detail dialogs with interface paths, numbered steps, operational warnings, and ready-to-use examples.
-- Escape, backdrop click, focus return, focus trapping, Alt+Arrow navigation, and visible keyboard focus.
-- English and French switching.
+- Skip is always visible, and the final screen provides a concise recap with one primary Start CTA.
+- Progress, language, theme, skipped state, and completion state are stored in localStorage when permitted, with window.name and in-memory fallbacks for stricter iframe sandboxes.
+- Escape, backdrop click, focus return, focus trapping, and visible keyboard focus.
+- English and French switching is available inside the collapsible progress panel.
 - Example buttons use input:prompt and never auto-submit.
 
 Rich UI is intentionally kept in the default cross-origin sandbox. It reports iframe height but does not read the Open WebUI parent DOM, cookies, local storage, or session data.
@@ -169,6 +173,7 @@ If every section is disabled or unavailable, the UI displays a controlled config
 - Redis SET NX locking and token-checked release prevent replica duplicates.
 - No example is automatically submitted and no tool action is automatically approved.
 - Client parse errors and all-sections-disabled configurations have safe visible fallbacks.
+- The tour never forces completion: Skip collapses it, while Resume restores the saved step when browser storage permits.
 - ResizeObserver is feature-detected and reduced-motion preferences are respected.
 
 ## Verification
