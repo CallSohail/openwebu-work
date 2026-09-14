@@ -1,7 +1,7 @@
 """
 title: Secure Dynamic Onboarding Rich UI
 author: Open WebUI administrator
-version: 4.1.0
+version: 4.2.0
 required_open_webui_version: 0.11.3
 description: Privacy-first, bilingual, role-aware onboarding built from each user's accessible Open WebUI resources.
 """
@@ -26,7 +26,7 @@ log = logging.getLogger("openwebui.secure_onboarding")
 log.setLevel(logging.INFO)
 
 ONBOARDING_VERSION = 4
-TEMPLATE_REVISION = 2
+TEMPLATE_REVISION = 3
 SETTINGS_KEY = "secure_onboarding"
 TEST_SETTINGS_KEY = "secure_onboarding_test"
 
