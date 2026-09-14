@@ -1,0 +1,33 @@
+name: Secure onboarding
+
+on:
+  push:
+    paths:
+      - "functions/events/secure-onboarding/**"
+      - ".github/workflows/secure-onboarding.yml"
+  pull_request:
+    paths:
+      - "functions/events/secure-onboarding/**"
+      - ".github/workflows/secure-onboarding.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: functions/events/secure-onboarding
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install test dependency
+        run: python -m pip install "pydantic>=2,<3"
+      - name: Compile
+        run: python -m py_compile secure_onboarding.py
+      - name: Unit tests
+        run: python -m unittest -v test_secure_onboarding.py
