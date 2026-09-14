@@ -268,6 +268,7 @@ ONBOARDING_HTML = r"""<!doctype html>
       if(kind==='knowledge')add(acts,action(L('Ouvrir le sélecteur #','Open # picker'),'#'));
       if(kind==='tool')add(acts,action(L('Préparer un essai','Prepare a try'),L('Utilise l’outil « '+(item.name||'')+' » pour : ','Use the “'+(item.name||'')+'” tool to: ')));
       if(acts.childElementCount)add(card,acts);
+      if(kind==='model'&&((item.actions||[]).length||(item.filters||[]).length)){var fd=E('details','tutorial');fd.style.marginTop='9px';var fs=E('summary');var fh=E('span','tutorial-title');add(fh,E('b','',L('Fonctions attachées à ce modèle','Functions attached to this model')),E('span','',L('Actions et filtres réellement configurés','Actually configured actions and filters')));add(fs,E('span','tutorial-icon','ƒ'),fh);add(fd,fs);var fb=E('div','tutorial-body'),fc=E('div','chips');(item.actions||[]).forEach(function(x){add(fc,E('span','chip',L('Action : ','Action: ')+(x.name||x.id)));});(item.filters||[]).forEach(function(x){add(fc,E('span','chip',L('Filtre : ','Filter: ')+(x.name||x.id)));});add(fb,fc);fd.appendChild(fb);card.appendChild(fd);}
       if(kind==='model'&&(item.examples||[]).length){var ex=E('div','examples');ex.style.marginTop='9px';item.examples.forEach(function(x){var row=E('div','example');add(row,E('code','',x),action(L('Utiliser','Use'),x));add(ex,row);});add(card,ex);}
       list.appendChild(card);
     });return list;
