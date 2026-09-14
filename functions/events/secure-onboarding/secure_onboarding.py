@@ -26,6 +26,7 @@ log = logging.getLogger("openwebui.secure_onboarding")
 log.setLevel(logging.INFO)
 
 ONBOARDING_VERSION = 4
+TEMPLATE_REVISION = 2
 SETTINGS_KEY = "secure_onboarding"
 TEST_SETTINGS_KEY = "secure_onboarding_test"
 
@@ -538,6 +539,7 @@ class Event:
         }.get(role, {"fr": "Utilisateur", "en": "User"})
         return {
             "schema": 1,
+            "template_revision": TEMPLATE_REVISION,
             "generated_at": now,
             "generated_at_label": {"fr": date_fr, "en": date_en},
             "user": {
