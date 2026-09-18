@@ -60,6 +60,7 @@ The goal is simple: keep each extension portable, documented, and safe to review
         ├── README.md
         └── secure-onboarding/
             ├── README.md
+            ├── CHANGELOG.md
             ├── secure_onboarding.py
             ├── smoke_secure_onboarding.mjs
             └── test_secure_onboarding.py

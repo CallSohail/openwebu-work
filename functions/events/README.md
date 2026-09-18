@@ -20,6 +20,7 @@ events/
 ├── README.md
 └── secure-onboarding/
     ├── README.md
+    ├── CHANGELOG.md
     ├── secure_onboarding.py
     ├── smoke_secure_onboarding.mjs
     └── test_secure_onboarding.py
