@@ -186,3 +186,11 @@ Before release, the implementation was checked for:
 ## Upgrade notes from v2
 
 v3 intentionally replaces the many `show_*` category Valves with a single **Enabled sections** multiselect. Existing `team_actions` and `my_actions` syntax remains compatible. If upgrading from v2, review the Function Valves once after saving v3 because the category configuration schema changed.
+
+## Changelog
+
+See [CHANGELOG.md](CHANGELOG.md). Released as `quick-actions-v3.0.1`; see [RELEASING.md](../../../RELEASING.md) for the release process.
+
+## License
+
+Released under the repository's [MIT License](../../../LICENSE).

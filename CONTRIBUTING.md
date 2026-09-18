@@ -18,15 +18,18 @@ Each implementation should include at least:
 
 ```text
 README.md
+CHANGELOG.md
 <plugin_name>.py
 ```
+
+The changelog uses the section names from the [release notes template](RELEASING.md#release-notes-template): `Added`, `Changed`, `Fixed`, `Security`, `Compatibility` and `Upgrade notes`, under a `## [MAJOR.MINOR.PATCH] - YYYY-MM-DD` heading, newest first. Omit a section that has nothing in it, and omit the date for a version released before it entered this repository.
 
 ## Before opening a pull request
 
 Check that the extension:
 
 - has clear Open WebUI metadata at the top of the Python file;
-- declares a semantic version;
+- declares a semantic version that matches its README and changelog;
 - documents the minimum Open WebUI version when relevant;
 - avoids hard-coded API keys, passwords, tokens, private endpoints, and personal data;
 - uses Valves or environment-backed configuration for deployment-specific values;

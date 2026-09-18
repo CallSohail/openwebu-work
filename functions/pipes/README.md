@@ -16,6 +16,7 @@ Typical uses include:
 pipes/
 └── pipe-name/
     ├── README.md
+    ├── CHANGELOG.md
     └── pipe_name.py
 ```
 

@@ -17,9 +17,19 @@ Event Functions were introduced in Open WebUI 0.10.0 and are auto-detected from 
 
 ```text
 events/
-└── event-name/
+├── README.md
+└── secure-onboarding/
     ├── README.md
-    └── event_name.py
+    ├── CHANGELOG.md
+    ├── secure_onboarding.py
+    ├── smoke_secure_onboarding.mjs
+    └── test_secure_onboarding.py
 ```
 
-No Event implementations are included yet.
+## Included Event Functions
+
+### Secure Dynamic Onboarding 9.1.0
+
+Creates one persistent, bilingual onboarding chat per eligible user. The Rich UI guide is filtered by effective permissions, accessible Tools and models, global feature flags, role, and administrator Valves. It supports controlled testing, signup and first-login delivery, in-place content updates, idempotent batch deployment, Redis locking, and user-respected deletion behavior.
+
+See [secure-onboarding/README.md](secure-onboarding/README.md) for installation, rollout, privacy, security, Valves, testing, and troubleshooting, and [secure-onboarding/CHANGELOG.md](secure-onboarding/CHANGELOG.md) for the release history.

@@ -1,0 +1,40 @@
+name: Validate Email Composer
+
+on:
+  push:
+    paths:
+      - "tools/email-composer/**"
+      - ".github/workflows/validate-email-composer.yml"
+  pull_request:
+    paths:
+      - "tools/email-composer/**"
+      - ".github/workflows/validate-email-composer.yml"
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install test dependencies
+        run: python -m pip install --upgrade pip fastapi pydantic pytest
+
+      - name: Compile Tool
+        run: python -m py_compile tools/email-composer/email_composer.py
+
+      - name: Run regression tests
+        run: pytest -q tools/email-composer/test_email_composer.py
+
+      - name: Verify packaged readable source
+        working-directory: tools/email-composer
+        run: |
+          python unpack_source.py
+          sha256sum -c SOURCE_SHA256
+          python -m py_compile email_composer_readable.py

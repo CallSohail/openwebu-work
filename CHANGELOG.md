@@ -2,6 +2,31 @@
 
 This repository contains independently versioned Open WebUI extensions. Plugin-specific release notes live next to each implementation when they need more detail.
 
+## 2026-09-18
+
+### Documentation and release metadata
+
+Brought every extension up to the same documentation and release standard.
+
+- added the missing changelogs for the RAGFlow Advanced Connector and Secure Dynamic Onboarding, so all five extensions now keep one beside the implementation;
+- rewrote the existing changelogs onto the section names from the release-notes template (`Added`, `Changed`, `Fixed`, `Security`, `Compatibility`, `Upgrade notes`) under dated `## [version]` headings;
+- expanded the RAGFlow README with its Tool methods, a complete Valve reference with defaults and ranges, the data flow, and known limitations;
+- added a Changelog section to each extension README, and a changelog column or link to the Tool, Filter, Action and Event category indexes;
+- corrected the Quick Actions version in the Action index from 3.0.0 to 3.0.1;
+- added a per-extension changelog table to the root README;
+- required a `CHANGELOG.md` beside every implementation in CONTRIBUTING.md, with the section names it should use;
+- replaced the stale tag list in RELEASING.md with a published-release table, annotated-tag instructions, and the rule that a tag points at the commit where that version's source last changed.
+
+### Secure Dynamic Onboarding 9.1.0
+
+Added a bilingual, role-aware Event Function that creates and maintains one persistent onboarding chat per eligible user. The release includes an interactive guided tour, a permission-filtered feature library, exact composer and navigation tutorials, Notes, Folders, Channels, Calendar and Automations guidance, safe test-user rollout, signup and first-login delivery, idempotent batch deployment, in-place guide revisions, deleted-guide handling, Redis locking, restrictive iframe CSP, disclosure controls, Python tests, and a full DOM smoke test.
+
+## 2026-09-11
+
+### Rich Email Composer 1.0.0
+
+Added a portable Rich UI email drafting Tool with direct recipient, subject, and body editing, AI-assisted revision prompts, contextual formatting controls, recipient and domain validation, light/dark/mobile support, rich/plain copy, mail-client handoff, multipart `.eml` export, large-mailto fallback, message-level embed rendering, tests, CI, and deployment-neutral styling. The public Tool contains no university-specific names, domains, logos, or color theme and does not hard-code an Open WebUI `0.11.x` version requirement.
+
 ## 2026-08-28
 
 ### Study Mode 1.1.0
