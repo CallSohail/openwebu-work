@@ -1,7 +1,12 @@
 # Quick Actions Changelog
 
-All notable changes to Quick Actions are documented here.
-This project follows [Semantic Versioning](https://semver.org/).
+## 3.1.0
+
+- Added a complete German UI, dialog, and prompt catalog for all 48 built-in actions.
+- Added `Deutsch` to the admin language default and the per-user language override.
+- Moved the remaining hardcoded prompt scaffolding into the localized backend text catalog.
+
+## 3.0.1
 
 Released as `quick-actions-v<version>`. See [RELEASING.md](../../../RELEASING.md) for the release process.
 
