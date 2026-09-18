@@ -36,6 +36,7 @@ The goal is simple: keep each extension portable, documented, and safe to review
 │   │   └── unpack_source.py
 │   └── ragflow/
 │       ├── README.md
+│       ├── CHANGELOG.md
 │       └── ragflow.py
 │
 └── functions/
@@ -137,7 +138,17 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for the extension structure, documentatio
 
 ## Changelog
 
-Repository-level changes are tracked in [CHANGELOG.md](CHANGELOG.md). Extensions may also keep their own changelog beside the implementation.
+Repository-level changes are tracked in [CHANGELOG.md](CHANGELOG.md).
+
+Every extension also keeps its own changelog beside the implementation:
+
+| Extension | Changelog | Latest |
+| --- | --- | --- |
+| Rich Email Composer | [tools/email-composer/CHANGELOG.md](tools/email-composer/CHANGELOG.md) | `email-composer-v1.0.0` |
+| RAGFlow Advanced Connector | [tools/ragflow/CHANGELOG.md](tools/ragflow/CHANGELOG.md) | `ragflow-v3.0.0` |
+| Study Mode | [functions/filters/study-mode/CHANGELOG.md](functions/filters/study-mode/CHANGELOG.md) | `study-mode-v1.1.0` |
+| Quick Actions | [functions/actions/quick-actions/CHANGELOG.md](functions/actions/quick-actions/CHANGELOG.md) | `quick-actions-v3.0.1` |
+| Secure Dynamic Onboarding | [functions/events/secure-onboarding/CHANGELOG.md](functions/events/secure-onboarding/CHANGELOG.md) | `secure-onboarding-v9.1.0` |
 
 ## License
 

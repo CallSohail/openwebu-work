@@ -17,9 +17,12 @@ A Filter can use:
 filters/
 └── filter-name/
     ├── README.md
+    ├── CHANGELOG.md
     └── filter_name.py
 ```
 
 ## Included filters
 
-- [Study Mode](study-mode/) - adaptive tutoring and interactive learning for existing models.
+| Filter | Version | Changelog | Purpose |
+| --- | --- | --- | --- |
+| [Study Mode](study-mode/) | 1.1.0 | [CHANGELOG](study-mode/CHANGELOG.md) | Adaptive tutoring and interactive learning for existing models |

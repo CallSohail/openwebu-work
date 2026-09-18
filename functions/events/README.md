@@ -32,4 +32,4 @@ events/
 
 Creates one persistent, bilingual onboarding chat per eligible user. The Rich UI guide is filtered by effective permissions, accessible Tools and models, global feature flags, role, and administrator Valves. It supports controlled testing, signup and first-login delivery, in-place content updates, idempotent batch deployment, Redis locking, and user-respected deletion behavior.
 
-See [secure-onboarding/README.md](secure-onboarding/README.md) for installation, rollout, privacy, security, Valves, testing, and troubleshooting.
+See [secure-onboarding/README.md](secure-onboarding/README.md) for installation, rollout, privacy, security, Valves, testing, and troubleshooting, and [secure-onboarding/CHANGELOG.md](secure-onboarding/CHANGELOG.md) for the release history.

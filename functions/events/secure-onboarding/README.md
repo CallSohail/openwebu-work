@@ -309,6 +309,10 @@ Increase **guide_revision**. For immediate rollout, also increase **deployment_r
 
 Configure shared Redis. Process-local fallback cannot coordinate separate processes.
 
+## Changelog
+
+See [CHANGELOG.md](CHANGELOG.md). Released as `secure-onboarding-v9.1.0`; see [RELEASING.md](../../../RELEASING.md) for the release process.
+
 ## License
 
 Released under the repository’s [MIT License](../../../LICENSE).

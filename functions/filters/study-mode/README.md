@@ -241,7 +241,7 @@ MathJax is the only optional external browser dependency introduced in v1.1 and 
 
 ## Changelog
 
-See [CHANGELOG.md](CHANGELOG.md).
+See [CHANGELOG.md](CHANGELOG.md). Released as `study-mode-v1.1.0`; see [RELEASING.md](../../../RELEASING.md) for the release process.
 
 ## Versioning
 

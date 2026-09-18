@@ -4,10 +4,10 @@ Tools give a model capabilities it can call during a conversation, such as query
 
 ## Available Tools
 
-| Tool | Version | Purpose |
-| --- | --- | --- |
-| [Rich Email Composer](email-composer/) | 1.0.0 | Interactive Rich UI email drafting with direct editing, AI-assisted revisions, contextual formatting, recipient validation, copy, `.eml` export, and mail-client handoff |
-| [RAGFlow Advanced Connector](ragflow/) | 3.0.0 | RAGFlow retrieval, dataset discovery, document search, and configurable retrieval controls |
+| Tool | Version | Changelog | Purpose |
+| --- | --- | --- | --- |
+| [Rich Email Composer](email-composer/) | 1.0.0 | [CHANGELOG](email-composer/CHANGELOG.md) | Interactive Rich UI email drafting with direct editing, AI-assisted revisions, contextual formatting, recipient validation, copy, `.eml` export, and mail-client handoff |
+| [RAGFlow Advanced Connector](ragflow/) | 3.0.0 | [CHANGELOG](ragflow/CHANGELOG.md) | RAGFlow retrieval, dataset discovery, document search, and configurable retrieval controls |
 
 ## Structure
 
@@ -25,6 +25,7 @@ tools/
 │   └── unpack_source.py
 └── ragflow/
     ├── README.md
+    ├── CHANGELOG.md
     └── ragflow.py
 ```
 
@@ -38,7 +39,8 @@ A public Tool should:
 - document required Python packages;
 - provide clear error handling and timeouts for external requests;
 - explain what data leaves the Open WebUI server;
-- include simple test prompts in its README.
+- include simple test prompts in its README;
+- keep a `CHANGELOG.md` beside the implementation.
 
 ## Installation
 

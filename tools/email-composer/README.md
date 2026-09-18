@@ -269,6 +269,10 @@ tools/email-composer/
 └── unpack_source.py
 ```
 
+## Changelog
+
+See [CHANGELOG.md](CHANGELOG.md). Released as `email-composer-v1.0.0`; see [RELEASING.md](../../RELEASING.md) for the release process.
+
 ## License
 
 MIT, see the repository-level [`LICENSE`](../../LICENSE).

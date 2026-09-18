@@ -13,9 +13,9 @@ Typical uses include:
 
 ## Available Actions
 
-| Action | Version | Status | Purpose |
+| Action | Version | Changelog | Purpose |
 | --- | --- | --- | --- |
-| [Quick Actions](quick-actions/) | 3.0.0 | Stable | Compact context-aware response transformations, Humanize actions, verification, creation workflows, English/French UI, and user/team custom actions |
+| [Quick Actions](quick-actions/) | 3.0.1 | [CHANGELOG](quick-actions/CHANGELOG.md) | Compact context-aware response transformations, Humanize actions, verification, creation workflows, English/French UI, and user/team custom actions |
 
 ## Directory convention
 
