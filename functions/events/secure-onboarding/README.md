@@ -1,6 +1,6 @@
 # Secure Dynamic Onboarding Rich UI
 
-Version **9.2.0**, for Open WebUI **0.11.3 or newer**.
+Version **9.2.1**, for Open WebUI **0.11.3 or newer**.
 
 A multilingual, role-aware Event Function that creates a persistent onboarding chat for every eligible user. The chat contains an interactive Rich UI guide that mirrors Open WebUI, explains only permitted features, and updates in place when permissions or guide content change.
 
@@ -105,6 +105,8 @@ The embedded iframe:
 | [secure_onboarding.py](secure_onboarding.py) | Complete Event Function and embedded Rich UI |
 | [locales/en.json](locales/en.json) | English source catalog and translation template |
 | [locales/fr.json](locales/fr.json) | French translation catalog |
+| [locales/es.json](locales/es.json) | Spanish translation catalog, contributed by [delfireinoso](https://github.com/delfireinoso) |
+| [locales/ca.json](locales/ca.json) | Catalan translation catalog, contributed by [delfireinoso](https://github.com/delfireinoso) |
 | [locales/README.md](locales/README.md) | Translation contribution guide |
 | [sync_locales.py](sync_locales.py) | Catalog validator and single-file embedding tool |
 | [test_secure_onboarding.py](test_secure_onboarding.py) | Python security, permission, and snapshot tests |
@@ -331,7 +333,7 @@ Configure shared Redis. Process-local fallback cannot coordinate separate proces
 
 ## Changelog
 
-See [CHANGELOG.md](CHANGELOG.md). The current release is `secure-onboarding-v9.2.0`; see [RELEASING.md](../../../RELEASING.md) for the release process.
+See [CHANGELOG.md](CHANGELOG.md). The current release is `secure-onboarding-v9.2.1`; see [RELEASING.md](../../../RELEASING.md) for the release process.
 
 ## License
 

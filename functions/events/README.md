@@ -23,7 +23,9 @@ events/
     ├── CHANGELOG.md
     ├── locales/
     │   ├── README.md
+    │   ├── ca.json
     │   ├── en.json
+    │   ├── es.json
     │   └── fr.json
     ├── secure_onboarding.py
     ├── smoke_secure_onboarding.mjs
@@ -33,7 +35,7 @@ events/
 
 ## Included Event Functions
 
-### Secure Dynamic Onboarding 9.2.0
+### Secure Dynamic Onboarding 9.2.1
 
 Creates one persistent, multilingual onboarding chat per eligible user. The Rich UI guide follows the Open WebUI interface language when a matching locale is embedded, while keeping an in-guide language selector and an administrator-configured fallback locale. Its content is filtered by effective permissions, accessible Tools and models, global feature flags, role, and administrator Valves. It supports contributor-friendly JSON locale catalogs, controlled testing, signup and first-login delivery, in-place content updates, idempotent batch deployment, Redis locking, and user-respected deletion behavior.
 

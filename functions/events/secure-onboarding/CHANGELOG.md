@@ -5,6 +5,22 @@ This project follows [Semantic Versioning](https://semver.org/).
 
 Released as `secure-onboarding-v<version>`. See [RELEASING.md](../../../RELEASING.md) for the release process.
 
+## [9.2.1] - 2026-09-22
+
+### Added
+
+- Complete Spanish and Catalan onboarding catalogs contributed by [delfireinoso](https://github.com/delfireinoso) through issues [#11](https://github.com/CallSohail/openwebu-work/issues/11) and [#12](https://github.com/CallSohail/openwebu-work/issues/12).
+- Automatic `es` and `ca` selection from the matching Open WebUI interface locale, plus ES and CA buttons in the in-guide language selector.
+
+### Fixed
+
+- Repaired the submitted JSON delimiter, catalog IDs, Catalan locale code, and a small set of obvious translation typos before embedding the catalogs.
+
+### Compatibility
+
+- Open WebUI 0.11.3 or newer.
+- Existing English and French behavior is unchanged.
+
 ## [9.2.0] - 2026-09-21
 
 ### Added

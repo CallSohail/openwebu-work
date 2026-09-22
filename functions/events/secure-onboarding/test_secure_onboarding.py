@@ -61,7 +61,7 @@ class SecureOnboardingTests(unittest.IsolatedAsyncioTestCase):
 
     def test_metadata_and_safe_defaults(self):
         source = MODULE_PATH.read_text(encoding="utf-8")
-        self.assertIn("version: 9.2.0", source)
+        self.assertIn("version: 9.2.1", source)
         self.assertIn("required_open_webui_version: 0.11.3", source)
         self.assertIn("author: CallSohail", source)
         self.assertFalse(self.event.valves.production_enabled)
@@ -247,8 +247,9 @@ class SecureOnboardingTests(unittest.IsolatedAsyncioTestCase):
 
     def test_platform_locale_uses_exact_then_base_language(self):
         user = SimpleNamespace(settings={"ui": {"language": "es-ES"}})
-        with patch.object(MODULE, "SUPPORTED_LOCALES", ("fr", "en", "es")):
-            self.assertEqual(self.event._language_for(user), "es")
+        self.assertEqual(self.event._language_for(user), "es")
+        user.settings["ui"]["language"] = "ca_ES"
+        self.assertEqual(self.event._language_for(user), "ca")
         user.settings["ui"]["language"] = "pt-BR"
         self.assertEqual(self.event._language_for(user), "fr")
 

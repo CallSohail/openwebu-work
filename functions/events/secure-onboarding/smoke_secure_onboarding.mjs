@@ -25,7 +25,7 @@ const sectionFlags = [
 
 const snapshot = {
   schema: 2,
-  template_revision: 10,
+  template_revision: 11,
   guide_revision: 1,
   update_notes: { fr: "", en: "" },
   generated_at: 1,

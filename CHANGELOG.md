@@ -2,6 +2,12 @@
 
 This repository contains independently versioned Open WebUI extensions. Plugin-specific release notes live next to each implementation when they need more detail.
 
+## 2026-09-22
+
+### Secure Dynamic Onboarding 9.2.1
+
+Added complete Spanish and Catalan onboarding catalogs contributed by [delfireinoso](https://github.com/delfireinoso) through issues [#11](https://github.com/CallSohail/openwebu-work/issues/11) and [#12](https://github.com/CallSohail/openwebu-work/issues/12). The guide now selects `es` and `ca` automatically from the matching Open WebUI interface locale and exposes both languages in its selector. The submitted catalogs were validated and received small mechanical repairs before embedding.
+
 ## 2026-09-21
 
 ### Secure Dynamic Onboarding 9.2.0
