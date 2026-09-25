@@ -35,8 +35,8 @@ events/
 
 ## Included Event Functions
 
-### Secure Dynamic Onboarding 9.2.1
+### Secure Dynamic Onboarding 9.3.0
 
-Creates one persistent, multilingual onboarding chat per eligible user. The Rich UI guide follows the Open WebUI interface language when a matching locale is embedded, while keeping an in-guide language selector and an administrator-configured fallback locale. Its content is filtered by effective permissions, accessible Tools and models, global feature flags, role, and administrator Valves. It supports contributor-friendly JSON locale catalogs, controlled testing, signup and first-login delivery, in-place content updates, idempotent batch deployment, Redis locking, and user-respected deletion behavior.
+Creates one persistent, multilingual onboarding chat per eligible user. The Rich UI guide follows the Open WebUI interface language when a matching locale is embedded, while keeping an optional language dropdown and an administrator-configured fallback locale. Its content is filtered by effective permissions, accessible Tools and models, global feature flags, role, and administrator Valves. Saving Valves can synchronize every existing guide in the background, and the ASCII-safe Rich UI transport prevents mojibake. It supports contributor-friendly JSON locale catalogs, controlled testing, signup and first-login delivery, in-place content updates, idempotent batch deployment, Redis locking, and user-respected deletion behavior.
 
 See [secure-onboarding/README.md](secure-onboarding/README.md) for installation, rollout, privacy, security, Valves, testing, and troubleshooting, and [secure-onboarding/CHANGELOG.md](secure-onboarding/CHANGELOG.md) for the release history.

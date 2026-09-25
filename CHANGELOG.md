@@ -2,6 +2,12 @@
 
 This repository contains independently versioned Open WebUI extensions. Plugin-specific release notes live next to each implementation when they need more detail.
 
+## 2026-09-25
+
+### Secure Dynamic Onboarding 9.3.0
+
+Added automatic synchronization of existing onboarding guides whenever an administrator saves Valves, so section visibility, branding, language controls, and guide content reach users after they refresh or reopen the chat. Replaced the language buttons with a compact dropdown that lists every embedded locale by name. Added mojibake repair and an ASCII-safe Rich UI transport to preserve French, Spanish, Catalan, punctuation, and symbols across Open WebUI message storage and iframe rendering.
+
 ## 2026-09-22
 
 ### Secure Dynamic Onboarding 9.2.1

@@ -5,6 +5,29 @@ This project follows [Semantic Versioning](https://semver.org/).
 
 Released as `secure-onboarding-v<version>`. See [RELEASING.md](../../../RELEASING.md) for the release process.
 
+## [9.3.0] - 2026-09-25
+
+### Added
+
+- Automatic background synchronization of every existing guide after Valve changes, controlled by `sync_existing_guides_on_valve_change`.
+- A compact language dropdown that shows every embedded locale by its native name and keeps the user’s selection.
+
+### Fixed
+
+- Repair common double-decoded UTF-8 text such as `DÃ©marrer`, `IntÃ©grations`, `Â·` and `sâ€™applique` before rendering.
+- Serialize the final Rich UI as ASCII-safe HTML and JavaScript escapes so transport layers cannot corrupt French, Spanish, Catalan, arrows, punctuation or emoji.
+- Make `show_language_switch` changes reach all existing guides after a Valve save.
+
+### Changed
+
+- Template revision increased to 12 so existing users receive the corrected renderer at refresh or login.
+- Valve synchronization updates existing chats in place and never recreates missing or deleted guides.
+
+### Compatibility
+
+- Verified against Open WebUI 0.11.4.
+- Existing role filtering, CSP, security behavior and onboarding content are unchanged.
+
 ## [9.2.2] - 2026-09-25
 
 ### Fixed

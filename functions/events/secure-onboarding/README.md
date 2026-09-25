@@ -13,8 +13,9 @@ The guide has two connected experiences:
 
 The interface supports:
 
-- French and English, with contributor-ready JSON catalogs for more languages;
+- French, English, Spanish and Catalan, with contributor-ready JSON catalogs for more languages;
 - automatic locale selection from the user’s Open WebUI language setting;
+- a compact language dropdown that can be enabled or hidden with a Valve;
 - light and dark themes through the platform preference;
 - Left and Right keyboard navigation;
 - desktop, tablet, and mobile layouts;
@@ -180,6 +181,12 @@ To also create missing guides for all eligible users:
 
 Deployment runs in batches. Each user and revision is tracked, so repeated saves and restarts do not create duplicate work.
 
+### Immediate Valve changes for existing guides
+
+Keep **sync_existing_guides_on_valve_change = true**. Saving Valves then rebuilds every existing welcome guide in the background. Users see enabled or disabled sections, the language control, branding, links and updated text after refreshing or reopening the welcome chat.
+
+This synchronization updates existing guides only. It does not recreate deleted guides or send a new guide to users who never had one. Use **test_user** for one person or **deploy_to_all_users** with a new **deployment_revision** for missing guides.
+
 ## Updating guide content
 
 When changing text, links, branding, or enabled sections:
@@ -187,7 +194,7 @@ When changing text, links, branding, or enabled sections:
 1. Increase **guide_revision**.
 2. Optionally set **update_notes_fr** and **update_notes_en**.
 3. Save the Valves.
-4. Wait for login refresh, or increase **deployment_revision** for an immediate update.
+4. Save the Valves. With **sync_existing_guides_on_valve_change** enabled, existing guides update immediately in the background.
 
 The existing assistant message and Rich UI embed are updated in place. A new chat is not created.
 
@@ -217,6 +224,7 @@ Use recreation only when your organization has decided the guide must return.
 | **deployment_revision** | 0 | Increase to launch an idempotent deployment |
 | **deployment_batch_size** | 50 | Users processed before a short pause |
 | **deployment_batch_delay_seconds** | 0.5 | Pause between deployment batches |
+| **sync_existing_guides_on_valve_change** | true | Rebuilds all existing guides after Valve changes |
 | **recreate_deleted_guides** | false | Controls whether deleted guides can return |
 | **guide_revision** | 1 | Content version for in-place updates |
 | **refresh_on_login** | true | Refreshes changed guides and access catalogs |
@@ -235,6 +243,8 @@ Use recreation only when your organization has decided the guide must return.
 | **use_user_interface_language** | true | Uses the user’s Open WebUI locale when that catalog is embedded |
 | **preferred_welcome_model_id** | empty | Used only when the user can access that model |
 | **default_group_id** | empty | Optional group for brand-new users only |
+
+The visible language dropdown lists every embedded locale by its native name, for example **Français**, **English**, **Español** and **Català**. The user’s selection is saved in the browser for that guide. Set **show_language_switch = false** to hide the dropdown and keep the guide on the Open WebUI interface language or configured fallback.
 
 ## Branding and links
 
@@ -314,7 +324,7 @@ node smoke_secure_onboarding.mjs
 npm uninstall --no-save --ignore-scripts jsdom
 ~~~
 
-The Python suite covers metadata, safe defaults, CSP and script-breakout protection, private snapshot fields, HTTPS links, sanitization, RBAC and global switches, server-side administrator-content stripping, permission-filtered catalogs, test-user gating, marker validation, localization, and public metadata limits.
+The Python suite covers metadata, safe defaults, CSP and script-breakout protection, ASCII-safe Unicode transport, mojibake repair, private snapshot fields, HTTPS links, sanitization, RBAC and global switches, Valve synchronization, server-side administrator-content stripping, permission-filtered catalogs, test-user gating, marker validation, localization, and public metadata limits.
 
 The DOM test renders the full administrator tour, walks every step, switches language, opens and closes a feature tutorial, and verifies the dismissed state.
 
@@ -330,7 +340,11 @@ The feature must be globally enabled, allowed by the user’s role/group permiss
 
 ### Existing guides are not changing
 
-Increase **guide_revision**. For immediate rollout, also increase **deployment_revision**.
+Confirm **production_enabled** and **sync_existing_guides_on_valve_change** are enabled, then save the Valves. Increase **guide_revision** when users should also see the guide-updated banner. Use a new **deployment_revision** only when missing guides must be created.
+
+### Accented text looks like `DÃ©marrer`
+
+Install version 9.3.0 or newer, then save the Valves once. The renderer repairs common double-decoded UTF-8 text and stores the Rich UI as ASCII-safe HTML, preventing transport layers from corrupting French, Spanish or Catalan characters.
 
 ### Multiple server replicas
 
@@ -338,7 +352,7 @@ Configure shared Redis. Process-local fallback cannot coordinate separate proces
 
 ## Changelog
 
-See [CHANGELOG.md](CHANGELOG.md). The current release is `secure-onboarding-v9.2.1`; see [RELEASING.md](../../../RELEASING.md) for the release process.
+See [CHANGELOG.md](CHANGELOG.md). The current release is `secure-onboarding-v9.3.0`; see [RELEASING.md](../../../RELEASING.md) for the release process.
 
 ## License
 

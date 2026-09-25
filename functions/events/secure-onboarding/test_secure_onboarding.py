@@ -61,13 +61,14 @@ class SecureOnboardingTests(unittest.IsolatedAsyncioTestCase):
 
     def test_metadata_and_safe_defaults(self):
         source = MODULE_PATH.read_text(encoding="utf-8")
-        self.assertIn("version: 9.2.2", source)
+        self.assertIn("version: 9.3.0", source)
         self.assertIn("required_open_webui_version: 0.11.3", source)
         self.assertIn("author: CallSohail", source)
         self.assertFalse(self.event.valves.production_enabled)
         self.assertFalse(self.event.valves.deploy_to_all_users)
         self.assertFalse(self.event.valves.recreate_deleted_guides)
         self.assertTrue(self.event.valves.create_on_approval)
+        self.assertTrue(self.event.valves.sync_existing_guides_on_valve_change)
         self.assertEqual(self.event.valves.deployment_revision, 0)
         self.assertEqual(self.event.valves.guide_revision, 1)
 
@@ -87,6 +88,17 @@ class SecureOnboardingTests(unittest.IsolatedAsyncioTestCase):
         self.assertIn("prefers-reduced-motion:reduce", rendered)
         self.assertIn("type:'iframe:height'", rendered)
         self.assertIn("type:'input:prompt'", rendered)
+        self.assertIn('id="gLangSelect"', rendered)
+        self.assertNotIn('data-lang=', rendered)
+        self.assertTrue(rendered.isascii())
+        self.assertIn("Int\\u00e9grations", rendered)
+
+    def test_mojibake_repair_restores_utf8_text(self):
+        broken = "Int\u00c3\u00a9grations s\u00e2\u20ac\u2122applique \u00c2\u00b7 guide"
+        self.assertEqual(
+            self.event._repair_mojibake(broken),
+            "Int\u00e9grations s\u2019applique \u00b7 guide",
+        )
 
     def test_render_excludes_private_snapshot_keys(self):
         snapshot = self.base_snapshot()
@@ -224,6 +236,39 @@ class SecureOnboardingTests(unittest.IsolatedAsyncioTestCase):
         self.assertFalse(await self.event._allowed_target("user-2"))
         self.event.valves.production_enabled = True
         self.assertTrue(await self.event._allowed_target("user-2"))
+
+    async def test_valve_save_refreshes_existing_guides(self):
+        self.event.valves.production_enabled = True
+        self.event.valves.deployment_revision = 0
+        self.event._maybe_run_test = AsyncMock()
+        spawned = []
+        self.event._spawn = spawned.append
+
+        await self.event.event(
+            {"subject": {"type": "function", "id": "secure-onboarding"}},
+            __event_name__="function.valves_updated",
+            __id__="secure-onboarding",
+        )
+
+        self.assertEqual(len(spawned), 1)
+        self.assertEqual(spawned[0].cr_code.co_name, "_sync_existing_guides")
+        spawned[0].close()
+
+    async def test_valve_sync_can_be_disabled(self):
+        self.event.valves.production_enabled = True
+        self.event.valves.sync_existing_guides_on_valve_change = False
+        self.event.valves.deployment_revision = 0
+        self.event._maybe_run_test = AsyncMock()
+        spawned = []
+        self.event._spawn = spawned.append
+
+        await self.event.event(
+            {"subject": {"type": "function", "id": "secure-onboarding"}},
+            __event_name__="function.valves_updated",
+            __id__="secure-onboarding",
+        )
+
+        self.assertEqual(spawned, [])
 
     async def test_role_approval_creates_guide_immediately(self):
         self.event.valves.production_enabled = True

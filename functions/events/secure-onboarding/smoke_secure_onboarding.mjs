@@ -25,7 +25,7 @@ const sectionFlags = [
 
 const snapshot = {
   schema: 2,
-  template_revision: 11,
+  template_revision: 12,
   guide_revision: 1,
   update_notes: { fr: "", en: "" },
   generated_at: 1,
@@ -150,14 +150,25 @@ assert.ok(document.querySelector(".sheet"), "feature detail content is missing")
 document.querySelector(".sheet-x").click();
 assert.equal(document.querySelector(".overlay"), null, "feature detail sheet did not close");
 
-document.querySelector("[data-lang='fr']").click();
+const languageSelect = document.getElementById("gLangSelect");
+assert.ok(languageSelect, "language dropdown is missing");
+assert.deepEqual(
+  [...languageSelect.options].map((option) => option.textContent),
+  ["Français", "English", "Español"],
+  "language dropdown labels are incorrect"
+);
+languageSelect.value = "fr";
+languageSelect.dispatchEvent(new dom.window.Event("change", { bubbles: true }));
 assert.equal(document.documentElement.lang, "fr");
-assert.equal(document.querySelector("[data-lang='fr']").getAttribute("aria-pressed"), "true");
+assert.equal(languageSelect.value, "fr");
+assert.equal(document.querySelector(".g-lang-label").textContent, "Langue");
 assert.match(document.querySelector("[data-tab='tour']").textContent, /Visite guidée/);
 
-document.querySelector("[data-lang='es']").click();
+languageSelect.value = "es";
+languageSelect.dispatchEvent(new dom.window.Event("change", { bubbles: true }));
 assert.equal(document.documentElement.lang, "es");
-assert.equal(document.querySelector("[data-lang='es']").getAttribute("aria-pressed"), "true");
+assert.equal(languageSelect.value, "es");
+assert.equal(document.querySelector(".g-lang-label").textContent, "Language");
 assert.match(document.querySelector("[data-tab='tour']").textContent, /Visita guiada/);
 
 document.getElementById("close").click();
