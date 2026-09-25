@@ -154,6 +154,10 @@ Set **production_enabled = true** and **create_on_signup = true**.
 
 The guide is created for auth.signup and user.created events. When **skip_pending_users** is enabled, pending users are skipped until they become active.
 
+### Pending users after approval
+
+Keep **create_on_approval = true**. When Open WebUI changes an account role from **pending** to **user** or **admin**, the **user.role_updated** event creates the missing guide immediately. This covers approval from the admin panel and role changes from API, SCIM, OAuth, or trusted headers. The login handler remains a fallback.
+
 ### Existing users at next login
 
 Set **production_enabled = true** and **create_on_first_login = true**.
@@ -206,6 +210,7 @@ Use recreation only when your organization has decided the guide must return.
 | **production_enabled** | false | Allows real-user signup, login, and deployment processing |
 | **create_on_signup** | true | Creates the guide for new accounts |
 | **create_on_first_login** | true | Creates missing guides for existing users at login |
+| **create_on_approval** | true | Creates a missing guide immediately after a pending account is approved |
 | **skip_pending_users** | true | Skips accounts that cannot use the platform yet |
 | **include_admins** | true | Includes administrators and their admin chapter |
 | **deploy_to_all_users** | false | Allows immediate deployment to create missing guides |

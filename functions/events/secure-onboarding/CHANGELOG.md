@@ -5,6 +5,23 @@ This project follows [Semantic Versioning](https://semver.org/).
 
 Released as `secure-onboarding-v<version>`. See [RELEASING.md](../../../RELEASING.md) for the release process.
 
+## [9.2.2] - 2026-09-25
+
+### Fixed
+
+- Deliver the onboarding guide immediately when a pending account is approved through Open WebUI's `user.role_updated` event.
+- Ignore role updates that keep an account pending, while retaining first-login delivery as a fallback.
+
+### Changed
+
+- Added the `create_on_approval` Valve, enabled by default.
+- Approval delivery assigns the configured default group before building the permission-aware guide, matching new-user delivery.
+
+### Compatibility
+
+- Verified against Open WebUI 0.11.4.
+- The onboarding HTML, CSS, JavaScript, translations, and visual design are unchanged.
+
 ## [9.2.1] - 2026-09-22
 
 ### Added

@@ -61,12 +61,13 @@ class SecureOnboardingTests(unittest.IsolatedAsyncioTestCase):
 
     def test_metadata_and_safe_defaults(self):
         source = MODULE_PATH.read_text(encoding="utf-8")
-        self.assertIn("version: 9.2.1", source)
+        self.assertIn("version: 9.2.2", source)
         self.assertIn("required_open_webui_version: 0.11.3", source)
         self.assertIn("author: CallSohail", source)
         self.assertFalse(self.event.valves.production_enabled)
         self.assertFalse(self.event.valves.deploy_to_all_users)
         self.assertFalse(self.event.valves.recreate_deleted_guides)
+        self.assertTrue(self.event.valves.create_on_approval)
         self.assertEqual(self.event.valves.deployment_revision, 0)
         self.assertEqual(self.event.valves.guide_revision, 1)
 
@@ -223,6 +224,57 @@ class SecureOnboardingTests(unittest.IsolatedAsyncioTestCase):
         self.assertFalse(await self.event._allowed_target("user-2"))
         self.event.valves.production_enabled = True
         self.assertTrue(await self.event._allowed_target("user-2"))
+
+    async def test_role_approval_creates_guide_immediately(self):
+        self.event.valves.production_enabled = True
+        self.event._allowed_target = AsyncMock(return_value=True)
+        self.event._ensure_guide = AsyncMock(return_value="created")
+
+        await self.event.event(
+            {
+                "subject": {"type": "user", "id": "user-1"},
+                "data": {"role": "user"},
+                "source": "api",
+            },
+            __event_name__="user.role_updated",
+        )
+
+        self.event._ensure_guide.assert_awaited_once_with(
+            "user-1",
+            None,
+            None,
+            source="user.role_updated",
+            allow_create=True,
+            assign_group=True,
+        )
+
+    async def test_pending_role_update_does_not_create_guide(self):
+        self.event.valves.production_enabled = True
+        self.event._allowed_target = AsyncMock(return_value=True)
+        self.event._ensure_guide = AsyncMock(return_value="created")
+
+        await self.event.event(
+            {
+                "subject": {"type": "user", "id": "user-1"},
+                "data": {"role": "pending"},
+            },
+            __event_name__="user.role_updated",
+        )
+
+        self.event._allowed_target.assert_not_awaited()
+        self.event._ensure_guide.assert_not_awaited()
+
+    async def test_role_update_without_role_uses_server_side_user_check(self):
+        self.event.valves.production_enabled = True
+        self.event._allowed_target = AsyncMock(return_value=True)
+        self.event._ensure_guide = AsyncMock(return_value="created")
+
+        await self.event.event(
+            {"subject": {"type": "user", "id": "user-1"}},
+            __event_name__="user.role_updated",
+        )
+
+        self.event._ensure_guide.assert_awaited_once()
 
     def test_marker_validation_requires_owned_chat_ids(self):
         self.assertFalse(self.event._marker_valid(None))

@@ -3,7 +3,7 @@ title: Secure Dynamic Onboarding Rich UI
 author: CallSohail
 author_url: https://github.com/CallSohail/openwebu-work
 funding_url: https://github.com/CallSohail/openwebu-work
-version: 9.2.1
+version: 9.2.2
 required_open_webui_version: 0.11.3
 description: Multilingual, role-aware interactive onboarding guide and tutorial for Open WebUI. Delivered once per user (new sign-ups, first login, or pushed to everyone), updated in place when content or permissions change, and never shows a feature the user is not allowed to use.
 """
@@ -1158,6 +1158,10 @@ class Event:
             True,
             description="EXISTING USERS. If a user has never received the guide, create it at their next login. Covers accounts created before this function was installed and pending users who were approved later.",
         )
+        create_on_approval: bool = Field(
+            True,
+            description="APPROVED USERS. Create the guide immediately when an account role changes from pending to user or admin. Login remains a fallback if the role-change event is unavailable.",
+        )
         skip_pending_users: bool = Field(
             True,
             description="Do not create a guide for accounts still in 'pending' role (they cannot use the platform yet). They receive it at their first login after approval.",
@@ -1346,6 +1350,23 @@ class Event:
                 user_id = self._user_id_from_event(__event_name__, event)
                 if user_id and await self._allowed_target(user_id):
                     await self._handle_login(user_id, __app__, __request__)
+                return
+
+            if __event_name__ == "user.role_updated":
+                user_id = self._user_id_from_event(__event_name__, event)
+                data = event.get("data") if isinstance(event, dict) else None
+                new_role = str(data.get("role") or "").strip().lower() if isinstance(data, dict) else ""
+                if new_role and new_role not in {"user", "admin"}:
+                    return
+                if user_id and self.valves.create_on_approval and await self._allowed_target(user_id):
+                    await self._ensure_guide(
+                        user_id,
+                        __app__,
+                        __request__,
+                        source="user.role_updated",
+                        allow_create=True,
+                        assign_group=True,
+                    )
                 return
 
             if __event_name__ == "function.valves_updated":
