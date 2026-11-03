@@ -2,7 +2,7 @@
 title: Rich Responses
 author: Muhammad Sohail
 author_url: https://github.com/CallSohail/openwebu-work
-version: 1.0.0
+version: 1.0.1
 license: MIT
 required_open_webui_version: 0.12.0
 description: ChatGPT-style streaming answers for any model. Detects what the user asks (explain, summarize a document, compare, how-to, code, plan, quick fact, chat) and steers the model to stream well-structured Markdown with icons, callouts, tables and diagrams; adds icons to bare headings live while the answer streams. Pairs with the Generative UI tool for interactive cards.
@@ -111,8 +111,9 @@ Your reply is streamed and rendered live as Markdown in Open WebUI. Make it easy
 {visual}{length}
 {shape}"""
 
-VISUAL_HINT = ("- If a `render_ui` tool is available and the answer needs interactivity (dashboard, calculator, sliders, sortable "
-               "table, chart, explorer, map, live weather), call it, then add one to three sentences. Otherwise use Markdown only.\n")
+VISUAL_HINT = ("- If the answer needs interactivity (dashboard, calculator, sliders, sortable table, chart, explorer, map, "
+               "live weather) and you were given ```genui block instructions, put a genui block inside the answer; otherwise, "
+               "if a `render_ui` tool is available, call it. Keep the surrounding text short. Otherwise use Markdown only.\n")
 BRIEF_HINT = "- The user asked for a brief answer: at most about 80 words, keep the icons and bold but skip extra sections.\n"
 DEEP_HINT = "- The user wants depth: be thorough, use more sections and examples, but keep every paragraph short.\n"
 

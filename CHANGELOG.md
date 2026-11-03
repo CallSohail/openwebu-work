@@ -4,6 +4,10 @@ This repository contains independently versioned Open WebUI extensions. Plugin-s
 
 ## 2026-11-03
 
+### Generative UI 1.1.0 and Rich Responses 1.0.1
+
+Generative UI gains a streaming mode: install the same file as a Filter and models can write ```genui blocks inside normal answers. The cards render while the answer is still streaming, with no tool calling needed. Rich Responses now points models to these blocks.
+
 ### Rich Responses 1.0.0
 
 Added a Filter that makes normal answers ChatGPT-style while they stream: it detects the request type (explain, summarize a document, compare, how-to, troubleshoot, plan, code, quick fact, chat, creative writing), steers the model to the matching Markdown structure, and adds icons to bare headings and bold labels live during streaming. It pairs with Generative UI for interactive cards.

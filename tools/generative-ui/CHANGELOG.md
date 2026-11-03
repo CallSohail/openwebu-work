@@ -5,6 +5,18 @@ This project follows [Semantic Versioning](https://semver.org/).
 
 Released as `generative-ui-v<version>`. See [RELEASING.md](../../RELEASING.md) for the release process.
 
+## [1.1.0] - 2026-11-03
+
+### Added
+
+- Streaming mode: the same file installed under Admin Panel > Functions acts as a Filter. Models write ```genui JSON blocks inside normal answers; the filter hides the JSON while it streams, shows build progress, renders the card the moment the block closes and keeps the text streaming. No tool calling required.
+- Intent-aware prompt injection (`prompt_mode` auto/always/off), placeholder captions, per-message card limit, repair of blocks cut off at the end of a stream, outlet rendering for non-streaming responses, Responses-API support.
+- 40 streaming tests.
+
+### Changed
+
+- Tool description and README document both modes; CI runs the whole test folder.
+
 ## [1.0.0] - 2026-11-03
 
 ### Added

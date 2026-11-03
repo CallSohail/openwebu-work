@@ -5,6 +5,12 @@ This project follows [Semantic Versioning](https://semver.org/).
 
 Released as `rich-responses-v<version>`. See [RELEASING.md](../../../RELEASING.md) for the release process.
 
+## [1.0.1] - 2026-11-03
+
+### Changed
+
+- The visual hint now points the model to Generative UI's inline ```genui blocks when they are enabled, and to the `render_ui` tool otherwise.
+
 ## [1.0.0] - 2026-11-03
 
 ### Added
