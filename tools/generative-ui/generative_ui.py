@@ -2,11 +2,11 @@
 title: Generative UI
 author: Muhammad Sohail
 author_url: https://github.com/CallSohail/openwebu-work
-version: 1.0.0
+version: 1.1.0
 license: MIT
 required_open_webui_version: 0.12.0
 requirements: aiohttp
-description: ChatGPT-style generative UI for any model. The model writes one validated JSON spec and the Tool renders native-looking, fully interactive cards, dashboards, charts, tables, calculators, checklists, comparisons, timelines, diagrams, maps and live weather inline in the chat. Self-contained renderer (no CDN), strict validation, sandboxed custom apps, light and dark themes.
+description: ChatGPT-style generative UI for any model. The model writes one validated JSON spec and the Tool renders native-looking, fully interactive cards, dashboards, charts, tables, calculators, checklists, comparisons, timelines, diagrams, maps and live weather inline in the chat. Self-contained renderer (no CDN), strict validation, sandboxed custom apps, light and dark themes. Import it as a Tool for render_ui, and optionally again under Admin Panel > Functions to stream cards inside normal answers (no tool calling needed).
 """
 
 import asyncio
@@ -24,7 +24,7 @@ from pydantic import BaseModel, Field
 
 log = logging.getLogger("generative_ui")
 
-VERSION = "1.0.0"
+VERSION = "1.1.0"
 PROTOCOL_VERSION = "1"
 USER_AGENT = "OpenWebUI-GenerativeUI/1.0 (+https://github.com/CallSohail/openwebu-work)"
 
@@ -2062,6 +2062,432 @@ _TEMPLATE = """<!DOCTYPE html>
 <script>__JS__</script>
 </body>
 </html>"""
+
+
+# --------------------------------------------------------------------------------------------------------------------
+# Streaming mode (Filter). The same file can be imported a second time under Admin Panel > Functions: Open WebUI
+# then uses this Filter class. The model writes a ```genui block anywhere in its normal streamed answer; the
+# filter hides the JSON while it streams, shows a "Building..." status, and as soon as the block closes it renders
+# the card and pushes it into the message, while the rest of the text keeps streaming. Works without tool calling.
+# --------------------------------------------------------------------------------------------------------------------
+GENUI_LANGS = ("genui", "gen-ui", "generative-ui", "ui-spec", "uispec")
+FENCE_OPEN_RE = re.compile(r"^[ \t]{0,3}(`{3,}|~{3,})[ \t]*([A-Za-z0-9_+.-]*)[^\n]*\n?$")
+VISUAL_INTENT_RE = re.compile(
+    r"\b(dashboard|chart|graph|plot|visual\w*|diagram|architecture|flow ?chart|workflow|pipeline|compare|comparison|"
+    r"versus|vs\.?|calculat\w*|simulat\w*|budget|expenses?|mortgage|loan|savings?|forecast|weather|track\w*|metrics?|"
+    r"kpis?|monitor\w*|status|table|spreadsheet|csv|data ?set|data|statistics?|trend\w*|timeline|itinerary|trip|"
+    r"plan|schedule|roadmap|map|route|checklist|shopping|options?|explore|explorer|interactive|slider|widget|card|"
+    r"show me|visuali[sz]e|tableau|graphique|comparer|tableau de bord|calculer|m[ée]t[ée]o|carte|itin[ée]raire|"
+    r"gr[áa]fico|comparar|panel|presupuesto|diagramm|vergleich|wetter|karte)\b", re.I)
+
+INLINE_GUIDE = """[GENERATIVE_UI_INLINE_V1]
+## Interactive visuals inside your answer
+You can place native interactive UI (cards, charts, dashboards, calculators with sliders, tables, checklists,
+comparisons, explorers, timelines, diagrams, maps, live weather) directly inside your streamed answer by writing a
+fenced block with the language tag `genui` that contains ONE JSON spec:
+
+```genui
+{"title": "Monthly expenses", "icon": "wallet", "state": {"rent": 768, "food": 220},
+ "computed": {"total": "rent + food"},
+ "components": [
+   {"type": "metric", "label": "Total", "value": "=total", "format": "money", "currency": "EUR"},
+   {"type": "slider", "bind": "rent", "label": "Rent", "min": 0, "max": 2000, "format": "money", "currency": "EUR"},
+   {"type": "chart", "kind": "bar", "labels": ["Rent", "Food"], "series": [{"name": "EUR", "expr": "i == 0 ? rent : food"}]}]}
+```
+
+Rules:
+- Use a block only when a visual or interaction clearly helps (numbers, trends, comparisons, calculators, plans, processes,
+  dashboards, options to explore). For plain explanations, definitions, chit-chat or one-number answers use Markdown only.
+- Write normal text before and after the block: introduce what the visual shows, then add insight. The user sees the
+  rendered card, never the JSON, so never say "here is the JSON" and never repeat every number in prose.
+- The block must be valid JSON on its own lines, opened with ```genui and closed with ```. One spec per block; use
+  several blocks for several visuals. Use ```json (not genui) when the user wants to see actual code or JSON.
+- If you also have a `render_ui` tool, prefer genui blocks: they appear while you are still writing. Never do both
+  for the same visual.
+- Never invent live readings, prices or ratings. Illustrative values need "data_source": {"kind": "demo"}.
+  For weather use {"type": "weather", "location": "City, Country"}; the server fetches it live.
+
+Spec format:
+{spec_doc}"""
+
+
+def _inline_spec_doc() -> str:
+    doc = Tools.render_ui.__doc__ or ""
+    start = doc.find("spec = {")
+    end = doc.find("After it returns")
+    body = doc[start:end] if start != -1 and end != -1 else doc
+    return "\n".join(line.strip() for line in body.splitlines() if line.strip())
+
+
+class _GenuiStream:
+    """Per-message streaming state: passes text through, captures ```genui blocks, tracks other code fences."""
+
+    HOLD_LIMIT = 200
+
+    def __init__(self) -> None:
+        self.at_line_start = True
+        self.holding = False
+        self.hold = ""
+        self.capture: str | None = None  # JSON text while inside a genui block
+        self.capture_fence = ""
+        self.other_fence = ""  # fence marker of a non-genui code block we are inside
+        self.blocks: list[str] = []
+        self.created = time.monotonic()
+        self.cards: list[str] = []
+        self.count = 0
+        self.info: dict | None = None
+        self.last_status = 0.0
+
+    def feed(self, text: str) -> list:
+        """Returns an ordered list of visible strings and events ("open", None), ("progress", n), ("close", json)."""
+        out: list = []
+        events = out  # events are appended in stream order, interleaved with text
+        for ch in text:
+            if self.capture is not None:
+                self.hold += ch
+                if ch == "\n":
+                    line, self.hold = self.hold, ""
+                    stripped = line.strip()
+                    if stripped and set(stripped) <= {self.capture_fence[0]} and len(stripped) >= len(self.capture_fence):
+                        events.append(("close", self.capture))
+                        self.capture = None
+                        self.at_line_start = True
+                    else:
+                        self.capture += line
+                        events.append(("progress", len(self.capture)))
+                continue
+            if self.holding:
+                self.hold += ch
+                resolved = self._resolve_hold(final=False, events=events)
+                if resolved is not None:
+                    out.append(resolved)
+                continue
+            if self.at_line_start and ch in "`~ \t":
+                self.holding = True
+                self.hold = ch
+                self.at_line_start = False
+                continue
+            out.append(ch)
+            self.at_line_start = ch == "\n"
+        return out
+
+    def _resolve_hold(self, final: bool, events: list) -> str | None:
+        h = self.hold
+        done = h.endswith("\n")
+        lead = h.lstrip(" \t")
+        if len(h) - len(lead) > 3 or (lead and lead[0] not in "`~"):
+            return self._release(h, done)
+        if not lead:
+            return None if not final else self._release(h, done)
+        marker_char = lead[0]
+        n = len(lead) - len(lead.lstrip(marker_char))
+        if n < 3:
+            if len(lead) > n or final:
+                return self._release(h, done)
+            return None
+        if not (done or final):
+            return None if len(h) < self.HOLD_LIMIT else self._release(h, False)
+        m = FENCE_OPEN_RE.match(h if done else h + "\n")
+        if not m:
+            return self._release(h, done)
+        fence, lang = m.group(1), (m.group(2) or "").lower()
+        if self.other_fence:
+            if lead.strip() and set(lead.strip()) <= {self.other_fence[0]} and len(lead.strip()) >= len(self.other_fence):
+                self.other_fence = ""
+            return self._release(h, done)
+        if lang in GENUI_LANGS:
+            self.holding = False
+            self.hold = ""
+            self.capture = ""
+            self.capture_fence = fence
+            self.at_line_start = True
+            events.append(("open", None))
+            return ""
+        self.other_fence = fence
+        return self._release(h, done)
+
+    def _release(self, text: str, line_done: bool) -> str:
+        self.holding = False
+        self.hold = ""
+        self.at_line_start = line_done
+        return text
+
+    def finish(self) -> list:
+        """End of stream: release held text; an unterminated genui block is closed and handed over for repair."""
+        out: list = []
+        if self.capture is not None:
+            out.append(("close", self.capture + self.hold))
+            self.capture = None
+            self.hold = ""
+        elif self.holding:
+            released = self._resolve_hold(final=True, events=out)
+            if released:
+                out.append(released)
+            if self.capture is not None:  # a lone opening fence at the very end
+                out.append(("close", ""))
+                self.capture = None
+        return out
+
+
+GENUI_BLOCK_RE = re.compile(r"(?ms)^[ \t]{0,3}(`{3,}|~{3,})[ \t]*(?:" + "|".join(GENUI_LANGS) + r")\b[^\n]*\n(.*?)(?:^[ \t]{0,3}\1[ \t]*$|\Z)")
+
+
+class Filter:
+    class Valves(BaseModel):
+        priority: int = Field(default=20, description="Filter order; lower runs earlier.")
+        prompt_mode: Literal["auto", "always", "off"] = Field(
+            default="auto", description="When to teach the model inline ```genui blocks: auto (requests that look visual), "
+                                        "always, or off (still renders blocks the model writes).")
+        placeholder: Literal["caption", "none"] = Field(
+            default="caption", description="What stays in the text where a card was generated.")
+        max_cards_per_message: int = Field(default=4, ge=1, le=12)
+        theme: Literal["auto", "light", "dark"] = Field(default="auto")
+        followup_action: Literal["submit", "fill"] = Field(default="submit")
+        live_weather: bool = Field(default=True)
+        resolve_images: bool = Field(default=True)
+        geocode_places: bool = Field(default=True)
+        map_embeds: bool = Field(default=True)
+        allow_custom_apps: bool = Field(default=True)
+        network_timeout: float = Field(default=6.0, ge=1.0, le=20.0)
+        max_spec_kb: int = Field(default=256, ge=16, le=1024)
+        status_updates: bool = Field(default=True)
+
+    class UserValves(BaseModel):
+        enabled: bool = Field(default=True, description="Render interactive visuals inside answers.")
+        theme: Literal["default", "auto", "light", "dark"] = Field(default="default")
+        units: Literal["auto", "metric", "imperial"] = Field(default="auto")
+
+    def __init__(self) -> None:
+        self.valves = self.Valves()
+        self._streams: dict[str, _GenuiStream] = {}
+        self._ttl = 1800
+
+    # ------------------------------------------------------------------ helpers
+    def _engine(self) -> "Tools":
+        t = Tools()
+        for k in ("theme", "followup_action", "live_weather", "resolve_images", "geocode_places", "map_embeds",
+                  "allow_custom_apps", "network_timeout", "max_spec_kb", "status_updates"):
+            setattr(t.valves, k, getattr(self.valves, k))
+        return t
+
+    @staticmethod
+    def _key(metadata: Any) -> str | None:
+        if not isinstance(metadata, dict):
+            return None
+        parts = [str(metadata[k]) for k in ("chat_id", "message_id") if metadata.get(k)]
+        return "|".join(parts) if parts else None
+
+    @staticmethod
+    def _uv(user: Any) -> "Filter.UserValves":
+        cand = (user or {}).get("valves") if isinstance(user, dict) else None
+        if isinstance(cand, Filter.UserValves):
+            return cand
+        try:
+            if isinstance(cand, dict):
+                return Filter.UserValves.model_validate(cand)
+            if hasattr(cand, "model_dump"):
+                return Filter.UserValves.model_validate(cand.model_dump())
+        except Exception:  # stored values from an older version
+            pass
+        return Filter.UserValves()
+
+    @staticmethod
+    def _last_user_text(messages: list) -> str:
+        for m in reversed(messages):
+            if isinstance(m, dict) and m.get("role") == "user":
+                c = m.get("content", "")
+                if isinstance(c, list):
+                    c = " ".join(str(p.get("text", "")) for p in c if isinstance(p, dict))
+                return str(c)
+        return ""
+
+    def _evict(self) -> None:
+        now = time.monotonic()
+        for k in [k for k, s in self._streams.items() if now - s.created > self._ttl]:
+            self._streams.pop(k, None)
+        while len(self._streams) > 300:
+            self._streams.pop(next(iter(self._streams)))
+
+    async def _status(self, emitter: Any, text: str, done: bool) -> None:
+        if emitter and self.valves.status_updates:
+            try:
+                await emitter({"type": "status", "data": {"description": text, "done": done}})
+            except Exception as exc:
+                log.debug("status emit failed: %s", exc)
+
+    async def _render_block(self, raw: str, st: _GenuiStream, user: Any, event_call: Any) -> tuple[str | None, str, str]:
+        """Returns (html or None, title, fallback_markdown_or_error)."""
+        engine = self._engine()
+        if len(raw.encode("utf-8")) > self.valves.max_spec_kb * 1024:
+            return None, "", "the visual was too large to display"
+        try:
+            spec, ctx = normalize_spec(parse_spec(raw))
+        except (SpecError, RecursionError) as exc:
+            return None, "", str(exc)[:200]
+        title = spec.get("title") or "Interactive view"
+        uv = self._uv(user)
+        theme_pref = self.valves.theme if uv.theme == "default" else uv.theme
+        if st.info is None:
+            st.info = await engine._browser_info(event_call) if (theme_pref == "auto" or uv.units == "auto") else {}
+        info = st.info
+        lang = str(info.get("lang") or "en-US")
+        units = uv.units if uv.units != "auto" else ("imperial" if lang.lower().endswith(("-us", "-lr", "-mm")) else "metric")
+        await engine._resolve(ctx, units)
+        if not self.valves.allow_custom_apps:
+            _disable_apps(spec["components"])
+        _prune_images(spec["components"])
+        theme = theme_pref if theme_pref in ("light", "dark") else ("dark" if info.get("dark") else
+                                                                     "light" if "dark" in info else "auto")
+        cfg = {"theme": theme, "follow": theme_pref == "auto", "followup": self.valves.followup_action,
+               "lang": lang, "maps": self.valves.map_embeds, "version": VERSION}
+        try:
+            return build_html(spec, ctx, cfg), title, to_markdown(spec, 3000)
+        except (TypeError, ValueError) as exc:
+            log.exception("inline render failed")
+            return None, title, f"render error: {type(exc).__name__}"
+
+    async def _publish(self, st: _GenuiStream, metadata: dict, emitter: Any) -> None:
+        """Push all cards of this message. Keeps embeds that other tools already added to the message."""
+        if not emitter:
+            return
+        existing: list = []
+        try:
+            from open_webui.models.chats import Chats  # available inside Open WebUI only
+
+            got = Chats.get_message_metadata(metadata.get("chat_id"), metadata.get("message_id"), "embeds")
+            got = await got if asyncio.iscoroutine(got) else got
+            if isinstance(got, list):
+                existing = [e for e in got if e not in st.cards]
+        except Exception as exc:  # outside Open WebUI, temporary chats or API differences
+            log.debug("existing embeds unavailable: %s", exc)
+        try:
+            await emitter({"type": "embeds", "data": {"embeds": existing + st.cards, "replace": True}})
+        except Exception as exc:
+            log.warning("embed emit failed: %s", exc)
+
+    async def _close_block(self, raw: str, st: _GenuiStream, metadata: dict, user: Any, emitter: Any,
+                           event_call: Any) -> str:
+        """Render one captured block and return the text that replaces it in the message."""
+        if not raw.strip():
+            return ""
+        if st.count >= self.valves.max_cards_per_message:
+            return "\n> [!NOTE]\n> More visuals were requested than this server allows in one answer.\n\n"
+        html, title, extra = await self._render_block(raw, st, user, event_call)
+        if html is None:
+            await self._status(emitter, "Could not build the interactive view", True)
+            return ("\n> [!WARNING]\n> The interactive view could not be displayed (" + extra.replace("\n", " ")[:160]
+                    + ").\n\n")
+        st.count += 1
+        st.cards.append(html)
+        await self._publish(st, metadata, emitter)
+        await self._status(emitter, f"“{title}” ready", True)
+        if self.valves.placeholder == "none":
+            return ""
+        return f"\n*\U0001F4CA {title} — interactive view shown above*\n\n"
+
+    # ------------------------------------------------------------------ hooks
+    async def inlet(self, body: dict, __user__: dict | None = None, __metadata__: dict | None = None) -> dict:
+        if not self._uv(__user__).enabled:
+            return body
+        key = self._key(__metadata__)
+        if key:
+            self._evict()
+            self._streams[key] = _GenuiStream()
+        messages = body.get("messages")
+        if self.valves.prompt_mode == "off" or not isinstance(messages, list) or not messages:
+            return body
+        text = self._last_user_text(messages)
+        if self.valves.prompt_mode == "auto" and not VISUAL_INTENT_RE.search(text or ""):
+            return body
+        if any(isinstance(m, dict) and "[GENERATIVE_UI_INLINE_V1]" in str(m.get("content", "")) for m in messages):
+            return body
+        guide = INLINE_GUIDE.replace("{spec_doc}", _inline_spec_doc())
+        for m in messages:
+            if isinstance(m, dict) and m.get("role") == "system" and isinstance(m.get("content"), str):
+                m["content"] = m["content"].rstrip() + "\n\n" + guide
+                return body
+        messages.insert(0, {"role": "system", "content": guide})
+        return body
+
+    async def stream(self, event: dict, __metadata__: dict | None = None, __user__: dict | None = None,
+                     __event_emitter__: Any = None, __event_call__: Any = None) -> dict:
+        key = self._key(__metadata__)
+        st = self._streams.get(key) if key else None
+        if st is None or not isinstance(event, dict):
+            return event
+
+        async def process(text: str, finished: bool) -> str:
+            items = st.feed(text) if text else []
+            if finished:
+                items += st.finish()
+            parts: list[str] = []
+            for item in items:
+                if isinstance(item, str):
+                    parts.append(item)
+                    continue
+                kind, payload = item
+                if kind == "open":
+                    await self._status(__event_emitter__, "Building interactive view…", False)
+                elif kind == "progress":
+                    now = time.monotonic()
+                    if now - st.last_status > 1.5:
+                        st.last_status = now
+                        await self._status(__event_emitter__, f"Building interactive view… ({payload // 100 / 10:.1f} KB)", False)
+                elif kind == "close":
+                    parts.append(await self._close_block(payload, st, __metadata__, __user__, __event_emitter__,
+                                                         __event_call__))
+            return "".join(parts)
+
+        finished_any = False
+        for choice in event.get("choices") or []:
+            if not isinstance(choice, dict):
+                continue
+            delta = choice.get("delta")
+            finished = bool(choice.get("finish_reason"))
+            text = delta.get("content") if isinstance(delta, dict) and isinstance(delta.get("content"), str) else ""
+            if text or finished:
+                new = await process(text, finished)
+                if isinstance(delta, dict):
+                    delta["content"] = new
+                elif new:
+                    choice["delta"] = {"content": new}
+            finished_any = finished_any or finished
+        etype = event.get("type")
+        if etype == "response.output_text.delta" and isinstance(event.get("delta"), str):
+            event["delta"] = await process(event["delta"], False)
+        elif etype in ("response.output_text.done", "response.completed"):
+            finished_any = True
+        if finished_any:
+            self._streams.pop(key, None)
+        return event
+
+    async def outlet(self, body: dict, __metadata__: dict | None = None, __user__: dict | None = None,
+                     __event_emitter__: Any = None, __event_call__: Any = None) -> dict:
+        """Non-streaming responses (and anything the stream hook missed): render remaining genui blocks."""
+        key = self._key(__metadata__)
+        self._streams.pop(key, None) if key else None
+        if not self._uv(__user__).enabled:
+            return body
+        messages = body.get("messages")
+        if not isinstance(messages, list) or not messages:
+            return body
+        msg = messages[-1]
+        if not isinstance(msg, dict) or msg.get("role") != "assistant" or not isinstance(msg.get("content"), str):
+            return body
+        if not GENUI_BLOCK_RE.search(msg["content"]):
+            return body
+        st = _GenuiStream()
+        meta = __metadata__ if isinstance(__metadata__, dict) else {}
+        out, last = [], 0
+        for m in GENUI_BLOCK_RE.finditer(msg["content"]):
+            out.append(msg["content"][last:m.start()])
+            out.append(await self._close_block(m.group(2), st, meta, __user__, __event_emitter__, __event_call__))
+            last = m.end()
+        out.append(msg["content"][last:])
+        msg["content"] = "".join(out)
+        if st.cards and "embeds" not in msg:
+            msg["embeds"] = st.cards
+        return body
 
 
 # --------------------------------------------------------------------------------------------------------------------

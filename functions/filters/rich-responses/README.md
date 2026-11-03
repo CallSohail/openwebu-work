@@ -7,7 +7,7 @@ With this filter, normal questions get structured, scannable Markdown that strea
 | | |
 | --- | --- |
 | Type | Filter Function (`inlet`, `stream`, `outlet`) |
-| Version | 1.0.0 |
+| Version | 1.0.1 |
 | Open WebUI | 0.12.0 or newer |
 | Dependencies | none |
 

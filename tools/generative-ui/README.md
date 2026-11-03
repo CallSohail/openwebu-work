@@ -1,13 +1,13 @@
 # Generative UI
 
-ChatGPT-style visual answers for Open WebUI, with any model that can call tools.
+ChatGPT-style visual answers for Open WebUI: interactive cards that stream inside normal answers, with any model.
 
 The model writes one small JSON spec. The Tool validates it, repairs common mistakes, fetches live data when asked, and renders a native-looking interactive view inline in the conversation: dashboards, metric cards, charts, sortable tables, calculators with sliders, checklists, product comparisons, option explorers, timelines, itineraries with maps, architecture diagrams, step-by-step workflows and live weather. Every control works locally in the browser, so moving a slider or switching a tab never calls the model again.
 
 | | |
 | --- | --- |
-| Type | Tool (`tools/generative-ui/generative_ui.py`, single file) |
-| Version | 1.0.0 |
+| Type | One file, two installs: a **Tool** (`render_ui`) and a **Filter** (streaming mode) |
+| Version | 1.1.0 |
 | Open WebUI | 0.12.0 or newer (embed API checked against the 0.12.5 source) |
 | Python packages | none beyond Open WebUI (`aiohttp`, `pydantic`, `fastapi` ship with it) |
 | Front-end dependencies | none: the renderer is self-contained, no CDN |
@@ -23,7 +23,33 @@ The model writes one small JSON spec. The Tool validates it, repairs common mist
 
 All screenshots in [`screenshots/`](screenshots/) were captured by the automated browser tests from the real renderer, inside a page that reproduces Open WebUI's embed iframe. The weather sample is labeled "Sample data" because the test environment had no network access to Open-Meteo.
 
-## How it works
+## Two ways to get cards
+
+| | Streaming mode (Filter) | Tool mode (`render_ui`) |
+| --- | --- | --- |
+| How the model asks | Writes a ```` ```genui ```` JSON block anywhere in its normal answer | Calls the `render_ui` function |
+| Needs tool calling | No: works with any model | Yes (native tool calling recommended) |
+| When the card appears | While the answer is still streaming, as soon as the block is complete | After the tool call finishes |
+| Text around it | Streams before and after the card in one answer | Model writes text after the tool returns |
+
+Install both for the best result; the model is told to prefer the streaming block when both are active.
+
+### Streaming mode, step by step
+
+```text
+User: "Compare my monthly expenses visually"
+  inlet   -> request looks visual, so the filter teaches the model the ```genui block format (prompt_mode auto)
+  stream  -> "Here is your spending at a glance."                       streams normally
+          -> ```genui  {...JSON...}  ```                                hidden from the user; status "Building interactive view... (1.2 KB)"
+          -> block closes: repair, validate, live data, render          card appears in the message (embeds event)
+          -> "*📊 Expenses - interactive view shown above*"              placeholder left in the text
+          -> "Rent is 67% of the total..."                              keeps streaming
+  outlet  -> non-streaming responses get the same treatment; nothing to do when streaming already handled it
+```
+
+Edge cases handled: a block split across any number of chunks, other code fences (including ```` ```json ```` and ```` ```genui ```` shown inside a longer fence) left untouched, a broken block replaced by a short warning instead of raw JSON, a block cut off by the end of the stream repaired and rendered when possible, a configurable card limit per answer, cards from the `render_ui` tool in the same message preserved, per-message state isolation, OpenAI-style and Responses-API streams.
+
+## How the Tool works
 
 ```text
 User message
@@ -49,7 +75,15 @@ See [ARCHITECTURE.md](ARCHITECTURE.md) for the protocol, security model, researc
 
 ## Installation
 
-1. **Workspace > Tools > + (Import)**, paste or upload `generative_ui.py`, review it, save.
+**Streaming mode (recommended):**
+
+1. **Admin Panel > Functions > + (Create)**, paste the whole `generative_ui.py`, save. Open WebUI uses the file's `Filter` class.
+2. Turn the function on and enable **Global** in its menu (or attach it to specific models under **Workspace > Models > Filters**).
+3. Nothing else: no tool calling needed. Optional Valves: `prompt_mode` (`auto` teaches the format only for visual requests, `always`, `off`), `placeholder`, `max_cards_per_message`, theme, live data switches.
+
+**Tool mode:**
+
+1. **Workspace > Tools > + (Import)**, paste or upload the same `generative_ui.py`, review it, save.
 2. **Workspace > Models > edit your model > Tools**: tick **Generative UI**. (Or enable it per chat from the **+** menu.)
 3. Recommended: **Model > Advanced Params > Function Calling: Native** for models that support tool calling (vLLM with a tool parser, Ollama tool models, OpenAI-compatible APIs). Models without native tool calling still work through Open WebUI's default prompt-based tool mode, with lower reliability.
 4. Optional: open the Tool's **Valves** (gear icon) to adjust behavior.
@@ -174,7 +208,7 @@ node tests/browser_test.js http://localhost:8765 screenshots
 
 Results for 1.0.0, run in this repository's environment:
 
-- **44 Python tests passed**: JSON repair, aliases, migrations, limits, duplicate ids, non-finite numbers, URL and expression filtering, prototype keys, HTML escaping and single-pass templating, theme detection, status events, live-data success and failure (mocked), image pruning, every demo rendering.
+- **84 Python tests passed** (44 for the protocol and Tool, 40 for streaming mode: 20 random chunkings of an answer with a card, fences, broken and truncated blocks, card limits, outlet, Responses API, isolation): JSON repair, aliases, migrations, limits, duplicate ids, non-finite numbers, URL and expression filtering, prototype keys, HTML escaping and single-pass templating, theme detection, status events, live-data success and failure (mocked), image pruning, every demo rendering.
 - **66 browser checks passed** in Chromium (Playwright 1.63) inside a parent page that reproduces Open WebUI 0.12.5's `FullHeightIframe` sandbox and message handling: slider recalculation, computed values, `visible_if`, segmented and tab switching, chart tooltips by mouse and keyboard, chart table view, reset, prompt and follow-up messages, iframe height messages, table search/sort/filter/pagination/CSV download, checklist totals and copy, explorer selection and keyboard navigation, map and directions links, interactive steps, mortgage `pmt()` and number validation, diagram details and accordion, contained component errors, sandboxed app isolation (network blocked), XSS payloads inert, 2,000-row table plus 8 charts rendering in under 3 seconds, and no horizontal overflow at 390 px for 12 demos.
 - CI runs the same suites: [`.github/workflows/validate-generative-ui.yml`](../../.github/workflows/validate-generative-ui.yml).
 
@@ -190,6 +224,9 @@ Results for 1.0.0, run in this repository's environment:
 | Open-Meteo and Wikipedia | Code paths tested with mocks; the live services were unreachable from the test environment. |
 
 ## Known limitations
+
+- Streaming-mode cards appear at the top of the message (Open WebUI's embed area), not exactly where the block was written; a short placeholder line marks the spot. Open WebUI also scrolls to the card when it appears.
+- Open WebUI never shows raw HTML inside streamed Markdown, so cards always use the embed area.
 
 - Interactive state lives in the browser and resets when the chat is reloaded; the embed itself is stored with the message and re-renders.
 - Open WebUI shows embeds after the tool call completes, so components appear in one piece rather than streaming in progressively. Status lines show progress meanwhile.
