@@ -4,6 +4,10 @@ This repository contains independently versioned Open WebUI extensions. Plugin-s
 
 ## 2026-11-03
 
+### Generative UI 1.2.0
+
+Streaming-mode cards now appear as soon as the model starts a visual and fill in section by section while the answer streams, without requiring the same-origin iframe setting. Cards gain a Download as HTML button and keep their state across reloads when same-origin iframes are allowed.
+
 ### Generative UI 1.1.0 and Rich Responses 1.0.1
 
 Generative UI gains a streaming mode: install the same file as a Filter and models can write ```genui blocks inside normal answers. The cards render while the answer is still streaming, with no tool calling needed. Rich Responses now points models to these blocks.

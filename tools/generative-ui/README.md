@@ -7,7 +7,7 @@ The model writes one small JSON spec. The Tool validates it, repairs common mist
 | | |
 | --- | --- |
 | Type | One file, two installs: a **Tool** (`render_ui`) and a **Filter** (streaming mode) |
-| Version | 1.1.0 |
+| Version | 1.2.0 |
 | Open WebUI | 0.12.0 or newer (embed API checked against the 0.12.5 source) |
 | Python packages | none beyond Open WebUI (`aiohttp`, `pydantic`, `fastapi` ship with it) |
 | Front-end dependencies | none: the renderer is self-contained, no CDN |
@@ -29,10 +29,12 @@ All screenshots in [`screenshots/`](screenshots/) were captured by the automated
 | --- | --- | --- |
 | How the model asks | Writes a ```` ```genui ```` JSON block anywhere in its normal answer | Calls the `render_ui` function |
 | Needs tool calling | No: works with any model | Yes (native tool calling recommended) |
-| When the card appears | While the answer is still streaming, as soon as the block is complete | After the tool call finishes |
+| When the card appears | Immediately when the block starts, then fills in section by section while it streams | After the tool call finishes |
 | Text around it | Streams before and after the card in one answer | Model writes text after the tool returns |
 
 Install both for the best result; the model is told to prefer the streaming block when both are active.
+
+Inspired by the open-source [Inline Visualizer](https://github.com/Classic298) for Open WebUI, which streams model-written HTML into an iframe by reading the chat page. Generative UI keeps the declarative, validated spec instead (no model-written scripts in the default path, no same-origin requirement) and gets the live effect from server-side progressive rendering.
 
 ### Streaming mode, step by step
 
@@ -40,12 +42,19 @@ Install both for the best result; the model is told to prefer the streaming bloc
 User: "Compare my monthly expenses visually"
   inlet   -> request looks visual, so the filter teaches the model the ```genui block format (prompt_mode auto)
   stream  -> "Here is your spending at a glance."                       streams normally
-          -> ```genui  {...JSON...}  ```                                hidden from the user; status "Building interactive view... (1.2 KB)"
-          -> block closes: repair, validate, live data, render          card appears in the message (embeds event)
+          -> ```genui  opens                                            card shell appears at once: title + "Rendering..." skeleton
+          -> {...JSON streams...}                                       each completed component is added to the card (only new ones fade in)
+          -> block closes: repair, validate, live data, render          final card replaces the live one (embeds event, persisted)
           -> "*📊 Expenses - interactive view shown above*"              placeholder left in the text
           -> "Rent is 67% of the total..."                              keeps streaming
   outlet  -> non-streaming responses get the same treatment; nothing to do when streaming already handled it
 ```
+
+![Card filling in while the answer streams](screenshots/streaming_live.png)
+
+Live filling works without "Allow iframe same origin": the filter re-renders the card on the server each time a component completes (at most every `live_preview_interval` seconds) and replaces the embed, so no code inside the card needs access to the Open WebUI page. If the user stops the answer mid-card, `outlet` finishes the card from what arrived or removes the shell.
+
+When "Allow iframe same origin" *is* enabled, cards also remember their slider, tab and input values across page reloads (stored per message in the browser). Every final card has a **Download as HTML** button that saves a standalone, still-interactive copy.
 
 Edge cases handled: a block split across any number of chunks, other code fences (including ```` ```json ```` and ```` ```genui ```` shown inside a longer fence) left untouched, a broken block replaced by a short warning instead of raw JSON, a block cut off by the end of the stream repaired and rendered when possible, a configurable card limit per answer, cards from the `render_ui` tool in the same message preserved, per-message state isolation, OpenAI-style and Responses-API streams.
 
@@ -208,8 +217,8 @@ node tests/browser_test.js http://localhost:8765 screenshots
 
 Results for 1.0.0, run in this repository's environment:
 
-- **84 Python tests passed** (44 for the protocol and Tool, 40 for streaming mode: 20 random chunkings of an answer with a card, fences, broken and truncated blocks, card limits, outlet, Responses API, isolation): JSON repair, aliases, migrations, limits, duplicate ids, non-finite numbers, URL and expression filtering, prototype keys, HTML escaping and single-pass templating, theme detection, status events, live-data success and failure (mocked), image pruning, every demo rendering.
-- **66 browser checks passed** in Chromium (Playwright 1.63) inside a parent page that reproduces Open WebUI 0.12.5's `FullHeightIframe` sandbox and message handling: slider recalculation, computed values, `visible_if`, segmented and tab switching, chart tooltips by mouse and keyboard, chart table view, reset, prompt and follow-up messages, iframe height messages, table search/sort/filter/pagination/CSV download, checklist totals and copy, explorer selection and keyboard navigation, map and directions links, interactive steps, mortgage `pmt()` and number validation, diagram details and accordion, contained component errors, sandboxed app isolation (network blocked), XSS payloads inert, 2,000-row table plus 8 charts rendering in under 3 seconds, and no horizontal overflow at 390 px for 12 demos.
+- **90 Python tests passed** (44 for the protocol and Tool, 46 for streaming mode: random chunkings, fences, broken and truncated blocks, card limits, live card growth and fade order, the partial-JSON component counter, stop-mid-card finalization, preservation of other embeds, outlet, Responses API, isolation): JSON repair, aliases, migrations, limits, duplicate ids, non-finite numbers, URL and expression filtering, prototype keys, HTML escaping and single-pass templating, theme detection, status events, live-data success and failure (mocked), image pruning, every demo rendering.
+- **73 browser checks passed** (including the live skeleton card, download as HTML, and state restored after reload with same-origin enabled; the original 66 are listed next) in Chromium (Playwright 1.63) inside a parent page that reproduces Open WebUI 0.12.5's `FullHeightIframe` sandbox and message handling: slider recalculation, computed values, `visible_if`, segmented and tab switching, chart tooltips by mouse and keyboard, chart table view, reset, prompt and follow-up messages, iframe height messages, table search/sort/filter/pagination/CSV download, checklist totals and copy, explorer selection and keyboard navigation, map and directions links, interactive steps, mortgage `pmt()` and number validation, diagram details and accordion, contained component errors, sandboxed app isolation (network blocked), XSS payloads inert, 2,000-row table plus 8 charts rendering in under 3 seconds, and no horizontal overflow at 390 px for 12 demos.
 - CI runs the same suites: [`.github/workflows/validate-generative-ui.yml`](../../.github/workflows/validate-generative-ui.yml).
 
 ## Compatibility

@@ -56,6 +56,24 @@ async def main():
         print(f"{name}: {len(resp.body) // 1024} KB")
     (out / "index.json").write_text(json.dumps(index, indent=1, ensure_ascii=False))
 
+    # Streaming-mode artifacts: a live (partial) card and a same-origin harness for state persistence.
+    flt = mod.Filter()
+    flt.valves.theme = theme
+    flt.valves.live_weather = flt.valves.resolve_images = flt.valves.geocode_places = False
+    st = mod._GenuiStream()
+    dash = json.loads(json.dumps(mod.EXAMPLES["dashboard"]))
+    partial = dict(dash, components=dash["components"][:2])
+    html, _, _ = await flt._render_block(partial, st, None, None, partial=True, fade_from=1)
+    (out / "live.html").write_text(html)
+    bg = "#212121" if theme == "dark" else "#ffffff"
+    (out / "harness_live_760.html").write_text(HARNESS.replace("EMBED", "live.html").replace("WIDTH", "760").replace("BG", bg))
+    so = HARNESS.replace("EMBED", "dashboard.html").replace("WIDTH", "760").replace("BG", bg)
+    so = so.replace('sandbox="allow-scripts allow-forms allow-popups allow-downloads"',
+                    'sandbox="allow-scripts allow-forms allow-popups allow-downloads allow-same-origin"')
+    so = so.replace('<div class="m">', '<div class="m" id="message-demo">')
+    (out / "harness_sameorigin_760.html").write_text(so)
+    print("live + same-origin harness written")
+
 
 if __name__ == "__main__":
     asyncio.run(main())

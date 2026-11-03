@@ -231,6 +231,40 @@ const text = (loc) => loc.innerText();
     await page.close();
   }
 
+  // ---- streaming mode: live card shell ----
+  {
+    const { page, frame, errors } = await open(browser, 'live');
+    check('live card shows the rendering skeleton', await frame.locator('.g-live').isVisible());
+    check('live card renders completed components only', (await frame.locator('#gui-root .g-stack > *').count()) >= 2 && (await frame.locator('.g-metric').count()) === 4);
+    check('live card hides footer and download until final', (await frame.locator('.g-fu').count()) === 0 && (await frame.locator('button[aria-label="Download as HTML"]').count()) === 0);
+    check('live card: no page errors', errors.length === 0, errors.join(' | '));
+    await page.close();
+  }
+
+  // ---- final card: download + state that survives reload (same-origin enabled) ----
+  {
+    const { page, frame } = await open(browser, 'dashboard');
+    const dl = page.waitForEvent('download', { timeout: 3000 }).catch(() => null);
+    await frame.getByRole('button', { name: 'Download as HTML' }).click();
+    const d = await dl;
+    check('download card as standalone HTML', !!d && d.suggestedFilename().endsWith('.html'), d ? d.suggestedFilename() : 'none');
+    await page.close();
+  }
+  {
+    const { page, frame } = await open(browser, 'sameorigin');
+    await frame.locator('input[type=range]').first().evaluate((el) => { el.value = 400; el.dispatchEvent(new Event('input', { bubbles: true })); });
+    await page.waitForTimeout(500);
+    await page.evaluate(() => { const f = document.getElementById('f'); const html = f.srcdoc; f.srcdoc = ''; setTimeout(() => { f.srcdoc = html; }, 50); });
+    await page.waitForTimeout(800);
+    const util = await page.frameLocator('#f').locator('.g-metric').first().locator('.g-metric-v').innerText();
+    check('state survives reload when same-origin is enabled', util.trim() === '100%', util);
+    await page.frameLocator('#f').getByRole('button', { name: 'Reset' }).click();
+    await page.waitForTimeout(500);
+    const left = await page.evaluate(() => Object.keys(localStorage).filter((k) => k.startsWith('gui-state:')).length);
+    check('reset clears saved state', left === 0, String(left));
+    await page.close();
+  }
+
   // ---- mobile layout: no horizontal overflow ----
   for (const name of ['dashboard', 'calculator', 'comparison', 'table', 'itinerary', 'diagram', 'checklist', 'explorer', 'chart', 'status', 'science', 'mortgage']) {
     const { page, errors } = await open(browser, name, 390);
