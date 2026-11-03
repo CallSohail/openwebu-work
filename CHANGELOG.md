@@ -2,6 +2,12 @@
 
 This repository contains independently versioned Open WebUI extensions. Plugin-specific release notes live next to each implementation when they need more detail.
 
+## 2026-11-03
+
+### Generative UI 1.0.0
+
+Added a new Tool that renders ChatGPT-style interactive answers inline in the chat for any tool-calling model. The model writes one JSON spec; the Tool repairs and validates it, fetches live weather when asked, and renders dashboards, charts, sortable tables, calculators with sliders, checklists, comparisons, option explorers, timelines, auto-layout diagrams, maps and more with a self-contained renderer. Includes a Python test suite, browser tests in an Open WebUI 0.12.5 iframe harness, screenshots and a CI workflow. It replaces the unpublished `frontier_ui.py` prototype and keeps rendering its `blocks` specs.
+
 ## 2026-09-25
 
 ### Secure Dynamic Onboarding 9.3.0

@@ -32,3 +32,7 @@ dist/
 *.egg-info/
 *.tmp
 *.log
+
+# Generative UI test output
+tools/generative-ui/tests/out/
+node_modules/
