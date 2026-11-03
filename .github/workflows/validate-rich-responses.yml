@@ -1,0 +1,30 @@
+name: Validate Rich Responses
+
+on:
+  push:
+    paths:
+      - "functions/filters/rich-responses/**"
+      - ".github/workflows/validate-rich-responses.yml"
+  pull_request:
+    paths:
+      - "functions/filters/rich-responses/**"
+      - ".github/workflows/validate-rich-responses.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    defaults:
+      run:
+        working-directory: functions/filters/rich-responses
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python -m pip install "pydantic>=2,<3" pytest
+      - run: python -m py_compile rich_responses.py
+      - run: python -m pytest -q test_rich_responses.py

@@ -212,6 +212,10 @@ Results for 1.0.0, run in this repository's environment:
 
 `frontier_ui.py` specs with `blocks` keep working: text, table, stats, chart, callout, compare, steps, timeline, status, places, images, map, weather, hero and links are mapped to the new components, and `budget` and `calculator` blocks become sliders with computed totals. Stock quotes, Craft/Office file apps, Gmail drafts and notes were removed (see [ARCHITECTURE.md](ARCHITECTURE.md#audit-of-frontier_uipy)); the validator tells the model when it meets one.
 
+## Pair with Rich Responses
+
+Generative UI handles interactive cards. For ordinary answers (explanations, document summaries, how-tos), install the [Rich Responses](../../functions/filters/rich-responses/) filter: it streams ChatGPT-style Markdown with icons in real time and tells the model when to call `render_ui`.
+
 ## Changelog
 
 See [CHANGELOG.md](CHANGELOG.md).
