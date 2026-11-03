@@ -1,0 +1,49 @@
+name: Validate Generative UI
+
+on:
+  push:
+    paths:
+      - "tools/generative-ui/**"
+      - ".github/workflows/validate-generative-ui.yml"
+  pull_request:
+    paths:
+      - "tools/generative-ui/**"
+      - ".github/workflows/validate-generative-ui.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: tools/generative-ui
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Install Python test dependencies
+        run: python -m pip install "pydantic>=2,<3" fastapi aiohttp pytest
+      - name: Compile Tool
+        run: python -m py_compile generative_ui.py
+      - name: Renderer JavaScript syntax
+        run: |
+          python -c "import pathlib,re; s=pathlib.Path('generative_ui.py').read_text(encoding='utf-8'); pathlib.Path('/tmp/gui.js').write_text(s.split('_JS = r\"\"\"')[1].split('\"\"\"')[0], encoding='utf-8')"
+          node --check /tmp/gui.js
+      - name: Unit, protocol and security tests
+        run: python -m pytest -q tests/test_generative_ui.py
+      - name: Build demo embeds (offline)
+        run: python tests/build_demos.py tests/out --offline
+      - name: Browser tests (Open WebUI iframe harness)
+        run: |
+          npm install --no-save playwright@1.63.0
+          npx playwright install --with-deps chromium
+          (python -m http.server 8765 --directory tests/out >/dev/null 2>&1 &)
+          sleep 1
+          node tests/browser_test.js http://localhost:8765

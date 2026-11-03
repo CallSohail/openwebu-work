@@ -8,6 +8,7 @@ The goal is simple: keep each extension portable, documented, and safe to review
 
 | Extension | Type | Version | Status | Purpose |
 | --- | --- | --- | --- | --- |
+| [Generative UI](tools/generative-ui/) | Tool | 1.0.0 | Stable | ChatGPT-style interactive answers for any tool-calling model: dashboards, charts, tables, calculators, checklists, comparisons, explorers, timelines, diagrams, maps and live weather, rendered inline from a validated JSON spec |
 | [Rich Email Composer](tools/email-composer/) | Tool | 1.0.0 | Stable | Interactive Rich UI email drafting with direct editing, AI-assisted revisions, contextual formatting, recipient validation, copy, `.eml` export, and mail-client handoff |
 | [Study Mode](functions/filters/study-mode/) | Filter | 1.1.0 | Stable | Guided learning, Socratic tutoring, adaptive pacing, native `ask_user`, multilingual interactive quizzes, LaTeX/keyboard/fullscreen/export options, and local-model compatibility hardening |
 | [Quick Actions](functions/actions/quick-actions/) | Action | 3.0.1 | Stable | Compact context-aware response transformations, Humanize actions, verification, creation workflows, English/French UI, and user/team custom actions |
@@ -27,6 +28,17 @@ The goal is simple: keep each extension portable, documented, and safe to review
 │
 ├── tools/
 │   ├── README.md
+│   ├── generative-ui/
+│   │   ├── README.md
+│   │   ├── ARCHITECTURE.md
+│   │   ├── CHANGELOG.md
+│   │   ├── generative_ui.py
+│   │   ├── screenshots/
+│   │   └── tests/
+│   │       ├── browser_test.js
+│   │       ├── build_demos.py
+│   │       ├── demos.py
+│   │       └── test_generative_ui.py
 │   ├── email-composer/
 │   │   ├── README.md
 │   │   ├── CHANGELOG.md
@@ -101,6 +113,8 @@ Rich Email Composer intentionally does not hard-code an Open WebUI `0.11.x` vers
 
 Study Mode and Quick Actions currently declare **Open WebUI 0.11.1 or newer** because they use current Function event APIs and interactive browser-side UI capabilities.
 
+Generative UI declares **Open WebUI 0.12.0 or newer** because it relies on Tool embeds returned as `(HTMLResponse, context)` and the embed prompt messages checked against the 0.12.5 source.
+
 Secure Dynamic Onboarding declares **Open WebUI 0.11.3 or newer** because it uses current Event Function hooks, Rich UI embeds, effective permission catalogs, Notes, Channels, Calendar, Automations, and current chat storage APIs.
 
 ## Security
@@ -130,6 +144,7 @@ Recommended Git tag format:
 Examples:
 
 ```text
+generative-ui-v1.0.0
 email-composer-v1.0.0
 study-mode-v1.1.0
 quick-actions-v3.0.1
@@ -151,6 +166,7 @@ Every extension also keeps its own changelog beside the implementation:
 
 | Extension | Changelog | Latest |
 | --- | --- | --- |
+| Generative UI | [tools/generative-ui/CHANGELOG.md](tools/generative-ui/CHANGELOG.md) | `generative-ui-v1.0.0` |
 | Rich Email Composer | [tools/email-composer/CHANGELOG.md](tools/email-composer/CHANGELOG.md) | `email-composer-v1.0.0` |
 | RAGFlow Advanced Connector | [tools/ragflow/CHANGELOG.md](tools/ragflow/CHANGELOG.md) | `ragflow-v3.0.0` |
 | Study Mode | [functions/filters/study-mode/CHANGELOG.md](functions/filters/study-mode/CHANGELOG.md) | `study-mode-v1.1.0` |
