@@ -2,7 +2,7 @@
 title: Generative UI
 author: Muhammad Sohail
 author_url: https://github.com/CallSohail/openwebu-work
-version: 1.1.0
+version: 1.2.0
 license: MIT
 required_open_webui_version: 0.12.0
 requirements: aiohttp
@@ -24,7 +24,7 @@ from pydantic import BaseModel, Field
 
 log = logging.getLogger("generative_ui")
 
-VERSION = "1.1.0"
+VERSION = "1.2.0"
 PROTOCOL_VERSION = "1"
 USER_AGENT = "OpenWebUI-GenerativeUI/1.0 (+https://github.com/CallSohail/openwebu-work)"
 
@@ -2137,6 +2137,13 @@ class _GenuiStream:
         self.count = 0
         self.info: dict | None = None
         self.last_status = 0.0
+        import uuid
+
+        self.owner = "gui-" + uuid.uuid4().hex[:16]  # marks this message's cards inside the embed HTML
+        self.live_index: int | None = None  # position of the card that is still streaming
+        self.live_count = -1
+        self.live_title: str | None = None
+        self.last_live = 0.0
 
     def feed(self, text: str) -> list:
         """Returns an ordered list of visible strings and events ("open", None), ("progress", n), ("close", json)."""
@@ -2229,6 +2236,64 @@ class _GenuiStream:
         return out
 
 
+def _completed_items(text: str, key: str) -> int:
+    """Count elements of the top-level `key` array whose closing bracket has already streamed in."""
+    depth, in_str, esc, i, n = 0, False, False, 0, len(text)
+    array_depth, count, last_key, buf = -1, 0, "", []
+    while i < n:
+        ch = text[i]
+        if in_str:
+            if esc:
+                esc = False
+            elif ch == "\\":
+                esc = True
+            elif ch == '"':
+                in_str = False
+                last_key = "".join(buf)
+            else:
+                buf.append(ch)
+            i += 1
+            continue
+        if ch == '"':
+            in_str, buf = True, []
+        elif ch in "{[":
+            depth += 1
+            if ch == "[" and array_depth < 0 and depth == 2 and last_key == key:
+                array_depth = depth
+        elif ch in "}]":
+            if array_depth > 0 and depth == array_depth + 1:
+                count += 1
+            if array_depth > 0 and depth == array_depth and ch == "]":
+                return count
+            depth -= 1
+        i += 1
+    return count
+
+
+def _partial_spec(raw: str) -> tuple[dict | None, int]:
+    """Parse an incomplete genui block. Returns (spec with only completed top-level components, count)."""
+    text = (raw or "").strip()
+    if not text:
+        return None, 0
+    try:
+        obj = parse_spec(text)
+    except (SpecError, RecursionError, MemoryError):
+        return None, 0
+    if isinstance(obj, list):
+        obj = {"components": obj}
+    if not isinstance(obj, dict):
+        return None, 0
+    key = next((k for k in ("components", "blocks", "children") if isinstance(obj.get(k), list)), None)
+    if key is None:
+        return {k: v for k, v in obj.items() if k in ("title", "subtitle", "icon", "badge")}, 0
+    comps = obj[key]
+    complete = comps[: _completed_items(text, key)]
+    out = dict(obj)
+    out.pop(key)
+    out["components"] = complete
+    return out, len(complete)
+
+
 GENUI_BLOCK_RE = re.compile(r"(?ms)^[ \t]{0,3}(`{3,}|~{3,})[ \t]*(?:" + "|".join(GENUI_LANGS) + r")\b[^\n]*\n(.*?)(?:^[ \t]{0,3}\1[ \t]*$|\Z)")
 
 
@@ -2251,6 +2316,11 @@ class Filter:
         network_timeout: float = Field(default=6.0, ge=1.0, le=20.0)
         max_spec_kb: int = Field(default=256, ge=16, le=1024)
         status_updates: bool = Field(default=True)
+        live_preview: bool = Field(
+            default=True, description="Show the card as soon as a genui block starts and fill it in component by "
+                                      "component while the JSON streams (like ChatGPT). Off: the card appears when complete.")
+        live_preview_interval: float = Field(default=0.8, ge=0.3, le=5.0,
+                                             description="Minimum seconds between live card updates.")
 
     class UserValves(BaseModel):
         enabled: bool = Field(default=True, description="Render interactive visuals inside answers.")
@@ -2315,10 +2385,11 @@ class Filter:
             except Exception as exc:
                 log.debug("status emit failed: %s", exc)
 
-    async def _render_block(self, raw: str, st: _GenuiStream, user: Any, event_call: Any) -> tuple[str | None, str, str]:
-        """Returns (html or None, title, fallback_markdown_or_error)."""
+    async def _render_block(self, raw: Any, st: _GenuiStream, user: Any, event_call: Any, partial: bool = False,
+                            fade_from: int = 0) -> tuple[str | None, str, str]:
+        """Returns (html or None, title, fallback_markdown_or_error). `raw` is JSON text or an already parsed spec."""
         engine = self._engine()
-        if len(raw.encode("utf-8")) > self.valves.max_spec_kb * 1024:
+        if isinstance(raw, str) and len(raw.encode("utf-8")) > self.valves.max_spec_kb * 1024:
             return None, "", "the visual was too large to display"
         try:
             spec, ctx = normalize_spec(parse_spec(raw))
@@ -2332,14 +2403,16 @@ class Filter:
         info = st.info
         lang = str(info.get("lang") or "en-US")
         units = uv.units if uv.units != "auto" else ("imperial" if lang.lower().endswith(("-us", "-lr", "-mm")) else "metric")
-        await engine._resolve(ctx, units)
+        if not partial:  # live data and image pruning only for the final card
+            await engine._resolve(ctx, units)
+            _prune_images(spec["components"])
         if not self.valves.allow_custom_apps:
             _disable_apps(spec["components"])
-        _prune_images(spec["components"])
         theme = theme_pref if theme_pref in ("light", "dark") else ("dark" if info.get("dark") else
                                                                      "light" if "dark" in info else "auto")
         cfg = {"theme": theme, "follow": theme_pref == "auto", "followup": self.valves.followup_action,
-               "lang": lang, "maps": self.valves.map_embeds, "version": VERSION}
+               "lang": lang, "maps": self.valves.map_embeds, "version": VERSION, "owner": st.owner,
+               "streaming": partial, "fade_from": fade_from}
         try:
             return build_html(spec, ctx, cfg), title, to_markdown(spec, 3000)
         except (TypeError, ValueError) as exc:
@@ -2357,7 +2430,7 @@ class Filter:
             got = Chats.get_message_metadata(metadata.get("chat_id"), metadata.get("message_id"), "embeds")
             got = await got if asyncio.iscoroutine(got) else got
             if isinstance(got, list):
-                existing = [e for e in got if e not in st.cards]
+                existing = [e for e in got if isinstance(e, str) and st.owner not in e and e not in st.cards]
         except Exception as exc:  # outside Open WebUI, temporary chats or API differences
             log.debug("existing embeds unavailable: %s", exc)
         try:
@@ -2369,21 +2442,67 @@ class Filter:
                            event_call: Any) -> str:
         """Render one captured block and return the text that replaces it in the message."""
         if not raw.strip():
+            await self._drop_live(st, metadata, emitter)
             return ""
-        if st.count >= self.valves.max_cards_per_message:
+        if st.count >= self.valves.max_cards_per_message and st.live_index is None:
             return "\n> [!NOTE]\n> More visuals were requested than this server allows in one answer.\n\n"
-        html, title, extra = await self._render_block(raw, st, user, event_call)
+        html, title, extra = await self._render_block(raw, st, user, event_call, fade_from=max(0, st.live_count))
         if html is None:
+            await self._drop_live(st, metadata, emitter)
             await self._status(emitter, "Could not build the interactive view", True)
             return ("\n> [!WARNING]\n> The interactive view could not be displayed (" + extra.replace("\n", " ")[:160]
                     + ").\n\n")
         st.count += 1
-        st.cards.append(html)
+        if st.live_index is not None and st.live_index < len(st.cards):
+            st.cards[st.live_index] = html
+        else:
+            st.cards.append(html)
+        st.live_index, st.live_count, st.live_title = None, -1, None
         await self._publish(st, metadata, emitter)
         await self._status(emitter, f"“{title}” ready", True)
         if self.valves.placeholder == "none":
             return ""
         return f"\n*\U0001F4CA {title} — interactive view shown above*\n\n"
+
+    async def _drop_live(self, st: _GenuiStream, metadata: dict, emitter: Any) -> None:
+        if st.live_index is not None and st.live_index < len(st.cards):
+            st.cards.pop(st.live_index)
+            st.live_index, st.live_count, st.live_title = None, -1, None
+            await self._publish(st, metadata, emitter)
+
+    async def _live_update(self, st: _GenuiStream, metadata: dict, user: Any, emitter: Any, event_call: Any,
+                           force: bool = False) -> None:
+        """Re-render the streaming card with every top-level component that is already complete."""
+        if not self.valves.live_preview or st.capture is None:
+            return
+        now = time.monotonic()
+        if not force and now - st.last_live < self.valves.live_preview_interval:
+            return
+        st.last_live = now
+        spec, done = _partial_spec(st.capture)
+        title = str(spec.get("title") or "")[:160] if spec else ""
+        if st.live_index is not None and done <= st.live_count and title == st.live_title:
+            return
+        if spec is None:
+            spec = {}
+        shell = dict(spec)
+        if not shell.get("components"):
+            shell["components"] = [{"type": "text", "md": "\u200b"}]
+            done = 0
+        shell.setdefault("title", "Building interactive view")
+        html, _, _ = await self._render_block(shell, st, user, event_call, partial=True,
+                                              fade_from=max(0, st.live_count if st.live_index is not None else 0))
+        if html is None:
+            return
+        if st.live_index is None:
+            if st.count >= self.valves.max_cards_per_message:
+                return
+            st.cards.append(html)
+            st.live_index = len(st.cards) - 1
+        else:
+            st.cards[st.live_index] = html
+        st.live_count, st.live_title = done, title
+        await self._publish(st, metadata, emitter)
 
     # ------------------------------------------------------------------ hooks
     async def inlet(self, body: dict, __user__: dict | None = None, __metadata__: dict | None = None) -> dict:
@@ -2428,11 +2547,13 @@ class Filter:
                 kind, payload = item
                 if kind == "open":
                     await self._status(__event_emitter__, "Building interactive view…", False)
+                    await self._live_update(st, __metadata__, __user__, __event_emitter__, __event_call__, force=True)
                 elif kind == "progress":
                     now = time.monotonic()
                     if now - st.last_status > 1.5:
                         st.last_status = now
                         await self._status(__event_emitter__, f"Building interactive view… ({payload // 100 / 10:.1f} KB)", False)
+                    await self._live_update(st, __metadata__, __user__, __event_emitter__, __event_call__)
                 elif kind == "close":
                     parts.append(await self._close_block(payload, st, __metadata__, __user__, __event_emitter__,
                                                          __event_call__))
@@ -2465,7 +2586,14 @@ class Filter:
                      __event_emitter__: Any = None, __event_call__: Any = None) -> dict:
         """Non-streaming responses (and anything the stream hook missed): render remaining genui blocks."""
         key = self._key(__metadata__)
-        self._streams.pop(key, None) if key else None
+        pending = self._streams.pop(key, None) if key else None
+        if pending is not None and (pending.capture is not None or pending.live_index is not None):
+            # the stream ended without a finish signal (stopped by the user, dropped connection):
+            # finish the card from what arrived, or remove the "Rendering..." shell
+            meta = __metadata__ if isinstance(__metadata__, dict) else {}
+            raw = (pending.capture or "") + pending.hold
+            pending.capture = None
+            await self._close_block(raw, pending, meta, __user__, __event_emitter__, __event_call__)
         if not self._uv(__user__).enabled:
             return body
         messages = body.get("messages")
@@ -3070,7 +3198,12 @@ padding:6px 12px;font-size:13px;cursor:pointer;color:var(--text);text-align:left
 .g-ds{color:var(--faint);font-size:12px;display:flex;align-items:center;gap:6px}
 .g-toast{position:fixed;left:50%;bottom:10px;transform:translateX(-50%);background:var(--text);color:var(--card);font-size:12.5px;
 padding:6px 12px;border-radius:999px;z-index:20;pointer-events:none}
-.g-fade{animation:gin .28s ease-out both}
+.g-fade{animation:gin .35s ease-out both}
+.g-live{display:flex;flex-direction:column;align-items:center;gap:10px;padding:22px 12px;color:var(--faint);font-size:12px}
+.g-live-dots{display:inline-flex;gap:7px}
+.g-live-dots span{width:7px;height:7px;border-radius:50%;background:var(--faint);animation:gpulse 1.4s infinite ease-in-out both}
+.g-live-dots span:nth-child(1){animation-delay:-.32s}.g-live-dots span:nth-child(2){animation-delay:-.16s}
+@keyframes gpulse{0%,80%,100%{opacity:.25;transform:scale(.85)}40%{opacity:1;transform:scale(1)}}
 @keyframes gin{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
 @keyframes shim{0%{background-position:-200px 0}100%{background-position:200px 0}}
 .g-img.loading{background:linear-gradient(90deg,var(--chip) 0,var(--hover) 50%,var(--chip) 100%);background-size:400px 100%;animation:shim 1.2s linear infinite}
@@ -3144,11 +3277,39 @@ setTimeout(function () { t.remove(); }, 1600);
 /* ---------- reactive state ---------- */
 var state = Object.create(null); var initial = SPEC.state || {};
 for (var k0 in initial) state[k0] = initial[k0];
+/* Persist interactive state per message when Open WebUI allows same-origin iframes (silent no-op otherwise). */
+var STORE_KEY = null;
+(function () {
+if (CFG.streaming) return;
+try {
+var fr = window.frameElement, msg = fr && fr.closest && fr.closest('[id^="message-"]');
+if (!msg) return;
+STORE_KEY = "gui-state:" + msg.id + ":" + (SPEC.title || "") + ":" + Object.keys(initial).join(",");
+var saved = JSON.parse(window.parent.localStorage.getItem(STORE_KEY) || "null");
+var comp = SPEC.computed || {};
+if (saved && typeof saved === "object") for (var k in saved) {
+if (Object.prototype.hasOwnProperty.call(initial, k) && !(k in comp) && typeof saved[k] === typeof initial[k]) state[k] = saved[k];
+}
+} catch (e) { STORE_KEY = null; }
+})();
+var saveTimer = 0;
+function persist() {
+if (!STORE_KEY) return;
+clearTimeout(saveTimer);
+saveTimer = setTimeout(function () {
+try {
+var out = {}, comp = SPEC.computed || {}, changed = false;
+for (var k in initial) if (!(k in comp)) { out[k] = state[k]; if (state[k] !== initial[k]) changed = true; }
+if (changed) window.parent.localStorage.setItem(STORE_KEY, JSON.stringify(out));
+else window.parent.localStorage.removeItem(STORE_KEY);
+} catch (e) { STORE_KEY = null; }
+}, 300);
+}
 var watchers = []; var queued = false;
 function watch(fn) { watchers.push(fn); try { fn(); } catch (e) { console.warn("[gui]", e); } }
 var COMPUTED = SPEC.computed || {};
 function recompute() { for (var k in COMPUTED) { try { state[k] = evalExpr(COMPUTED[k]); } catch (e) { state[k] = null; } } }
-function flush() { queued = false; recompute(); for (var i = 0; i < watchers.length; i++) { try { watchers[i](); } catch (e) { console.warn("[gui]", e); } } postHeight(); }
+function flush() { queued = false; recompute(); for (var i = 0; i < watchers.length; i++) { try { watchers[i](); } catch (e) { console.warn("[gui]", e); } } postHeight(); persist(); }
 function setVar(k, v) { if (!k || state[k] === v) return; state[k] = v; if (!queued) { queued = true; Promise.resolve().then(flush); } }
 function resetState() { for (var k in initial) if (!(k in COMPUTED)) state[k] = initial[k]; if (!queued) { queued = true; Promise.resolve().then(flush); } }
 /* ---------- safe expression engine (no eval) ---------- */
@@ -4034,7 +4195,10 @@ hasVal ? h("div", { "class": "g-check-f" }, totalL, totalV) : null, copyBtn);
 function stars(r, n) { return h("span", { "class": "g-stars", "aria-label": "Rated " + r + " out of 5" }, icon("star", 13), h("b", { style: { color: "var(--text)" } }, (Math.round(r * 10) / 10).toFixed(1)), n ? "(" + fmt(n, { format: "compact" }) + ")" : null); }
 function img(src, alt, cls) {
 var fig = h("div", { "class": "g-img loading " + (cls || "") });
-if (!src) { fig.classList.remove("loading"); fig.appendChild(h("div", { "class": "g-ph" }, icon("image", 22), "No image")); return fig; }
+if (!src) {
+if (CFG.streaming) { fig.appendChild(h("div", { "class": "g-ph" }, "Loading photo\u2026")); return fig; }
+fig.classList.remove("loading"); fig.appendChild(h("div", { "class": "g-ph" }, icon("image", 22), "No image")); return fig;
+}
 var im = h("img", { src: src, alt: alt || "", loading: "lazy", decoding: "async", referrerpolicy: "no-referrer" });
 im.addEventListener("load", function () { fig.classList.remove("loading"); postHeight(); });
 im.addEventListener("error", function () { fig.classList.remove("loading"); im.remove(); fig.appendChild(h("div", { "class": "g-ph" }, icon("image", 22), "Image unavailable")); });
@@ -4117,6 +4281,7 @@ if (c.caption || c.places.some(function (p) { return p.approx; })) el.appendChil
 return el;
 };
 R.weather = function (c) {
+if (!c.error && !c.data && CFG.streaming) return h("div", { "class": "g-card g-live" }, h("div", { "class": "g-live-dots" }, h("span"), h("span"), h("span")), h("div", { "class": "g-live-l" }, "Fetching live weather for " + (c.location || "") + "\u2026"));
 if (c.error || !c.data) return h("div", { "class": "g-callout tone-warning" }, icon("cloud", 17), h("div", null, h("div", { "class": "g-callout-t" }, "Weather unavailable"), c.error || "No data."));
 var d = c.data, cur = d.current || {}, tu = d.temp_unit || "";
 var hourly = d.hourly || {}, temps = hourly.temp || [];
@@ -4295,10 +4460,23 @@ return f.childNodes.length ? f : null;
 }
 function render() {
 var frame = SPEC.frame === "plain" ? "g-plain" : "g-frame";
-var head = SPEC.title || SPEC.badge ? h("div", null,
-h("div", { "class": "g-top" }, h("div", { "class": "g-top-t" }, SPEC.icon ? icon(SPEC.icon, 18) : null, h("span", null, txt(SPEC.title || ""))), badge(SPEC.badge)),
+var dl = null;
+if (!CFG.streaming) {
+dl = h("button", { type: "button", "class": "g-btn icon", "aria-label": "Download as HTML", title: "Download as HTML" }, icon("download", 15));
+dl.addEventListener("click", function () {
+try {
+var html = "<!DOCTYPE html>\n" + D.documentElement.outerHTML.replace(/<div id="gui-root"[\s\S]*?<\/div>\s*(?=<script type="application\/json")/, '<div id="gui-root"></div>\n');
+download((SPEC.title || "visual").replace(/[^\w\- ]+/g, "").trim().replace(/\s+/g, "_") + ".html", html, "text/html;charset=utf-8");
+} catch (e) { toast("Download blocked by the browser"); }
+});
+}
+var head = SPEC.title || SPEC.badge ? h("div", { "class": (CFG.fade_from || 0) > 0 ? "" : "g-fade" },
+h("div", { "class": "g-top" }, h("div", { "class": "g-top-t" }, SPEC.icon ? icon(SPEC.icon, 18) : null, h("span", null, txt(SPEC.title || ""))), h("div", { "class": "g-ctrl" }, badge(SPEC.badge), dl)),
 SPEC.subtitle ? h("div", { "class": "g-sub" }, txt(SPEC.subtitle)) : null) : null;
-var body = h("div", { "class": frame + " g-stack g-fade" }, head, nodes(SPEC.components), footer());
+var fadeFrom = CFG.fade_from || 0, kids = [];
+(SPEC.components || []).forEach(function (c, i) { var n = node(c); if (n) { if (i >= fadeFrom) n.classList.add("g-fade"); kids.push(n); } });
+var live = CFG.streaming ? h("div", { "class": "g-live", role: "status", "aria-live": "polite" }, h("div", { "class": "g-live-dots" }, h("span"), h("span"), h("span")), h("div", { "class": "g-live-l" }, "Rendering\u2026")) : null;
+var body = h("div", { "class": frame + " g-stack" }, head, kids, live, CFG.streaming ? null : footer());
 ROOT.textContent = ""; ROOT.appendChild(body);
 var fbEl = D.getElementById("gui-fallback"); if (fbEl) fbEl.remove();
 mountQ.forEach(function (fn) { try { fn(); } catch (e) { console.warn("[gui]", e); } });

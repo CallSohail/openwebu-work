@@ -5,6 +5,20 @@ This project follows [Semantic Versioning](https://semver.org/).
 
 Released as `generative-ui-v<version>`. See [RELEASING.md](../../RELEASING.md) for the release process.
 
+## [1.2.0] - 2026-11-03
+
+### Added
+
+- Live cards in streaming mode: the card appears the moment a ```genui block opens (title and a "Rendering..." skeleton) and fills in component by component while the JSON streams; only newly completed components fade in. Valves `live_preview` and `live_preview_interval`.
+- Stop-safe: if the answer is stopped mid-card, `outlet` finishes the card from what arrived or removes the shell.
+- "Download as HTML" button on every final card (standalone, still interactive).
+- Interactive state (sliders, tabs, inputs) survives page reloads when "Allow iframe same origin" is enabled; silently disabled otherwise.
+- Loading states for live weather and photos while a card is streaming.
+
+### Fixed
+
+- Embeds published by the filter no longer duplicate older live versions of the same card; cards from other tools in the message are kept.
+
 ## [1.1.0] - 2026-11-03
 
 ### Added

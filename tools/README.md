@@ -6,7 +6,7 @@ Tools give a model capabilities it can call during a conversation, such as query
 
 | Tool | Version | Changelog | Purpose |
 | --- | --- | --- | --- |
-| [Generative UI](generative-ui/) | 1.1.0 | [CHANGELOG](generative-ui/CHANGELOG.md) | ChatGPT-style interactive answers: dashboards, charts, tables, calculators, checklists, comparisons, diagrams, maps and live weather from a validated JSON spec |
+| [Generative UI](generative-ui/) | 1.2.0 | [CHANGELOG](generative-ui/CHANGELOG.md) | ChatGPT-style interactive answers: dashboards, charts, tables, calculators, checklists, comparisons, diagrams, maps and live weather from a validated JSON spec |
 | [Rich Email Composer](email-composer/) | 1.0.0 | [CHANGELOG](email-composer/CHANGELOG.md) | Interactive Rich UI email drafting with direct editing, AI-assisted revisions, contextual formatting, recipient validation, copy, `.eml` export, and mail-client handoff |
 | [RAGFlow Advanced Connector](ragflow/) | 3.0.0 | [CHANGELOG](ragflow/CHANGELOG.md) | RAGFlow retrieval, dataset discovery, document search, and configurable retrieval controls |
 

@@ -8,7 +8,7 @@ The goal is simple: keep each extension portable, documented, and safe to review
 
 | Extension | Type | Version | Status | Purpose |
 | --- | --- | --- | --- | --- |
-| [Generative UI](tools/generative-ui/) | Tool + Filter | 1.1.0 | Stable | ChatGPT-style interactive cards that stream inside answers (Filter, any model) or come from a `render_ui` tool call: dashboards, charts, tables, calculators, checklists, comparisons, explorers, timelines, diagrams, maps and live weather, rendered inline from a validated JSON spec |
+| [Generative UI](tools/generative-ui/) | Tool + Filter | 1.2.0 | Stable | ChatGPT-style interactive cards that stream inside answers (Filter, any model) or come from a `render_ui` tool call: dashboards, charts, tables, calculators, checklists, comparisons, explorers, timelines, diagrams, maps and live weather, rendered inline from a validated JSON spec |
 | [Rich Email Composer](tools/email-composer/) | Tool | 1.0.0 | Stable | Interactive Rich UI email drafting with direct editing, AI-assisted revisions, contextual formatting, recipient validation, copy, `.eml` export, and mail-client handoff |
 | [Rich Responses](functions/filters/rich-responses/) | Filter | 1.0.1 | Stable | ChatGPT-style streamed answers for any model: detects explain, summarize, compare, how-to and more, shapes the Markdown, and adds icons to headings live |
 | [Study Mode](functions/filters/study-mode/) | Filter | 1.1.0 | Stable | Guided learning, Socratic tutoring, adaptive pacing, native `ask_user`, multilingual interactive quizzes, LaTeX/keyboard/fullscreen/export options, and local-model compatibility hardening |
@@ -150,7 +150,7 @@ Recommended Git tag format:
 Examples:
 
 ```text
-generative-ui-v1.1.0
+generative-ui-v1.2.0
 email-composer-v1.0.0
 study-mode-v1.1.0
 quick-actions-v3.0.1
@@ -172,7 +172,7 @@ Every extension also keeps its own changelog beside the implementation:
 
 | Extension | Changelog | Latest |
 | --- | --- | --- |
-| Generative UI | [tools/generative-ui/CHANGELOG.md](tools/generative-ui/CHANGELOG.md) | `generative-ui-v1.1.0` |
+| Generative UI | [tools/generative-ui/CHANGELOG.md](tools/generative-ui/CHANGELOG.md) | `generative-ui-v1.2.0` |
 | Rich Email Composer | [tools/email-composer/CHANGELOG.md](tools/email-composer/CHANGELOG.md) | `email-composer-v1.0.0` |
 | RAGFlow Advanced Connector | [tools/ragflow/CHANGELOG.md](tools/ragflow/CHANGELOG.md) | `ragflow-v3.0.0` |
 | Rich Responses | [functions/filters/rich-responses/CHANGELOG.md](functions/filters/rich-responses/CHANGELOG.md) | `rich-responses-v1.0.1` |
