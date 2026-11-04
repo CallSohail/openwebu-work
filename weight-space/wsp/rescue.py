@@ -100,6 +100,8 @@ def run_model(path, items, a, out_file):
             for i, (x, g) in enumerate(zip(batch, gen)):
                 eos_pos = next((j for j, t_ in enumerate(g) if t_ in eos_ids), None)
                 g = g[:eos_pos + 1] if eos_pos is not None else g
+                while g and g[-1] == (tok.pad_token_id or 0) and g[-1] not in eos_ids:  # padding after a loop stop
+                    g = g[:-1]
                 text = tok.decode(g, skip_special_tokens=False)
                 r = {"id": x["id"], "set": x["set"], "tokens": len(g), **grade(x, text, i in stop.looped, eos_pos is not None),
                      "text": text}
@@ -107,6 +109,17 @@ def run_model(path, items, a, out_file):
         print(f"[{os.path.basename(out_file)}] batch {b // a.batch_size + 1}/{-(-len(todo) // a.batch_size)} "
               f"{time.time() - t:.0f}s", flush=True)
     del model
+
+
+def clean(rows, tok, pad="<|endoftext|>"):
+    """Strip padding that older runs left after a loop stop, and recount tokens."""
+    for r in rows:
+        if r["text"].endswith(pad):
+            r["text"] = r["text"].rstrip()
+            while r["text"].endswith(pad):
+                r["text"] = r["text"][:-len(pad)]
+            r["tokens"] = len(tok(r["text"], add_special_tokens=False)["input_ids"])
+    return rows
 
 
 def summarize(rows):
@@ -141,11 +154,16 @@ def main(argv=None):
     items = [json.loads(l) for l in open(a.data) if l.strip()]
     os.makedirs(a.out, exist_ok=True)
     summary = {}
+    from transformers import AutoTokenizer
+    tok = AutoTokenizer.from_pretrained(a.model[0].split("=", 1)[1])
     for spec in a.model:
         name, path = spec.split("=", 1)
         f = os.path.join(a.out, f"{name}.jsonl")
         run_model(path, items, a, f)
-        summary[name] = summarize([json.loads(l) for l in open(f)])
+        rows = clean([json.loads(l) for l in open(f)], tok)
+        with open(f, "w") as fh:
+            fh.writelines(json.dumps(r, ensure_ascii=False) + "\n" for r in rows)
+        summary[name] = summarize(rows)
     json.dump({"settings": vars(a), "summary": summary}, open(os.path.join(a.out, "summary.json"), "w"), indent=1)
     keys = ["correct", "looped_again", "closed_think", "boxed", "cut_at_limit", "mean_tokens"]
     print("| model | " + " | ".join(keys) + " |\n|" + "---|" * (len(keys) + 1))
