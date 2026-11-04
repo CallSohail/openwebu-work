@@ -129,13 +129,15 @@ def img(p):
 def examples(rescue_dir, models, k=3):
     rows = {m: {json.loads(l)["id"]: json.loads(l) for l in open(os.path.join(rescue_dir, f"{m}.jsonl"))} for m in models}
     base, last = models[0], models[-1]
-    ids = [i for i in rows[last] if rows[last][i]["correct"] and not rows[base][i]["correct"]][:k]
+    ids = [i for i in rows[last] if rows[last][i]["correct"] and not rows[base][i]["correct"]]
+    ids += [i for i in rows[last] if rows[base][i]["looped"] and not rows[last][i]["looped"] and i not in ids]
     out = []
-    for i in ids:
+    for i in ids[:k]:
         b, e = rows[base][i], rows[last][i]
+        verdict = f"correct ({html.escape(str(e['pred']))})" if e["correct"] else "no loop, still reasoning"
         out.append(f"<details><summary><b>{html.escape(i)}</b>: {base} → {'loop' if b['looped'] else 'no answer'}, "
-                   f"{last} → correct ({html.escape(str(e['pred']))})</summary><div class='ex'><div><h4>{base}</h4><pre>"
-                   f"{html.escape(b['text'][-1200:])}</pre></div><div><h4>{last}</h4><pre>{html.escape(e['text'][-1200:])}</pre></div></div></details>")
+                   f"{last} → {verdict}</summary><div class='ex'><div><h4>{base}: last 1,200 characters</h4><pre>"
+                   f"{html.escape(b['text'][-1200:])}</pre></div><div><h4>{last}: last 1,200 characters</h4><pre>{html.escape(e['text'][-1200:])}</pre></div></div></details>")
     return "".join(out)
 
 
@@ -180,6 +182,14 @@ def main(argv=None):
                     "<th>guard: quick accuracy</th><th>decision</th></tr>" + "".join(rows_) + "</table>"
                     "<p class='mut'>Dev: 16 rescue items (separate from test), 1,024 new tokens. Guard: 80 held-out GSM8K/MATH "
                     "problems, thinking off, greedy; an edit may not lose more than 2 points.</p>")
+    stats_html = ""
+    sp = os.path.join(a.rescue, "stats.json")
+    if os.path.exists(sp):
+        stt = json.load(open(sp))
+        stats_html = (f"<section><b>Paired test:</b> {stt['base_only_loops']} items looped only with the base model, "
+                      f"{stt['edited_only_loops']} only with the edit (exact McNemar p = {stt['mcnemar_exact_p']:.1e}). "
+                      "<span class='mut'>No model reached a final answer within this budget: the edited model's correct answers run "
+                      "~9k tokens (MIT's 32k evaluation), far past what this CPU test can generate.</span></section>")
     models = list(summary)
     head = ["model", "correct", "looped again", "finished thinking", "gave \\boxed", "cut at limit", "mean new tokens"]
     keys = ["correct", "looped_again", "closed_think", "boxed", "cut_at_limit", "mean_tokens"]
@@ -208,7 +218,7 @@ one direction removed from {sum(v['columns'] for v in winfo.values())} MLP outpu
 (T={settings['temperature']}, top-p {settings['top_p']}, top-k {settings['top_k']}, presence penalty {settings['presence']}).
 A continuation counts as looped when 90% of its 8-grams over 512 tokens repeat; it is stopped there.</p>
 {''.join(img(p) for p in imgs[:2])}</section>
-<h2>Examples: base loops, edited recovers</h2><section>{examples(a.rescue, models)}</section>
+{stats_html}<h2>Examples: same starting point, base loops, edited keeps reasoning</h2><section>{examples(a.rescue, models)}</section>
 <h2>How the final edit was chosen</h2><section>{sel_html}{img(imgs[2]) + '<p class="mut">Teacher-forced scores on 8 dev loops. Every edit moves the model away from the base on both kinds of text, so this only weakly separates candidates; generation and the guard decided.</p>' if probe else ''}</section>
 <h2>Full-scale benchmark (MIT's published evaluation)</h2><section>{img([p for p in imgs if p.endswith('mit_benchmarks.png')][0])}
 <p class="mut">The CPU test above can't run 32k-token answers. These are MIT's own vLLM results for the same edit, from their public logs.</p></section>

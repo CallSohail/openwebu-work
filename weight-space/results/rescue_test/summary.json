@@ -1,0 +1,47 @@
+{
+ "settings": {
+  "data": "data/rescue_test.jsonl",
+  "model": [
+   "base=/home/user/models/qwen35",
+   "edited=/home/user/models/qwen35-mit"
+  ],
+  "out": "/home/user/runs/rescue_test",
+  "max_new_tokens": 1024,
+  "batch_size": 8,
+  "temperature": 0.6,
+  "top_p": 0.95,
+  "top_k": 20,
+  "presence": 1.5,
+  "seed": 0,
+  "device": "cpu",
+  "dtype": "bfloat16"
+ },
+ "summary": {
+  "base": {
+   "n": 48,
+   "correct": 0.0,
+   "looped_again": 72.91666666666667,
+   "closed_think": 0.0,
+   "boxed": 0.0,
+   "cut_at_limit": 27.083333333333332,
+   "mean_tokens": 724.6666666666666,
+   "correct_gsm8k": 0.0,
+   "looped_gsm8k": 66.66666666666667,
+   "correct_math500": 0.0,
+   "looped_math500": 79.16666666666667
+  },
+  "edited": {
+   "n": 48,
+   "correct": 0.0,
+   "looped_again": 2.0833333333333335,
+   "closed_think": 0.0,
+   "boxed": 0.0,
+   "cut_at_limit": 97.91666666666667,
+   "mean_tokens": 1013.3333333333334,
+   "correct_gsm8k": 0.0,
+   "looped_gsm8k": 0.0,
+   "correct_math500": 0.0,
+   "looped_math500": 4.166666666666667
+  }
+ }
+}

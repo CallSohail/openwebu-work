@@ -20,6 +20,24 @@ Qwen3.5-0.8B with thinking on gets stuck in loops: 85 of its first 96 practice a
 
 The control is just as important. Gemma 3 270M rarely loops (8.5% of answers cut off), and nothing improved it. Editing **removes an obstacle that hides an ability; it does not add abilities.** Use this on one specific, repeatable failure such as loops, a stuck behaviour or a narrow quirk.
 
+## Result in this repo: Qwen3.5-0.8B, improved
+
+**Final weights:** [`release/qwen35-0.8b-loopfix/`](release/qwen35-0.8b-loopfix/). It's a 404 KB exact diff that rebuilds the full model with sha256 checks. **Report with charts:** `results/report/index.html`.
+
+| | Base | Edited |
+|---|---|---|
+| Fell back into a loop (48 held-out test loops, this session) | 72.9% | **2.1%** |
+| Guard: quick accuracy on 80 held-out problems | 37.5% | 37.5% |
+| MATH-500 / GSM8K at 32k tokens (MIT's evaluation of these exact weights) | 7.9% / 13.8% | **48.1% / 67.1%** |
+
+What was done:
+1. Reproduced MIT's edit bit for bit.
+2. Ran this pipeline blind. It picked the same layers (15, 19), the same 64 neurons per layer, and the same direction (cos 1.0000).
+3. Tried four stronger or wider variants (α8, α10, top-128, 4 layers) on 16 dev loops plus a guard set. α10 finished some answers sooner but lost 3.75 guard points, so it was discarded. None beat α6.
+4. Confirmed the α6 edit on 48 untouched test loops: 34 loops fixed, 0 introduced, McNemar p = 1.2e-10.
+
+Everything is in `results/`.
+
 ## What's here
 
 | Command | Step | What it does |
@@ -30,6 +48,11 @@ The control is just as important. Gemma 3 270M rarely loops (8.5% of answers cut
 | `python -m wsp.diagnose MODEL --pairs pairs.json --out diag` | 1. Diagnose | Runs the contrast-pair recipe above. It ranks layers by how much their MLP writes along the failure direction and picks the top-k writer neurons. |
 | `python -m wsp.edit MODEL --directions diag/directions.pt --alpha 6 --out MODEL-edited` | 2. Fix | Applies the rank-one column edit to a copy. It refuses edits that touch more than 1% of weights and never overwrites the original. Writes a manifest with hashes and the command that reproduces the edit. |
 | `python -m wsp.gate probe ORIG EDITED --pairs pairs.json` | 3a. Quick check | Takes seconds. Checks whether the edit makes the looping branch less likely while leaving the productive one alone. |
+| `python -m wsp.loopprobe --data data/rescue_dev.jsonl --base M --model a=E` | Select | Scores candidates by teacher-forcing them on real base-model loops. |
+| `python -m wsp.rescue --data data/rescue_test.jsonl --model base=M --model edited=E --out runs/x` | Test (CPU) | Continues real base-model loops from where they began, using MIT's sampling, and measures whether each model loops again or escapes. |
+| `python -m wsp.guard --problems data/heldout_*.jsonl --model base=M --model edited=E --out g.json` | Guard | Measures reference-solution likelihood and quick-answer accuracy, so an edit can't silently damage the model. |
+| `python -m wsp.pack create BASE EDITED --out pkg` / `apply BASE pkg --out DIR` | Ship | Packs an edit as an exact small diff, and rebuilds the full model from it with hash checks. |
+| `python -m wsp.report --rescue runs/x --base M --edited final=E --out report` | Report | Builds the charts and a self-contained HTML page. |
 | `python -m wsp.gate generate ORIG EDITED --problems p.jsonl --guard g.jsonl` | 3b. Gate | Paired generation with the same seeds and sampling for both models. Reports accuracy, cut rate and tail repetition. Prints **SHIP** only if the primary score gains ≥5 points and no guard set drops by more than 2. |
 
 ## Quickstart: Qwen3.5-0.8B

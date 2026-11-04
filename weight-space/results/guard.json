@@ -1,0 +1,1634 @@
+{
+ "base": {
+  "ref_logprob": -1.2389661500230431,
+  "n_ref": 80,
+  "quick_accuracy": 37.5,
+  "n": 80,
+  "rows": [
+   {
+    "id": "gsm8k_train_6724",
+    "pred": "70",
+    "correct": false
+   },
+   {
+    "id": "gsm8k_train_5741",
+    "pred": "96",
+    "correct": true
+   },
+   {
+    "id": "gsm8k_train_1913",
+    "pred": "15.58",
+    "correct": false
+   },
+   {
+    "id": "gsm8k_train_2949",
+    "pred": "55",
+    "correct": true
+   },
+   {
+    "id": "gsm8k_train_3374",
+    "pred": "125",
+    "correct": true
+   },
+   {
+    "id": "gsm8k_train_4532",
+    "pred": "11200",
+    "correct": false
+   },
+   {
+    "id": "gsm8k_train_5370",
+    "pred": "56",
+    "correct": true
+   },
+   {
+    "id": "gsm8k_train_189",
+    "pred": "48",
+    "correct": true
+   },
+   {
+    "id": "gsm8k_train_2094",
+    "pred": null,
+    "correct": false
+   },
+   {
+    "id": "gsm8k_train_3525",
+    "pred": "29",
+    "correct": false
+   },
+   {
+    "id": "gsm8k_train_62",
+    "pred": "8 \\text{ liters}",
+    "correct": false
+   },
+   {
+    "id": "gsm8k_train_5900",
+    "pred": "30",
+    "correct": false
+   },
+   {
+    "id": "gsm8k_train_4917",
+    "pred": "27",
+    "correct": true
+   },
+   {
+    "id": "gsm8k_train_5323",
+    "pred": "2",
+    "correct": true
+   },
+   {
+    "id": "gsm8k_train_7411",
+    "pred": "10",
+    "correct": true
+   },
+   {
+    "id": "gsm8k_train_5622",
+    "pred": "3",
+    "correct": true
+   },
+   {
+    "id": "gsm8k_train_6292",
+    "pred": "30",
+    "correct": true
+   },
+   {
+    "id": "gsm8k_train_665",
+    "pred": "24",
+    "correct": true
+   },
+   {
+    "id": "gsm8k_train_4163",
+    "pred": "0",
+    "correct": false
+   },
+   {
+    "id": "gsm8k_train_3423",
+    "pred": "52",
+    "correct": true
+   },
+   {
+    "id": "gsm8k_train_263",
+    "pred": "30",
+    "correct": true
+   },
+   {
+    "id": "gsm8k_train_4079",
+    "pred": "35",
+    "correct": true
+   },
+   {
+    "id": "gsm8k_train_6204",
+    "pred": "38",
+    "correct": true
+   },
+   {
+    "id": "gsm8k_train_1470",
+    "pred": null,
+    "correct": false
+   },
+   {
+    "id": "gsm8k_train_4969",
+    "pred": "198",
+    "correct": false
+   },
+   {
+    "id": "gsm8k_train_4287",
+    "pred": "11",
+    "correct": true
+   },
+   {
+    "id": "gsm8k_train_6402",
+    "pred": "10",
+    "correct": false
+   },
+   {
+    "id": "gsm8k_train_2194",
+    "pred": "144",
+    "correct": true
+   },
+   {
+    "id": "gsm8k_train_7394",
+    "pred": "900",
+    "correct": true
+   },
+   {
+    "id": "gsm8k_train_1042",
+    "pred": "4",
+    "correct": false
+   },
+   {
+    "id": "gsm8k_train_7068",
+    "pred": "300",
+    "correct": false
+   },
+   {
+    "id": "gsm8k_train_2613",
+    "pred": "2\\frac{1}{6}",
+    "correct": false
+   },
+   {
+    "id": "gsm8k_train_6254",
+    "pred": "30",
+    "correct": false
+   },
+   {
+    "id": "gsm8k_train_2663",
+    "pred": "-5",
+    "correct": false
+   },
+   {
+    "id": "gsm8k_train_1947",
+    "pred": "54",
+    "correct": true
+   },
+   {
+    "id": "gsm8k_train_1004",
+    "pred": "630",
+    "correct": false
+   },
+   {
+    "id": "gsm8k_train_7000",
+    "pred": "8",
+    "correct": false
+   },
+   {
+    "id": "gsm8k_train_6198",
+    "pred": "26",
+    "correct": true
+   },
+   {
+    "id": "gsm8k_train_2918",
+    "pred": "450.00",
+    "correct": true
+   },
+   {
+    "id": "gsm8k_train_5000",
+    "pred": null,
+    "correct": false
+   },
+   {
+    "id": "math_train_number_theory_66",
+    "pred": "1",
+    "correct": true
+   },
+   {
+    "id": "math_train_number_theory_12",
+    "pred": null,
+    "correct": false
+   },
+   {
+    "id": "math_train_number_theory_275",
+    "pred": null,
+    "correct": false
+   },
+   {
+    "id": "math_train_precalculus_618",
+    "pred": null,
+    "correct": false
+   },
+   {
+    "id": "math_train_intermediate_algebra_1266",
+    "pred": null,
+    "correct": false
+   },
+   {
+    "id": "math_train_intermediate_algebra_267",
+    "pred": null,
+    "correct": false
+   },
+   {
+    "id": "math_train_number_theory_330",
+    "pred": null,
+    "correct": false
+   },
+   {
+    "id": "math_train_intermediate_algebra_880",
+    "pred": null,
+    "correct": false
+   },
+   {
+    "id": "math_train_geometry_409",
+    "pred": null,
+    "correct": false
+   },
+   {
+    "id": "math_train_algebra_1674",
+    "pred": null,
+    "correct": false
+   },
+   {
+    "id": "math_train_precalculus_197",
+    "pred": null,
+    "correct": false
+   },
+   {
+    "id": "math_train_intermediate_algebra_552",
+    "pred": null,
+    "correct": false
+   },
+   {
+    "id": "math_train_precalculus_288",
+    "pred": null,
+    "correct": false
+   },
+   {
+    "id": "math_train_counting_and_probability_207",
+    "pred": null,
+    "correct": false
+   },
+   {
+    "id": "math_train_algebra_1418",
+    "pred": null,
+    "correct": false
+   },
+   {
+    "id": "math_train_prealgebra_141",
+    "pred": "3",
+    "correct": true
+   },
+   {
+    "id": "math_train_counting_and_probability_293",
+    "pred": "1386",
+    "correct": false
+   },
+   {
+    "id": "math_train_prealgebra_840",
+    "pred": null,
+    "correct": false
+   },
+   {
+    "id": "math_train_algebra_326",
+    "pred": "\\frac{12}{7}",
+    "correct": true
+   },
+   {
+    "id": "math_train_number_theory_339",
+    "pred": null,
+    "correct": false
+   },
+   {
+    "id": "math_train_geometry_436",
+    "pred": null,
+    "correct": false
+   },
+   {
+    "id": "math_train_precalculus_28",
+    "pred": null,
+    "correct": false
+   },
+   {
+    "id": "math_train_intermediate_algebra_1255",
+    "pred": null,
+    "correct": false
+   },
+   {
+    "id": "math_train_number_theory_196",
+    "pred": null,
+    "correct": false
+   },
+   {
+    "id": "math_train_algebra_108",
+    "pred": "10",
+    "correct": true
+   },
+   {
+    "id": "math_train_number_theory_143",
+    "pred": null,
+    "correct": false
+   },
+   {
+    "id": "math_train_geometry_827",
+    "pred": null,
+    "correct": false
+   },
+   {
+    "id": "math_train_intermediate_algebra_1270",
+    "pred": "odd",
+    "correct": true
+   },
+   {
+    "id": "math_train_intermediate_algebra_223",
+    "pred": null,
+    "correct": false
+   },
+   {
+    "id": "math_train_intermediate_algebra_747",
+    "pred": null,
+    "correct": false
+   },
+   {
+    "id": "math_train_counting_and_probability_48",
+    "pred": null,
+    "correct": false
+   },
+   {
+    "id": "math_train_counting_and_probability_566",
+    "pred": "4.5",
+    "correct": true
+   },
+   {
+    "id": "math_train_prealgebra_654",
+    "pred": "No such polygon",
+    "correct": false
+   },
+   {
+    "id": "math_train_number_theory_220",
+    "pred": "29",
+    "correct": true
+   },
+   {
+    "id": "math_train_precalculus_693",
+    "pred": null,
+    "correct": false
+   },
+   {
+    "id": "math_train_precalculus_592",
+    "pred": null,
+    "correct": false
+   },
+   {
+    "id": "math_train_algebra_112",
+    "pred": "14x^2+6x+3",
+    "correct": true
+   },
+   {
+    "id": "math_train_number_theory_286",
+    "pred": null,
+    "correct": false
+   },
+   {
+    "id": "math_train_precalculus_292",
+    "pred": "\\begin{pmatrix} 15 \\\\ 10 \\end{pmatrix}",
+    "correct": true
+   },
+   {
+    "id": "math_train_intermediate_algebra_952",
+    "pred": null,
+    "correct": false
+   }
+  ]
+ },
+ "mit": {
+  "ref_logprob": -1.250570084154606,
+  "n_ref": 80,
+  "quick_accuracy": 37.5,
+  "n": 80,
+  "rows": [
+   {
+    "id": "gsm8k_train_6724",
+    "pred": null,
+    "correct": false
+   },
+   {
+    "id": "gsm8k_train_5741",
+    "pred": null,
+    "correct": false
+   },
+   {
+    "id": "gsm8k_train_1913",
+    "pred": "8",
+    "correct": true
+   },
+   {
+    "id": "gsm8k_train_2949",
+    "pred": "25 minutes",
+    "correct": false
+   },
+   {
+    "id": "gsm8k_train_3374",
+    "pred": "125",
+    "correct": true
+   },
+   {
+    "id": "gsm8k_train_4532",
+    "pred": "78400",
+    "correct": true
+   },
+   {
+    "id": "gsm8k_train_5370",
+    "pred": "56",
+    "correct": true
+   },
+   {
+    "id": "gsm8k_train_189",
+    "pred": "144",
+    "correct": false
+   },
+   {
+    "id": "gsm8k_train_2094",
+    "pred": null,
+    "correct": false
+   },
+   {
+    "id": "gsm8k_train_3525",
+    "pred": "29",
+    "correct": false
+   },
+   {
+    "id": "gsm8k_train_62",
+    "pred": null,
+    "correct": false
+   },
+   {
+    "id": "gsm8k_train_5900",
+    "pred": "18",
+    "correct": false
+   },
+   {
+    "id": "gsm8k_train_4917",
+    "pred": "27",
+    "correct": true
+   },
+   {
+    "id": "gsm8k_train_5323",
+    "pred": "2",
+    "correct": true
+   },
+   {
+    "id": "gsm8k_train_7411",
+    "pred": "120",
+    "correct": false
+   },
+   {
+    "id": "gsm8k_train_5622",
+    "pred": "3",
+    "correct": true
+   },
+   {
+    "id": "gsm8k_train_6292",
+    "pred": "30",
+    "correct": true
+   },
+   {
+    "id": "gsm8k_train_665",
+    "pred": "24",
+    "correct": true
+   },
+   {
+    "id": "gsm8k_train_4163",
+    "pred": null,
+    "correct": false
+   },
+   {
+    "id": "gsm8k_train_3423",
+    "pred": null,
+    "correct": false
+   },
+   {
+    "id": "gsm8k_train_263",
+    "pred": "30",
+    "correct": true
+   },
+   {
+    "id": "gsm8k_train_4079",
+    "pred": "35",
+    "correct": true
+   },
+   {
+    "id": "gsm8k_train_6204",
+    "pred": "38",
+    "correct": true
+   },
+   {
+    "id": "gsm8k_train_1470",
+    "pred": null,
+    "correct": false
+   },
+   {
+    "id": "gsm8k_train_4969",
+    "pred": "582",
+    "correct": false
+   },
+   {
+    "id": "gsm8k_train_4287",
+    "pred": "11",
+    "correct": true
+   },
+   {
+    "id": "gsm8k_train_6402",
+    "pred": "1.875",
+    "correct": false
+   },
+   {
+    "id": "gsm8k_train_2194",
+    "pred": "144",
+    "correct": true
+   },
+   {
+    "id": "gsm8k_train_7394",
+    "pred": "900",
+    "correct": true
+   },
+   {
+    "id": "gsm8k_train_1042",
+    "pred": "28",
+    "correct": true
+   },
+   {
+    "id": "gsm8k_train_7068",
+    "pred": "325",
+    "correct": true
+   },
+   {
+    "id": "gsm8k_train_2613",
+    "pred": "\\frac{13}{6}",
+    "correct": false
+   },
+   {
+    "id": "gsm8k_train_6254",
+    "pred": "-30",
+    "correct": false
+   },
+   {
+    "id": "gsm8k_train_2663",
+    "pred": "5",
+    "correct": true
+   },
+   {
+    "id": "gsm8k_train_1947",
+    "pred": "54",
+    "correct": true
+   },
+   {
+    "id": "gsm8k_train_1004",
+    "pred": "630",
+    "correct": false
+   },
+   {
+    "id": "gsm8k_train_7000",
+    "pred": "8",
+    "correct": false
+   },
+   {
+    "id": "gsm8k_train_6198",
+    "pred": "26",
+    "correct": true
+   },
+   {
+    "id": "gsm8k_train_2918",
+    "pred": "450",
+    "correct": true
+   },
+   {
+    "id": "gsm8k_train_5000",
+    "pred": "18",
+    "correct": true
+   },
+   {
+    "id": "math_train_number_theory_66",
+    "pred": "1",
+    "correct": true
+   },
+   {
+    "id": "math_train_number_theory_12",
+    "pred": null,
+    "correct": false
+   },
+   {
+    "id": "math_train_number_theory_275",
+    "pred": null,
+    "correct": false
+   },
+   {
+    "id": "math_train_precalculus_618",
+    "pred": null,
+    "correct": false
+   },
+   {
+    "id": "math_train_intermediate_algebra_1266",
+    "pred": null,
+    "correct": false
+   },
+   {
+    "id": "math_train_intermediate_algebra_267",
+    "pred": null,
+    "correct": false
+   },
+   {
+    "id": "math_train_number_theory_330",
+    "pred": null,
+    "correct": false
+   },
+   {
+    "id": "math_train_intermediate_algebra_880",
+    "pred": null,
+    "correct": false
+   },
+   {
+    "id": "math_train_geometry_409",
+    "pred": null,
+    "correct": false
+   },
+   {
+    "id": "math_train_algebra_1674",
+    "pred": null,
+    "correct": false
+   },
+   {
+    "id": "math_train_precalculus_197",
+    "pred": null,
+    "correct": false
+   },
+   {
+    "id": "math_train_intermediate_algebra_552",
+    "pred": null,
+    "correct": false
+   },
+   {
+    "id": "math_train_precalculus_288",
+    "pred": null,
+    "correct": false
+   },
+   {
+    "id": "math_train_counting_and_probability_207",
+    "pred": "2",
+    "correct": false
+   },
+   {
+    "id": "math_train_algebra_1418",
+    "pred": null,
+    "correct": false
+   },
+   {
+    "id": "math_train_prealgebra_141",
+    "pred": "3",
+    "correct": true
+   },
+   {
+    "id": "math_train_counting_and_probability_293",
+    "pred": null,
+    "correct": false
+   },
+   {
+    "id": "math_train_prealgebra_840",
+    "pred": "0",
+    "correct": false
+   },
+   {
+    "id": "math_train_algebra_326",
+    "pred": null,
+    "correct": false
+   },
+   {
+    "id": "math_train_number_theory_339",
+    "pred": null,
+    "correct": false
+   },
+   {
+    "id": "math_train_geometry_436",
+    "pred": null,
+    "correct": false
+   },
+   {
+    "id": "math_train_precalculus_28",
+    "pred": null,
+    "correct": false
+   },
+   {
+    "id": "math_train_intermediate_algebra_1255",
+    "pred": null,
+    "correct": false
+   },
+   {
+    "id": "math_train_number_theory_196",
+    "pred": null,
+    "correct": false
+   },
+   {
+    "id": "math_train_algebra_108",
+    "pred": "10",
+    "correct": true
+   },
+   {
+    "id": "math_train_number_theory_143",
+    "pred": null,
+    "correct": false
+   },
+   {
+    "id": "math_train_geometry_827",
+    "pred": null,
+    "correct": false
+   },
+   {
+    "id": "math_train_intermediate_algebra_1270",
+    "pred": null,
+    "correct": false
+   },
+   {
+    "id": "math_train_intermediate_algebra_223",
+    "pred": null,
+    "correct": false
+   },
+   {
+    "id": "math_train_intermediate_algebra_747",
+    "pred": null,
+    "correct": false
+   },
+   {
+    "id": "math_train_counting_and_probability_48",
+    "pred": null,
+    "correct": false
+   },
+   {
+    "id": "math_train_counting_and_probability_566",
+    "pred": "4.5",
+    "correct": true
+   },
+   {
+    "id": "math_train_prealgebra_654",
+    "pred": "No such polygon",
+    "correct": false
+   },
+   {
+    "id": "math_train_number_theory_220",
+    "pred": "29",
+    "correct": true
+   },
+   {
+    "id": "math_train_precalculus_693",
+    "pred": null,
+    "correct": false
+   },
+   {
+    "id": "math_train_precalculus_592",
+    "pred": null,
+    "correct": false
+   },
+   {
+    "id": "math_train_algebra_112",
+    "pred": "14x^2 + 6x + 3",
+    "correct": true
+   },
+   {
+    "id": "math_train_number_theory_286",
+    "pred": "1",
+    "correct": true
+   },
+   {
+    "id": "math_train_precalculus_292",
+    "pred": "\\begin{pmatrix} 15 \\\\ 10 \\end{pmatrix}",
+    "correct": true
+   },
+   {
+    "id": "math_train_intermediate_algebra_952",
+    "pred": null,
+    "correct": false
+   }
+  ]
+ },
+ "a10k64": {
+  "ref_logprob": -1.2643167912960052,
+  "n_ref": 80,
+  "quick_accuracy": 33.75,
+  "n": 80,
+  "rows": [
+   {
+    "id": "gsm8k_train_6724",
+    "pred": "70",
+    "correct": false
+   },
+   {
+    "id": "gsm8k_train_5741",
+    "pred": "96",
+    "correct": true
+   },
+   {
+    "id": "gsm8k_train_1913",
+    "pred": "8",
+    "correct": true
+   },
+   {
+    "id": "gsm8k_train_2949",
+    "pred": "1 \\text{ hour } 55 \\text{ minutes}",
+    "correct": false
+   },
+   {
+    "id": "gsm8k_train_3374",
+    "pred": "125",
+    "correct": true
+   },
+   {
+    "id": "gsm8k_train_4532",
+    "pred": "78400",
+    "correct": true
+   },
+   {
+    "id": "gsm8k_train_5370",
+    "pred": "56",
+    "correct": true
+   },
+   {
+    "id": "gsm8k_train_189",
+    "pred": "144",
+    "correct": false
+   },
+   {
+    "id": "gsm8k_train_2094",
+    "pred": null,
+    "correct": false
+   },
+   {
+    "id": "gsm8k_train_3525",
+    "pred": "29",
+    "correct": false
+   },
+   {
+    "id": "gsm8k_train_62",
+    "pred": "8",
+    "correct": false
+   },
+   {
+    "id": "gsm8k_train_5900",
+    "pred": "30",
+    "correct": false
+   },
+   {
+    "id": "gsm8k_train_4917",
+    "pred": "27",
+    "correct": true
+   },
+   {
+    "id": "gsm8k_train_5323",
+    "pred": "2",
+    "correct": true
+   },
+   {
+    "id": "gsm8k_train_7411",
+    "pred": "10",
+    "correct": true
+   },
+   {
+    "id": "gsm8k_train_5622",
+    "pred": "7",
+    "correct": false
+   },
+   {
+    "id": "gsm8k_train_6292",
+    "pred": "30",
+    "correct": true
+   },
+   {
+    "id": "gsm8k_train_665",
+    "pred": "24",
+    "correct": true
+   },
+   {
+    "id": "gsm8k_train_4163",
+    "pred": null,
+    "correct": false
+   },
+   {
+    "id": "gsm8k_train_3423",
+    "pred": "4",
+    "correct": false
+   },
+   {
+    "id": "gsm8k_train_263",
+    "pred": null,
+    "correct": false
+   },
+   {
+    "id": "gsm8k_train_4079",
+    "pred": "35",
+    "correct": true
+   },
+   {
+    "id": "gsm8k_train_6204",
+    "pred": null,
+    "correct": false
+   },
+   {
+    "id": "gsm8k_train_1470",
+    "pred": "0.5",
+    "correct": false
+   },
+   {
+    "id": "gsm8k_train_4969",
+    "pred": "301.5",
+    "correct": false
+   },
+   {
+    "id": "gsm8k_train_4287",
+    "pred": null,
+    "correct": false
+   },
+   {
+    "id": "gsm8k_train_6402",
+    "pred": "30",
+    "correct": false
+   },
+   {
+    "id": "gsm8k_train_2194",
+    "pred": "144",
+    "correct": true
+   },
+   {
+    "id": "gsm8k_train_7394",
+    "pred": "700",
+    "correct": false
+   },
+   {
+    "id": "gsm8k_train_1042",
+    "pred": "28",
+    "correct": true
+   },
+   {
+    "id": "gsm8k_train_7068",
+    "pred": "100",
+    "correct": false
+   },
+   {
+    "id": "gsm8k_train_2613",
+    "pred": null,
+    "correct": false
+   },
+   {
+    "id": "gsm8k_train_6254",
+    "pred": "30",
+    "correct": false
+   },
+   {
+    "id": "gsm8k_train_2663",
+    "pred": "-5",
+    "correct": false
+   },
+   {
+    "id": "gsm8k_train_1947",
+    "pred": "54",
+    "correct": true
+   },
+   {
+    "id": "gsm8k_train_1004",
+    "pred": "630",
+    "correct": false
+   },
+   {
+    "id": "gsm8k_train_7000",
+    "pred": "8",
+    "correct": false
+   },
+   {
+    "id": "gsm8k_train_6198",
+    "pred": "26",
+    "correct": true
+   },
+   {
+    "id": "gsm8k_train_2918",
+    "pred": "450.00",
+    "correct": true
+   },
+   {
+    "id": "gsm8k_train_5000",
+    "pred": "16.20",
+    "correct": false
+   },
+   {
+    "id": "math_train_number_theory_66",
+    "pred": "1",
+    "correct": true
+   },
+   {
+    "id": "math_train_number_theory_12",
+    "pred": "1005",
+    "correct": false
+   },
+   {
+    "id": "math_train_number_theory_275",
+    "pred": null,
+    "correct": false
+   },
+   {
+    "id": "math_train_precalculus_618",
+    "pred": null,
+    "correct": false
+   },
+   {
+    "id": "math_train_intermediate_algebra_1266",
+    "pred": null,
+    "correct": false
+   },
+   {
+    "id": "math_train_intermediate_algebra_267",
+    "pred": null,
+    "correct": false
+   },
+   {
+    "id": "math_train_number_theory_330",
+    "pred": null,
+    "correct": false
+   },
+   {
+    "id": "math_train_intermediate_algebra_880",
+    "pred": null,
+    "correct": false
+   },
+   {
+    "id": "math_train_geometry_409",
+    "pred": null,
+    "correct": false
+   },
+   {
+    "id": "math_train_algebra_1674",
+    "pred": null,
+    "correct": false
+   },
+   {
+    "id": "math_train_precalculus_197",
+    "pred": null,
+    "correct": false
+   },
+   {
+    "id": "math_train_intermediate_algebra_552",
+    "pred": null,
+    "correct": false
+   },
+   {
+    "id": "math_train_precalculus_288",
+    "pred": null,
+    "correct": false
+   },
+   {
+    "id": "math_train_counting_and_probability_207",
+    "pred": "4",
+    "correct": false
+   },
+   {
+    "id": "math_train_algebra_1418",
+    "pred": null,
+    "correct": false
+   },
+   {
+    "id": "math_train_prealgebra_141",
+    "pred": "3",
+    "correct": true
+   },
+   {
+    "id": "math_train_counting_and_probability_293",
+    "pred": null,
+    "correct": false
+   },
+   {
+    "id": "math_train_prealgebra_840",
+    "pred": null,
+    "correct": false
+   },
+   {
+    "id": "math_train_algebra_326",
+    "pred": "\\frac{12}{7}",
+    "correct": true
+   },
+   {
+    "id": "math_train_number_theory_339",
+    "pred": null,
+    "correct": false
+   },
+   {
+    "id": "math_train_geometry_436",
+    "pred": null,
+    "correct": false
+   },
+   {
+    "id": "math_train_precalculus_28",
+    "pred": null,
+    "correct": false
+   },
+   {
+    "id": "math_train_intermediate_algebra_1255",
+    "pred": null,
+    "correct": false
+   },
+   {
+    "id": "math_train_number_theory_196",
+    "pred": "6",
+    "correct": true
+   },
+   {
+    "id": "math_train_algebra_108",
+    "pred": "10",
+    "correct": true
+   },
+   {
+    "id": "math_train_number_theory_143",
+    "pred": null,
+    "correct": false
+   },
+   {
+    "id": "math_train_geometry_827",
+    "pred": null,
+    "correct": false
+   },
+   {
+    "id": "math_train_intermediate_algebra_1270",
+    "pred": "odd",
+    "correct": true
+   },
+   {
+    "id": "math_train_intermediate_algebra_223",
+    "pred": "x = \\frac{3}{2}",
+    "correct": true
+   },
+   {
+    "id": "math_train_intermediate_algebra_747",
+    "pred": null,
+    "correct": false
+   },
+   {
+    "id": "math_train_counting_and_probability_48",
+    "pred": null,
+    "correct": false
+   },
+   {
+    "id": "math_train_counting_and_probability_566",
+    "pred": "4.5",
+    "correct": true
+   },
+   {
+    "id": "math_train_prealgebra_654",
+    "pred": null,
+    "correct": false
+   },
+   {
+    "id": "math_train_number_theory_220",
+    "pred": "23",
+    "correct": false
+   },
+   {
+    "id": "math_train_precalculus_693",
+    "pred": null,
+    "correct": false
+   },
+   {
+    "id": "math_train_precalculus_592",
+    "pred": null,
+    "correct": false
+   },
+   {
+    "id": "math_train_algebra_112",
+    "pred": "14x^2 + 6x + 3",
+    "correct": true
+   },
+   {
+    "id": "math_train_number_theory_286",
+    "pred": "1",
+    "correct": true
+   },
+   {
+    "id": "math_train_precalculus_292",
+    "pred": "\\begin{pmatrix} 15 \\\\ 10 \\end{pmatrix}",
+    "correct": true
+   },
+   {
+    "id": "math_train_intermediate_algebra_952",
+    "pred": null,
+    "correct": false
+   }
+  ]
+ },
+ "a8k64": {
+  "ref_logprob": -1.2564079431816935,
+  "n_ref": 80,
+  "quick_accuracy": 40.0,
+  "n": 80,
+  "rows": [
+   {
+    "id": "gsm8k_train_6724",
+    "pred": "70",
+    "correct": false
+   },
+   {
+    "id": "gsm8k_train_5741",
+    "pred": null,
+    "correct": false
+   },
+   {
+    "id": "gsm8k_train_1913",
+    "pred": "8",
+    "correct": true
+   },
+   {
+    "id": "gsm8k_train_2949",
+    "pred": "55 \\text{ minutes}",
+    "correct": false
+   },
+   {
+    "id": "gsm8k_train_3374",
+    "pred": "125",
+    "correct": true
+   },
+   {
+    "id": "gsm8k_train_4532",
+    "pred": "78400",
+    "correct": true
+   },
+   {
+    "id": "gsm8k_train_5370",
+    "pred": "56",
+    "correct": true
+   },
+   {
+    "id": "gsm8k_train_189",
+    "pred": "48",
+    "correct": true
+   },
+   {
+    "id": "gsm8k_train_2094",
+    "pred": "58",
+    "correct": true
+   },
+   {
+    "id": "gsm8k_train_3525",
+    "pred": "29",
+    "correct": false
+   },
+   {
+    "id": "gsm8k_train_62",
+    "pred": "15",
+    "correct": true
+   },
+   {
+    "id": "gsm8k_train_5900",
+    "pred": "30",
+    "correct": false
+   },
+   {
+    "id": "gsm8k_train_4917",
+    "pred": "27",
+    "correct": true
+   },
+   {
+    "id": "gsm8k_train_5323",
+    "pred": "2",
+    "correct": true
+   },
+   {
+    "id": "gsm8k_train_7411",
+    "pred": "10",
+    "correct": true
+   },
+   {
+    "id": "gsm8k_train_5622",
+    "pred": "3",
+    "correct": true
+   },
+   {
+    "id": "gsm8k_train_6292",
+    "pred": "30",
+    "correct": true
+   },
+   {
+    "id": "gsm8k_train_665",
+    "pred": "24",
+    "correct": true
+   },
+   {
+    "id": "gsm8k_train_4163",
+    "pred": "40",
+    "correct": true
+   },
+   {
+    "id": "gsm8k_train_3423",
+    "pred": null,
+    "correct": false
+   },
+   {
+    "id": "gsm8k_train_263",
+    "pred": "6",
+    "correct": false
+   },
+   {
+    "id": "gsm8k_train_4079",
+    "pred": "35",
+    "correct": true
+   },
+   {
+    "id": "gsm8k_train_6204",
+    "pred": "38",
+    "correct": true
+   },
+   {
+    "id": "gsm8k_train_1470",
+    "pred": null,
+    "correct": false
+   },
+   {
+    "id": "gsm8k_train_4969",
+    "pred": "582",
+    "correct": false
+   },
+   {
+    "id": "gsm8k_train_4287",
+    "pred": null,
+    "correct": false
+   },
+   {
+    "id": "gsm8k_train_6402",
+    "pred": "10",
+    "correct": false
+   },
+   {
+    "id": "gsm8k_train_2194",
+    "pred": "144",
+    "correct": true
+   },
+   {
+    "id": "gsm8k_train_7394",
+    "pred": "900",
+    "correct": true
+   },
+   {
+    "id": "gsm8k_train_1042",
+    "pred": "16",
+    "correct": false
+   },
+   {
+    "id": "gsm8k_train_7068",
+    "pred": "300",
+    "correct": false
+   },
+   {
+    "id": "gsm8k_train_2613",
+    "pred": null,
+    "correct": false
+   },
+   {
+    "id": "gsm8k_train_6254",
+    "pred": "0",
+    "correct": false
+   },
+   {
+    "id": "gsm8k_train_2663",
+    "pred": "-5",
+    "correct": false
+   },
+   {
+    "id": "gsm8k_train_1947",
+    "pred": "54",
+    "correct": true
+   },
+   {
+    "id": "gsm8k_train_1004",
+    "pred": "630",
+    "correct": false
+   },
+   {
+    "id": "gsm8k_train_7000",
+    "pred": "8",
+    "correct": false
+   },
+   {
+    "id": "gsm8k_train_6198",
+    "pred": "26",
+    "correct": true
+   },
+   {
+    "id": "gsm8k_train_2918",
+    "pred": "450.00",
+    "correct": true
+   },
+   {
+    "id": "gsm8k_train_5000",
+    "pred": "18",
+    "correct": true
+   },
+   {
+    "id": "math_train_number_theory_66",
+    "pred": "1",
+    "correct": true
+   },
+   {
+    "id": "math_train_number_theory_12",
+    "pred": null,
+    "correct": false
+   },
+   {
+    "id": "math_train_number_theory_275",
+    "pred": null,
+    "correct": false
+   },
+   {
+    "id": "math_train_precalculus_618",
+    "pred": null,
+    "correct": false
+   },
+   {
+    "id": "math_train_intermediate_algebra_1266",
+    "pred": null,
+    "correct": false
+   },
+   {
+    "id": "math_train_intermediate_algebra_267",
+    "pred": null,
+    "correct": false
+   },
+   {
+    "id": "math_train_number_theory_330",
+    "pred": null,
+    "correct": false
+   },
+   {
+    "id": "math_train_intermediate_algebra_880",
+    "pred": null,
+    "correct": false
+   },
+   {
+    "id": "math_train_geometry_409",
+    "pred": null,
+    "correct": false
+   },
+   {
+    "id": "math_train_algebra_1674",
+    "pred": null,
+    "correct": false
+   },
+   {
+    "id": "math_train_precalculus_197",
+    "pred": null,
+    "correct": false
+   },
+   {
+    "id": "math_train_intermediate_algebra_552",
+    "pred": null,
+    "correct": false
+   },
+   {
+    "id": "math_train_precalculus_288",
+    "pred": null,
+    "correct": false
+   },
+   {
+    "id": "math_train_counting_and_probability_207",
+    "pred": "12",
+    "correct": false
+   },
+   {
+    "id": "math_train_algebra_1418",
+    "pred": null,
+    "correct": false
+   },
+   {
+    "id": "math_train_prealgebra_141",
+    "pred": "3",
+    "correct": true
+   },
+   {
+    "id": "math_train_counting_and_probability_293",
+    "pred": "9009",
+    "correct": false
+   },
+   {
+    "id": "math_train_prealgebra_840",
+    "pred": null,
+    "correct": false
+   },
+   {
+    "id": "math_train_algebra_326",
+    "pred": null,
+    "correct": false
+   },
+   {
+    "id": "math_train_number_theory_339",
+    "pred": null,
+    "correct": false
+   },
+   {
+    "id": "math_train_geometry_436",
+    "pred": null,
+    "correct": false
+   },
+   {
+    "id": "math_train_precalculus_28",
+    "pred": null,
+    "correct": false
+   },
+   {
+    "id": "math_train_intermediate_algebra_1255",
+    "pred": null,
+    "correct": false
+   },
+   {
+    "id": "math_train_number_theory_196",
+    "pred": null,
+    "correct": false
+   },
+   {
+    "id": "math_train_algebra_108",
+    "pred": "10",
+    "correct": true
+   },
+   {
+    "id": "math_train_number_theory_143",
+    "pred": null,
+    "correct": false
+   },
+   {
+    "id": "math_train_geometry_827",
+    "pred": null,
+    "correct": false
+   },
+   {
+    "id": "math_train_intermediate_algebra_1270",
+    "pred": "odd",
+    "correct": true
+   },
+   {
+    "id": "math_train_intermediate_algebra_223",
+    "pred": null,
+    "correct": false
+   },
+   {
+    "id": "math_train_intermediate_algebra_747",
+    "pred": null,
+    "correct": false
+   },
+   {
+    "id": "math_train_counting_and_probability_48",
+    "pred": null,
+    "correct": false
+   },
+   {
+    "id": "math_train_counting_and_probability_566",
+    "pred": "4.5",
+    "correct": true
+   },
+   {
+    "id": "math_train_prealgebra_654",
+    "pred": "6",
+    "correct": true
+   },
+   {
+    "id": "math_train_number_theory_220",
+    "pred": "29",
+    "correct": true
+   },
+   {
+    "id": "math_train_precalculus_693",
+    "pred": null,
+    "correct": false
+   },
+   {
+    "id": "math_train_precalculus_592",
+    "pred": null,
+    "correct": false
+   },
+   {
+    "id": "math_train_algebra_112",
+    "pred": "14x^2 + 6x + 3",
+    "correct": true
+   },
+   {
+    "id": "math_train_number_theory_286",
+    "pred": "1",
+    "correct": true
+   },
+   {
+    "id": "math_train_precalculus_292",
+    "pred": "\\begin{pmatrix} 15 \\\\ 10 \\end{pmatrix}",
+    "correct": true
+   },
+   {
+    "id": "math_train_intermediate_algebra_952",
+    "pred": null,
+    "correct": false
+   }
+  ]
+ }
+}
