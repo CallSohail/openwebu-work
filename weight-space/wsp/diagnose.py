@@ -47,7 +47,7 @@ def contrast(model, tok, pairs, tail: int, writer_tail: int):
     return dr / n, dmw / n
 
 
-def diagnose(model, tok, pairs, layers=None, top_k=64, tail=36, writer_tail=24, n_layers=2):
+def diagnose(model, tok, pairs, layers=None, top_k=64, tail=36, writer_tail=24, n_layers=2, include_last=False):
     d_resid, d_mlp = contrast(model, tok, pairs, tail, writer_tail)
     L = M.layers(model)
     table = []
@@ -57,7 +57,10 @@ def diagnose(model, tok, pairs, layers=None, top_k=64, tail=36, writer_tail=24, 
         write = float(u @ (W @ d_mlp[l]))  # how much this MLP adds along the loop direction
         table.append({"layer": l, "contrast_norm": float(d_resid[l + 1].norm()),
                       "growth": float((d_resid[l + 1] - d_resid[l]) @ u), "mlp_write": write})
-    chosen = layers or [r["layer"] for r in sorted(table, key=lambda r: -r["mlp_write"])[:n_layers]]
+    # The last layer's output is the pre-norm final residual, whose scale dwarfs every other layer's, and its MLP
+    # writes straight into the output head; leave it out of automatic selection unless asked.
+    pool = [r for r in table if include_last or r["layer"] != max(L)]
+    chosen = layers or [r["layer"] for r in sorted(pool, key=lambda r: -r["mlp_write"])[:n_layers]]
     out = {}
     for l in chosen:
         u = d_resid[l + 1] / d_resid[l + 1].norm()
@@ -78,6 +81,7 @@ def main(argv=None):
     ap.add_argument("--out", default="diag")
     ap.add_argument("--layers", type=int, nargs="*", help="layers to target (default: top --n-layers by mlp_write)")
     ap.add_argument("--n-layers", type=int, default=2)
+    ap.add_argument("--include-last", action="store_true", help="allow the final layer in automatic selection")
     ap.add_argument("--top-k", type=int, default=64)
     ap.add_argument("--tail", type=int, default=36)
     ap.add_argument("--writer-tail", type=int, default=24)
@@ -90,7 +94,7 @@ def main(argv=None):
     model, tok = M.load(a.model, a.device)
     if M.n_params(model) > 3e9:
         raise SystemExit("Too large for weight-space editing with current tooling (>3B parameters).")
-    table, out = diagnose(model, tok, pairs, a.layers, a.top_k, a.tail, a.writer_tail, a.n_layers)
+    table, out = diagnose(model, tok, pairs, a.layers, a.top_k, a.tail, a.writer_tail, a.n_layers, a.include_last)
 
     os.makedirs(a.out, exist_ok=True)
     torch.save({l: {"u": v["u"], "neurons": v["neurons"]} for l, v in out.items()}, os.path.join(a.out, "directions.pt"))
