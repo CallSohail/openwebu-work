@@ -36,3 +36,9 @@ dist/
 # Generative UI test output
 tools/generative-ui/tests/out/
 node_modules/
+
+# Weight-space toolkit outputs (model weights stay out of git)
+weight-space/diag/
+weight-space/qwen35*/
+weight-space/*.html
+weight-space/gate.json

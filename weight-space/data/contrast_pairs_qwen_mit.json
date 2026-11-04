@@ -1,0 +1,21 @@
+{
+ "source": "MIT CSAIL lm_understand-logs, exp8_math/runs/p50c/requests/fwd_4 (CC BY 4.0). The four matched productive/repetitive contexts Astra used to find the Qwen3.5-0.8B loop direction. Raw Qwen chat template, thinking on.",
+ "pairs": [
+  {
+   "productive": "<|im_start|>user\nRafael works 10 hours on Monday and 8 on Tuesday, with 20 hours left to work. He earns $20 per hour. Find his weekly pay.<|im_end|>\n<|im_start|>assistant\n<think>\nThe first two days total 10+8=18 hours. Adding the remaining 20 gives 38 hours. His pay is 38*20=760 dollars. Checking: 200+160+400=760, consistent with the total. The hours and hourly rate have the correct units.",
+   "repetitive": "<|im_start|>user\nRafael works 10 hours on Monday and 8 on Tuesday, with 20 hours left to work. He earns $20 per hour. Find his weekly pay.<|im_end|>\n<|im_start|>assistant\n<think>\nThe first two days total 10+8=18 hours. Adding the remaining 20 gives 38 hours. But is 20 the total? No, it is the remaining time. But is 20 the total? No, it is the remaining time. But is 20 the total? No, it is the remaining time."
+  },
+  {
+   "productive": "<|im_start|>user\nFind the remainder when 6x^4-14x^3-4x^2+2x-26 is divided by 2x-6.<|im_end|>\n<|im_start|>assistant\n<think>\nSet 2x-6=0, giving x=3. The remainder is P(3)=486-378-36+6-26=52. To justify this, write P(x)=(2x-6)Q(x)+R. Substituting x=3 cancels the quotient term, leaving P(3)=R. Hence the constant remainder is 52.",
+   "repetitive": "<|im_start|>user\nFind the remainder when 6x^4-14x^3-4x^2+2x-26 is divided by 2x-6.<|im_end|>\n<|im_start|>assistant\n<think>\nSet 2x-6=0, giving x=3. The remainder is P(3)=486-378-36+6-26=52. But P(x) has -26. The constant term is -26. But P(x) has -26. The constant term is -26. But P(x) has -26. The constant term is -26."
+  },
+  {
+   "productive": "<|im_start|>user\nThe sequence is 88,85,82,... How many terms precede -17?<|im_end|>\n<|im_start|>assistant\n<think>\nThe common difference is -3. Solve 88-3(n-1)=-17. Then 3(n-1)=105, so n=36. The target is the 36th term, with 35 terms preceding it. Checking: the 35th term is -14, followed by -17.",
+   "repetitive": "<|im_start|>user\nThe sequence is 88,85,82,... How many terms precede -17?<|im_end|>\n<|im_start|>assistant\n<think>\nThe common difference is -3. Solve 88-3(n-1)=-17. Then 3(n-1)=105, so n=36. Now 88-85=3 and 85-82=3. Now 88-85=3 and 85-82=3. Now 88-85=3 and 85-82=3. Now 88-85=3 and 85-82=3."
+  },
+  {
+   "productive": "<|im_start|>user\nA machine makes 45 necklaces, and another makes 2.4 times as many. Find the total.<|im_end|>\n<|im_start|>assistant\n<think>\nThe second machine makes 45*2.4=108 necklaces. Add the first machine's 45 to obtain 153 necklaces. Multiplication gives the second quantity, while addition combines the two machines. A check is 45*3.4=153.",
+   "repetitive": "<|im_start|>user\nA machine makes 45 necklaces, and another makes 2.4 times as many. Find the total.<|im_end|>\n<|im_start|>assistant\n<think>\nThe second machine makes 45*2.4=108 necklaces. Add the first machine's 45 to obtain 153 necklaces. Is 108 the total? No, 45+108=153. Is 108 the total? No, 45+108=153. Is 108 the total? No, 45+108=153."
+  }
+ ]
+}

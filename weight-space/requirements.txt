@@ -1,0 +1,6 @@
+numpy>=1.26
+torch>=2.4
+transformers>=5.0
+safetensors
+pytest
+# optional: math-verify (grading MIT used), huggingface_hub (downloads)

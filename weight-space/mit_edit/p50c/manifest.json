@@ -1,0 +1,39 @@
+{
+ "tensors": [
+  {
+   "name": "model.language_model.layers.15.mlp.down_proj.weight",
+   "shape": [
+    1024,
+    3584
+   ],
+   "dtype": "bfloat16",
+   "changed_entries": 65260,
+   "changed_columns": 64,
+   "changed_rows": 1024,
+   "relative_change": 0.10635984688997269,
+   "base_sha256": "ef60d2c687bab19464dca9c8bfd7777e46ad226df0c9e25643b0bab04b5a1cca",
+   "edited_sha256": "82e2d733ea64feaeb4af93a1e065641d3df98b494a8b7576ef2f52e90fe2ee53",
+   "submitted_file": "model.language_model.layers.15.mlp.down_proj.weight.npy",
+   "form": "sparse"
+  },
+  {
+   "name": "model.language_model.layers.19.mlp.down_proj.weight",
+   "shape": [
+    1024,
+    3584
+   ],
+   "dtype": "bfloat16",
+   "changed_entries": 64928,
+   "changed_columns": 64,
+   "changed_rows": 1023,
+   "relative_change": 0.08106115460395813,
+   "base_sha256": "638eedeb701b94aa861f4438e615c07ec6c60ee703db1bfee2de577bb6498c3e",
+   "edited_sha256": "8ef3c61bc36af113ad58e89dbb0a4a14dcba5a45cb750c15ab515c82ddd12eb2",
+   "submitted_file": "model.language_model.layers.19.mlp.down_proj.weight.npy",
+   "form": "sparse"
+  }
+ ],
+ "changed_tensors": 2,
+ "changed_entries_total": 130188,
+ "note": "changed_entries counts bfloat16 entries whose bits differ from the base model; an entry the edit touched but that rounds back to the same bfloat16 value is not counted"
+}
