@@ -143,6 +143,7 @@ def main(argv=None):
     ap = argparse.ArgumentParser()
     ap.add_argument("--rescue", required=True)
     ap.add_argument("--probe")
+    ap.add_argument("--selection", help="results/selection.json (dev rescue + guard per candidate)")
     ap.add_argument("--base", required=True)
     ap.add_argument("--edited", required=True, help="name=path of the model whose weight changes to chart")
     ap.add_argument("--out", required=True)
@@ -158,6 +159,27 @@ def main(argv=None):
     name, path = a.edited.split("=", 1)
     wimgs, winfo = chart_weights(a.base, path, a.out)
     imgs += wimgs
+    sel_html = ""
+    if a.selection:
+        sel = json.load(open(a.selection))
+        g0 = sel["guard"]["base"]["quick_accuracy"]
+        rows_ = []
+        for k, desc in [("base", "unedited")] + list(sel["candidates"].items()):
+            d, g = sel["dev_rescue"].get(k), sel["guard"].get(k)
+            ga = f"{g['quick_accuracy']:.1f}%" if g else "n/a"
+            if k == "base":
+                verdict = "reference"
+            elif g and g["quick_accuracy"] < g0 - 2:
+                verdict = "discard: guard drop"
+            elif k == "mit":
+                verdict = "<b>KEEP (final)</b>"
+            else:
+                verdict = "no gain over final"
+            rows_.append(f"<tr><td>{k}</td><td>{desc}</td><td>{d['looped_again']:.0f}%</td><td>{d['correct']:.1f}%</td><td>{ga}</td><td>{verdict}</td></tr>")
+        sel_html = ("<table><tr><th>candidate</th><th>edit</th><th>dev: looped again</th><th>dev: correct</th>"
+                    "<th>guard: quick accuracy</th><th>decision</th></tr>" + "".join(rows_) + "</table>"
+                    "<p class='mut'>Dev: 16 rescue items (separate from test), 1,024 new tokens. Guard: 80 held-out GSM8K/MATH "
+                    "problems, thinking off, greedy; an edit may not lose more than 2 points.</p>")
     models = list(summary)
     head = ["model", "correct", "looped again", "finished thinking", "gave \\boxed", "cut at limit", "mean new tokens"]
     keys = ["correct", "looped_again", "closed_think", "boxed", "cut_at_limit", "mean_tokens"]
@@ -187,7 +209,7 @@ one direction removed from {sum(v['columns'] for v in winfo.values())} MLP outpu
 A continuation counts as looped when 90% of its 8-grams over 512 tokens repeat; it is stopped there.</p>
 {''.join(img(p) for p in imgs[:2])}</section>
 <h2>Examples: base loops, edited recovers</h2><section>{examples(a.rescue, models)}</section>
-{'<h2>How the final edit was chosen</h2><section>' + img(imgs[2]) + '<p class="mut">Scored on 8 dev loops, separate from the test items. Only the chosen edit and MIT’s were run on the test set.</p></section>' if probe else ''}
+<h2>How the final edit was chosen</h2><section>{sel_html}{img(imgs[2]) + '<p class="mut">Teacher-forced scores on 8 dev loops. Every edit moves the model away from the base on both kinds of text, so this only weakly separates candidates; generation and the guard decided.</p>' if probe else ''}</section>
 <h2>Full-scale benchmark (MIT's published evaluation)</h2><section>{img([p for p in imgs if p.endswith('mit_benchmarks.png')][0])}
 <p class="mut">The CPU test above can't run 32k-token answers. These are MIT's own vLLM results for the same edit, from their public logs.</p></section>
 <h2>What changed in the weights</h2><section>{''.join(img(p) for p in wimgs)}</section>

@@ -1,0 +1,28 @@
+{
+ "tensors": [
+  {
+   "name": "model.language_model.layers.15.mlp.down_proj.weight",
+   "dtype": "BF16",
+   "shape": [
+    1024,
+    3584
+   ],
+   "changed_entries": 65260,
+   "changed_columns": 64,
+   "base_sha256": "ef60d2c687bab19464dca9c8bfd7777e46ad226df0c9e25643b0bab04b5a1cca",
+   "edited_sha256": "82e2d733ea64feaeb4af93a1e065641d3df98b494a8b7576ef2f52e90fe2ee53"
+  },
+  {
+   "name": "model.language_model.layers.19.mlp.down_proj.weight",
+   "dtype": "BF16",
+   "shape": [
+    1024,
+    3584
+   ],
+   "changed_entries": 64928,
+   "changed_columns": 64,
+   "base_sha256": "638eedeb701b94aa861f4438e615c07ec6c60ee703db1bfee2de577bb6498c3e",
+   "edited_sha256": "8ef3c61bc36af113ad58e89dbb0a4a14dcba5a45cb750c15ab515c82ddd12eb2"
+  }
+ ]
+}

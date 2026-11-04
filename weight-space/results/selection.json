@@ -1,0 +1,123 @@
+{
+ "dev_rescue": {
+  "base": {
+   "n": 16,
+   "correct": 0.0,
+   "looped_again": 75.0,
+   "closed_think": 0.0,
+   "boxed": 0.0,
+   "cut_at_limit": 25.0,
+   "mean_tokens": 672.0,
+   "correct_gsm8k": 0.0,
+   "looped_gsm8k": 62.5,
+   "correct_math500": 0.0,
+   "looped_math500": 87.5
+  },
+  "mit": {
+   "n": 16,
+   "correct": 0.0,
+   "looped_again": 0.0,
+   "closed_think": 0.0,
+   "boxed": 0.0,
+   "cut_at_limit": 100.0,
+   "mean_tokens": 1024.0,
+   "correct_gsm8k": 0.0,
+   "looped_gsm8k": 0.0,
+   "correct_math500": 0.0,
+   "looped_math500": 0.0
+  },
+  "a10k64": {
+   "n": 16,
+   "correct": 12.5,
+   "looped_again": 12.5,
+   "closed_think": 12.5,
+   "boxed": 12.5,
+   "cut_at_limit": 87.5,
+   "mean_tokens": 951.875,
+   "correct_gsm8k": 12.5,
+   "looped_gsm8k": 12.5,
+   "correct_math500": 12.5,
+   "looped_math500": 12.5
+  },
+  "a6k64L4": {
+   "n": 16,
+   "correct": 0.0,
+   "looped_again": 0.0,
+   "closed_think": 0.0,
+   "boxed": 0.0,
+   "cut_at_limit": 100.0,
+   "mean_tokens": 1024.0,
+   "correct_gsm8k": 0.0,
+   "looped_gsm8k": 0.0,
+   "correct_math500": 0.0,
+   "looped_math500": 0.0
+  },
+  "a8k64": {
+   "n": 16,
+   "correct": 0.0,
+   "looped_again": 0.0,
+   "closed_think": 6.25,
+   "boxed": 0.0,
+   "cut_at_limit": 100.0,
+   "mean_tokens": 1024.0,
+   "correct_gsm8k": 0.0,
+   "looped_gsm8k": 0.0,
+   "correct_math500": 0.0,
+   "looped_math500": 0.0
+  }
+ },
+ "guard": {
+  "base": {
+   "ref_logprob": -1.2389661500230431,
+   "quick_accuracy": 37.5,
+   "n": 80
+  },
+  "mit": {
+   "ref_logprob": -1.250570084154606,
+   "quick_accuracy": 37.5,
+   "n": 80
+  },
+  "a10k64": {
+   "ref_logprob": -1.2643167912960052,
+   "quick_accuracy": 33.75,
+   "n": 80
+  },
+  "a8k64": {
+   "ref_logprob": -1.2564079431816935,
+   "quick_accuracy": 40.0,
+   "n": 80
+  }
+ },
+ "probe": {
+  "mit": {
+   "loop_delta": -0.06640308443456888,
+   "reasoning_delta": -0.061386569403111935
+  },
+  "a6k64": {
+   "loop_delta": -0.06653985753655434,
+   "reasoning_delta": -0.061184526421129704
+  },
+  "a8k64": {
+   "loop_delta": -0.1294355522841215,
+   "reasoning_delta": -0.11210798937827349
+  },
+  "a10k64": {
+   "loop_delta": -0.2587108351290226,
+   "reasoning_delta": -0.20852286461740732
+  },
+  "a6k128": {
+   "loop_delta": -0.08942119218409061,
+   "reasoning_delta": -0.07888520695269108
+  },
+  "a6k64L4": {
+   "loop_delta": -0.09428158216178417,
+   "reasoning_delta": -0.0776816769503057
+  }
+ },
+ "candidates": {
+  "mit": "MIT p50c: alpha 6, top-64, layers 15+19",
+  "a10k64": "alpha 10, top-64, layers 15+19",
+  "a8k64": "alpha 8, top-64, layers 15+19",
+  "a6k64L4": "alpha 6, top-64, layers 14+15+19+21"
+ }
+}
