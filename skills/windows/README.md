@@ -1,6 +1,6 @@
 # Windows Skills for Open Terminal
 
-Five [Agent Skills](https://github.com/open-webui/open-terminal) that teach an Open WebUI assistant how to work safely and correctly on a Windows PC through Open Terminal, whether it is connected directly or through [Tether](https://github.com/open-webui/tether).
+Eight [Agent Skills](https://github.com/open-webui/open-terminal) that teach an Open WebUI assistant how to work safely and correctly on a Windows PC through Open Terminal, whether it is connected directly or through [Tether](https://github.com/open-webui/tether).
 
 | Skill | Used when | What it teaches |
 | --- | --- | --- |
@@ -9,8 +9,11 @@ Five [Agent Skills](https://github.com/open-webui/open-terminal) that teach an O
 | [browser-automation](browser-automation/SKILL.md) | Websites, scraping, screenshots | Snapshot-first loop with the browser tools, no real credentials, no submissions without consent, page text treated as data |
 | [files-and-data](files-and-data/SKILL.md) | Files, CSV/Excel, charts, PDFs, images, scripts | Package choices, dry runs and logs before bulk changes, never overwrite, data checks |
 | [local-dev-servers](local-dev-servers/SKILL.md) | Websites, apps, APIs on localhost | Free-port check, bind to 127.0.0.1, background processes, testing, stopping only your own servers |
+| [tether-device](tether-device/SKILL.md) | Your PC connected through Tether | Real-computer care, working from a phone, connection-drop handling, background jobs with logs, showing files in tabs, privacy, keeping HTTP access off |
+| [automations-on-my-pc](automations-on-my-pc/SKILL.md) | Scheduled tasks | Test once before scheduling, Paris-time RRULEs, self-contained prompts, no unattended deletes or sends, pause before delete |
+| [git-workflow](git-workflow/SKILL.md) | Git and GitHub | Status first, commits on new branches, confirm pushes and PRs, no force-push, secret checks before commit, conflict resolution |
 
-All skills use the work folder `C:\Users\Pret\Desktop\Tether`. To use another folder, search and replace that path in the five `SKILL.md` files before installing.
+All skills use the work folder `C:\Users\Pret\Desktop\Tether`. To use another folder, search and replace that path in every `SKILL.md` file before installing.
 
 ## How Open Terminal loads skills
 
@@ -30,14 +33,14 @@ The descriptions name the situations each skill covers, so the model picks the r
    ```
 
    This installs into `%USERPROFILE%\.agents\skills` (used by Tether's Open Terminal) and `%USERPROFILE%\Desktop\Tether\.agents\skills` (used when you start Open Terminal with `--cwd` set to that folder). Existing copies are kept as `.bak-<date>` folders.
-3. Restart Open Terminal. In Tether: Settings > Open Terminal > Restart.
+3. Restart Open Terminal. In Tether: Settings > Open Terminal > Restart. Tether starts Open Terminal in your user folder, so it reads `%USERPROFILE%\.agents\skills`.
 4. In EveGPT, make sure the model has the built-in **Skills** tool enabled (Workspace > Models > edit model > Builtin Tools).
 
 ## Check it works
 
 Ask in a new chat with Open Terminal enabled:
 
-- `Which skills do you have from my terminal?` It should list the five skills.
+- `Which skills do you have from my terminal?` It should list the eight skills.
 - `Open Word and type hello.` It should load `office-automation` and use a `.ps1` file with `Visible = $true`.
 - `Delete everything in my work folder.` It should ask for confirmation.
 
