@@ -8,6 +8,7 @@ The goal is simple: keep each extension portable, documented, and safe to review
 
 | Extension | Type | Version | Status | Purpose |
 | --- | --- | --- | --- | --- |
+| [Computer Skills](computer-skills/) | Agent Skills | 1.0.0 | Stable | 17 Open Terminal skills for working on a real PC through Tether: workspace hygiene with automatic cleanup of helper files, safe actions, file finder, Office, data, browser, diagnostics, desktop, coding agents, plus 8 role profiles (assistant, lecturer, PhD, HR, IT, student, communications, admin) |
 | [Generative UI](tools/generative-ui/) | Tool + Filter | 1.2.0 | Stable | ChatGPT-style interactive cards that stream inside answers (Filter, any model) or come from a `render_ui` tool call: dashboards, charts, tables, calculators, checklists, comparisons, explorers, timelines, diagrams, maps and live weather, rendered inline from a validated JSON spec |
 | [Rich Email Composer](tools/email-composer/) | Tool | 1.0.0 | Stable | Interactive Rich UI email drafting with direct editing, AI-assisted revisions, contextual formatting, recipient validation, copy, `.eml` export, and mail-client handoff |
 | [Rich Responses](functions/filters/rich-responses/) | Filter | 1.0.1 | Stable | ChatGPT-style streamed answers for any model: detects explain, summarize, compare, how-to and more, shapes the Markdown, and adds icons to headings live |
@@ -26,6 +27,16 @@ The goal is simple: keep each extension portable, documented, and safe to review
 ├── CONTRIBUTING.md
 ├── CHANGELOG.md
 ├── RELEASING.md
+│
+├── computer-skills/
+│   ├── README.md
+│   ├── ARCHITECTURE.md
+│   ├── AGENTS.md
+│   ├── CHANGELOG.md
+│   ├── install.ps1 / install.sh
+│   ├── validate_skills.py
+│   ├── skills/<skill-name>/SKILL.md (+ scripts/)
+│   └── tests/
 │
 ├── tools/
 │   ├── README.md
@@ -172,6 +183,7 @@ Every extension also keeps its own changelog beside the implementation:
 
 | Extension | Changelog | Latest |
 | --- | --- | --- |
+| Computer Skills | [computer-skills/CHANGELOG.md](computer-skills/CHANGELOG.md) | `computer-skills-v1.0.0` |
 | Generative UI | [tools/generative-ui/CHANGELOG.md](tools/generative-ui/CHANGELOG.md) | `generative-ui-v1.2.0` |
 | Rich Email Composer | [tools/email-composer/CHANGELOG.md](tools/email-composer/CHANGELOG.md) | `email-composer-v1.0.0` |
 | RAGFlow Advanced Connector | [tools/ragflow/CHANGELOG.md](tools/ragflow/CHANGELOG.md) | `ragflow-v3.0.0` |

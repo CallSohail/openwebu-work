@@ -2,6 +2,12 @@
 
 This repository contains independently versioned Open WebUI extensions. Plugin-specific release notes live next to each implementation when they need more detail.
 
+## 2026-11-09
+
+### Computer Skills 1.0.0
+
+New folder of Agent Skills for Open Terminal and Tether, installed into `~/.agents/skills` on the user's computer. Nine core skills teach the model to work safely and tidily on a real PC (a per-task scratch folder whose helper scripts and temp files are deleted at the end, dry runs and Recycle Bin deletes, read-only finders and diagnostics, Office, data, browser, desktop and coding-agent handoff), and eight role profiles adapt it to university staff and students. Includes an `AGENTS.md` template, installers, a validator that mirrors Open Terminal's skill loader, tests, and an architecture note on how Tether connects a PC to Open WebUI.
+
 ## 2026-11-03
 
 ### Generative UI 1.2.0
