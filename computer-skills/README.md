@@ -54,7 +54,9 @@ To install a subset, for example for a lecturer:
 
 macOS or Linux: `./install.sh --with-agents-md`.
 
-The installer copies skills to `~/.agents/skills`, which Open Terminal scans. Existing skills with the same name are moved to a dated backup folder first. `-Uninstall` removes only this pack's skills.
+The installer copies skills to `~/.agents/skills`, which Open Terminal scans.
+
+Open Terminal's home is not always your Windows profile: Tether can set a custom home folder (Settings, Open Terminal, Advanced). Check by asking the chat `Run: python -c "import pathlib;print(pathlib.Path.home())"`, then install there with `.\install.ps1 -HomeDir <that path>`. The file browser's "Home / .agents / skills" view shows what the terminal actually sees. Existing skills with the same name are moved to a dated backup folder first. `-Uninstall` removes only this pack's skills.
 
 If Tether's sandbox is on, Open Terminal gets a private, throwaway home folder, so skills installed in your real home are not visible, and copying them into the workspace folder does not help because only home-relative paths are scanned. Use the sandbox for simple document work, and turn it off when you want these skills.
 
