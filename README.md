@@ -14,6 +14,7 @@ The goal is simple: keep each extension portable, documented, and safe to review
 | [Study Mode](functions/filters/study-mode/) | Filter | 1.1.0 | Stable | Guided learning, Socratic tutoring, adaptive pacing, native `ask_user`, multilingual interactive quizzes, LaTeX/keyboard/fullscreen/export options, and local-model compatibility hardening |
 | [Quick Actions](functions/actions/quick-actions/) | Action | 3.0.1 | Stable | Compact context-aware response transformations, Humanize actions, verification, creation workflows, English/French UI, and user/team custom actions |
 | [Secure Dynamic Onboarding](functions/events/secure-onboarding/) | Event | 9.3.0 | Stable | English, French, Spanish and Catalan permission-aware onboarding with a language dropdown, immediate Valve synchronization, UTF-8-safe Rich UI delivery, guided tutorials, and safe rollout |
+| [Chat Inspector](functions/events/chat-inspector/) | Event | 0.2.0 | Stable | Live context estimate, response usage, saved tool inventory and model settings during a chat |
 | [Chat Gallery](functions/events/chat-gallery/) | Event | 1.1.0 | Stable | A Gallery tab with every image in the current chat and every image the person uploaded or generated: filters, zoom, generation details, copy, download, zip, delete and a jump back to the message. Maintained fork of @G30's Chat Gallery, in English and French |
 | [Chat Files](functions/events/chat-files/) | Event | 1.0.0 | Stable | A Files tab with every document, spreadsheet and other file in the chat and in the person's account: previews (PDF, tables, JSON, text, audio, extracted text), search, filters, rename, delete, zip and a jump back to the message. Companion to Chat Gallery, in English and French, checked for contrast in light, dark, OLED and Her themes |
 | [Chat Canvas](functions/events/chat-canvas/) | Event | 1.0.0 | Stable | A Canvas tab that turns the code and documents in a chat into editable pages: edit with line numbers, preview HTML, SVG, Markdown, JSON and CSV, compare changes, ask the model for a change to a selection, and save to files or notes. Companion to Chat Gallery and Chat Files, in English and French |
@@ -100,6 +101,12 @@ The goal is simple: keep each extension portable, documented, and safe to review
         │       ├── e2e.mjs
         │       ├── seed.py
         │       └── test_chat_files.py
+        ├── chat-inspector/
+        │   ├── README.md
+        │   ├── CHANGELOG.md
+        │   ├── chat_inspector.py
+        │   ├── inspector.js
+        │   └── tests/
         ├── chat-gallery/
         │   ├── README.md
         │   ├── ARCHITECTURE.md
