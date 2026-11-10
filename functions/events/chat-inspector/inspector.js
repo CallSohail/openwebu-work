@@ -9,7 +9,7 @@
     code_interpreter: 'Code interpreter', terminal: 'Terminal', usage: 'Usage display',
     citations: 'Citations', status_updates: 'Status updates', memory: 'Memory', builtin_tools: 'Built-in tools'
   };
-  let button, dialog, content, controller, openedPath, openedToken, sequence = 0;
+  let button, menuButton, dialog, content, controller, openedPath, openedToken, sequence = 0;
   const sessionToken = () => { try { return localStorage.getItem('token') || ''; } catch { return ''; } };
   const el = (tag, cls, value) => {
     const node = document.createElement(tag);
@@ -138,15 +138,47 @@
     try { dialog.showModal(); } catch { return; }
     refresh();
   }
+  // The native navbar can stay mounted but hidden when the full-width tab bar
+  // appears. Only attach to a visible host; otherwise the button disappears.
+  function visible(node) { return !!node && node.isConnected && node.getClientRects().length > 0; }
   function sync() {
     if (dialog?.open && (openedPath !== location.pathname || openedToken !== sessionToken())) close();
-    const host = [...document.querySelectorAll('#chat-container nav .flex.flex-none.items-center.self-center')].pop() || document.querySelector('#controls-container .panel-tab-strip')?.parentElement;
-    if (!host || !(location.pathname === '/' || route())) { button?.remove(); return; }
-    if (!button) {
-      button = el('button', 'ci-trigger', 'ⓘ'); button.type = 'button'; button.id = 'owui-chat-inspector';
-      button.setAttribute('aria-label', 'Chat inspector'); button.title = 'Chat inspector'; button.addEventListener('click', open);
+    const chatRoute = location.pathname === '/' || !!route();
+    const groups = [...document.querySelectorAll('#chat-container nav .flex.flex-none.items-center.self-center')];
+    const nav = groups.reverse().find(visible);
+    const controls = document.getElementById('controls-container');
+    const lists = controls && visible(controls)
+      ? [...controls.querySelectorAll('.panel-tab-strip')].filter(visible) : [];
+    const host = chatRoute ? (nav || lists[0]?.parentElement) : null;
+    if (!host) button?.remove();
+    else {
+      if (!button) {
+        button = el('button', 'ci-trigger', 'ⓘ'); button.type = 'button'; button.id = 'owui-chat-inspector';
+        button.setAttribute('aria-label', 'Chat inspector'); button.title = 'Chat inspector'; button.addEventListener('click', open);
+      }
+      // Gallery keeps its button at the end of the tab row. Insert before it,
+      // otherwise the two independent MutationObservers would fight forever.
+      const gallery = host.querySelector(':scope > #owui-chat-gallery-header');
+      if (button.parentElement !== host) host.insertBefore(button, gallery || null);
     }
-    if (button.parentElement !== host) host.append(button);
+
+    // Match Gallery's + menu integration. Never attach to a chat's unrelated
+    // overflow menu; only use the visible panel whose + button is expanded.
+    const expanded = chatRoute && lists.find(list => {
+      const plus = list.parentElement?.querySelector(':scope > :not([role="tablist"]) > button[aria-haspopup="true"]');
+      return plus?.getAttribute('aria-expanded') === 'true';
+    });
+    const menus = [...document.querySelectorAll('body > [role="menu"]')].filter(visible);
+    const menu = expanded ? menus.at(-1)?.querySelector('.app-dropdown-menu') : null;
+    if (!menu) menuButton?.remove();
+    else {
+      if (!menuButton) {
+        menuButton = el('button', 'ci-menu-button', 'ⓘ  Chat inspector');
+        menuButton.type = 'button'; menuButton.id = 'owui-chat-inspector-menu';
+        menuButton.addEventListener('click', open);
+      }
+      if (menuButton.parentElement !== menu) menu.append(menuButton);
+    }
   }
   let pending = false;
   function schedule() { if (!pending) { pending = true; requestAnimationFrame(() => { pending = false; sync(); }); } }
@@ -159,7 +191,7 @@
       .ci-dialog::backdrop{background:#0008}.ci-header{display:flex;align-items:center;justify-content:space-between;gap:1rem}.ci-header h2{font-size:1.15rem;font-weight:650;margin:0}
       .ci-dialog h3{font-weight:650;margin:1rem 0 .25rem}.ci-note{font-size:.85rem;opacity:.8;margin:.5rem 0}.ci-row{display:flex;justify-content:space-between;gap:1rem;padding:.3rem 0;border-bottom:1px solid #8883}.ci-row dd{margin:0;text-align:right;overflow-wrap:anywhere}.ci-button{font:inherit;color:inherit;background:transparent;border:1px solid #8887;border-radius:.5rem;padding:.4rem .7rem;cursor:pointer}.ci-dialog :focus-visible,.ci-trigger:focus-visible{outline:2px solid #3b82f6;outline-offset:2px}
     `; document.head.append(style);
-    new MutationObserver(schedule).observe(document.body, {childList:true, subtree:true});
+    new MutationObserver(schedule).observe(document.body, {childList:true, subtree:true, attributes:true, attributeFilter:['class', 'style', 'hidden', 'aria-expanded']});
     window.addEventListener('popstate', schedule); window.addEventListener('storage', schedule); window.addEventListener('focus', schedule); schedule();
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start, {once:true}); else start();

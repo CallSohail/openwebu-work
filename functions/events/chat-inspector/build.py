@@ -13,7 +13,7 @@ header = '''"""
 title: Chat Inspector
 description: View saved response usage and explicit model capability settings without exporting chat data.
 author: Muhammad Sohail
-version: 0.1.0
+version: 0.1.1
 license: MIT
 required_open_webui_version: 0.13.3
 """

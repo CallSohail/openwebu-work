@@ -25,13 +25,34 @@ const assert = require('assert');
     await page.addScriptTag({content:script});
     await page.locator('#owui-chat-inspector').waitFor();
     assert.equal(requests.filter(r => r.url.startsWith('/api/')).length, 0, 'no data read until user opens');
-    await page.locator('#owui-chat-inspector').click();
+    // Reproduce the user's load: navbar remains in the DOM but becomes hidden;
+    // the full-width tab strip and the Gallery button appear afterward.
+    await page.evaluate(() => {
+      document.querySelector('#chat-container nav').style.display = 'none';
+      const controls = document.createElement('div'); controls.id = 'controls-container';
+      controls.innerHTML = '<div data-panel-tab-bar><div id="bar"><div role="tablist" class="panel-tab-strip"><button role="tab">Chat</button></div><div><button id="plus" aria-haspopup="true" aria-expanded="false">+</button></div><button id="owui-chat-gallery-header">Gallery</button></div></div>';
+      document.body.append(controls);
+    });
+    await page.waitForFunction(() => document.querySelector('#owui-chat-inspector')?.parentElement?.id === 'bar');
+    assert.equal(await page.locator('#owui-chat-inspector').evaluate(e => e.nextElementSibling.id), 'owui-chat-gallery-header');
+    // A Svelte rerender replaces the whole tab row; the icon must reattach.
+    await page.evaluate(() => { const old = document.querySelector('#bar'); const fresh = old.cloneNode(true); fresh.querySelector('#owui-chat-inspector').remove(); old.replaceWith(fresh); });
+    await page.waitForFunction(() => document.querySelector('#owui-chat-inspector')?.parentElement?.id === 'bar');
+    await page.evaluate(() => {
+      document.querySelector('#plus').setAttribute('aria-expanded', 'true');
+      const menu = document.createElement('div'); menu.setAttribute('role', 'menu');
+      menu.innerHTML = '<div class="app-dropdown-menu"></div>'; document.body.append(menu);
+    });
+    await page.locator('#owui-chat-inspector-menu').waitFor();
+    await page.locator('#owui-chat-inspector-menu').click();
     await page.getByText('Configured on', {exact:true}).waitFor();
     let text = await page.locator('dialog').innerText();
     for (const expected of ['42','0','model-1','Configured off','Not explicitly set','Compaction threshold']) assert(text.includes(expected), expected);
     assert(!text.includes('999'), 'only active branch');
     assert(requests.filter(r => r.url.startsWith('/api/')).every(r => r.auth === 'Bearer example-token'));
     await page.keyboard.press('Escape');
+    await page.evaluate(() => document.querySelector('#plus').setAttribute('aria-expanded', 'false'));
+    await page.waitForFunction(() => !document.querySelector('#owui-chat-inspector-menu'));
     assert.equal(await page.locator('dialog').evaluate(e => e.open), false);
     assert.equal(await page.locator('.ci-content').innerText(), '', 'clears private data on close');
     chat.chat.history.messages.a.model = '<img src=x onerror=alert(1)>';

@@ -1,8 +1,8 @@
 # Chat Inspector
 
-A read-only, on-demand indicator for Open WebUI v0.13.3. Open a saved chat and select **ⓘ** in its header to see the last assistant response in the server-returned branch, reported input/output/total tokens, the server's context-compaction estimate when available, and the response model's explicitly configured capability flags.
+A read-only, on-demand indicator for Open WebUI v0.13.3. Open a saved chat and select **ⓘ** beside the chat tabs or in the chat header to see the last assistant response in the server-returned branch, reported input/output/total tokens, the server's context-compaction estimate when available, and the response model's explicitly configured capability flags.
 
-Version 0.1.0 is an initial release. It does not determine the current unsent model selection, effective tool permissions, selected tools, provider quota, spending, billing, or lifetime usage. Model flags are configuration, not evidence that a model or user can actually use a feature. Missing fields are shown as not reported or not explicitly set. A response in progress can be incomplete. An Open WebUI server may overlay active stream data on a chat response, so this is a server snapshot, not a historical accounting record. Do not add the token numbers together across responses to estimate context usage or a bill. Open WebUI's native Settings > Data and message usage controls may offer additional usage information.
+Version 0.1.1 is an initial release. It does not determine the current unsent model selection, effective tool permissions, selected tools, provider quota, spending, billing, or lifetime usage. Model flags are configuration, not evidence that a model or user can actually use a feature. Missing fields are shown as not reported or not explicitly set. A response in progress can be incomplete. An Open WebUI server may overlay active stream data on a chat response, so this is a server snapshot, not a historical accounting record. Do not add the token numbers together across responses to estimate context usage or a bill. Open WebUI's native Settings > Data and message usage controls may offer additional usage information.
 
 ## Install
 
