@@ -2,6 +2,12 @@
 
 This repository contains independently versioned Open WebUI extensions. Plugin-specific release notes live next to each implementation when they need more detail.
 
+## 2026-11-10
+
+### Chat Gallery 1.1.0
+
+Added a maintained fork of @G30's Chat Gallery Event Function. The second view now lists every image a person uploaded or generated, so it is useful on a server without image generation. A Gallery button lets accounts without the Tabs panel's + menu open it, and on a screen without a tab row the gallery opens over the chat. Adds a kind filter, sort, refresh, French, small pictures for the grid, request timeouts and seven administrator Valves. Fixes a flaw that could send the sign-in token to another site through a crafted image address in a chat. Includes server tests, a browser suite that passed on Open WebUI 0.13.0 and 0.13.3, and a CI workflow.
+
 ## 2026-11-03
 
 ### Generative UI 1.2.0
