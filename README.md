@@ -14,6 +14,7 @@ The goal is simple: keep each extension portable, documented, and safe to review
 | [Study Mode](functions/filters/study-mode/) | Filter | 1.1.0 | Stable | Guided learning, Socratic tutoring, adaptive pacing, native `ask_user`, multilingual interactive quizzes, LaTeX/keyboard/fullscreen/export options, and local-model compatibility hardening |
 | [Quick Actions](functions/actions/quick-actions/) | Action | 3.0.1 | Stable | Compact context-aware response transformations, Humanize actions, verification, creation workflows, English/French UI, and user/team custom actions |
 | [Secure Dynamic Onboarding](functions/events/secure-onboarding/) | Event | 9.3.0 | Stable | English, French, Spanish and Catalan permission-aware onboarding with a language dropdown, immediate Valve synchronization, UTF-8-safe Rich UI delivery, guided tutorials, and safe rollout |
+| [Chat Gallery](functions/events/chat-gallery/) | Event | 1.1.0 | Stable | A Gallery tab with every image in the current chat and every image the person uploaded or generated: filters, zoom, generation details, copy, download, zip, delete and a jump back to the message. Maintained fork of @G30's Chat Gallery, in English and French |
 | [RAGFlow Advanced Connector](tools/ragflow/) | Tool | 3.0.0 | Stable | RAGFlow retrieval, dataset discovery, document search, and configurable retrieval controls |
 
 ## Repository structure
@@ -77,6 +78,16 @@ The goal is simple: keep each extension portable, documented, and safe to review
     │       └── quick_actions.py
     └── events/
         ├── README.md
+        ├── chat-gallery/
+        │   ├── README.md
+        │   ├── ARCHITECTURE.md
+        │   ├── CHANGELOG.md
+        │   ├── chat_gallery.py
+        │   ├── screenshots/
+        │   └── tests/
+        │       ├── e2e.mjs
+        │       ├── seed.py
+        │       └── test_chat_gallery.py
         └── secure-onboarding/
             ├── README.md
             ├── CHANGELOG.md
@@ -121,6 +132,8 @@ Study Mode and Quick Actions currently declare **Open WebUI 0.11.1 or newer** be
 
 Generative UI declares **Open WebUI 0.12.0 or newer** because it relies on Tool embeds returned as `(HTMLResponse, context)` and the embed prompt messages checked against the 0.12.5 source.
 
+Chat Gallery declares **Open WebUI 0.13.0 or newer**, the release that added the Tabs panel it lives in. It was tested in a browser on 0.13.0 and 0.13.3.
+
 Secure Dynamic Onboarding declares **Open WebUI 0.11.3 or newer** because it uses current Event Function hooks, Rich UI embeds, effective permission catalogs, Notes, Channels, Calendar, Automations, and current chat storage APIs.
 
 ## Security
@@ -156,6 +169,7 @@ study-mode-v1.1.0
 quick-actions-v3.0.1
 ragflow-v3.0.0
 secure-onboarding-v9.3.0
+chat-gallery-v1.1.0
 ```
 
 See [RELEASING.md](RELEASING.md) for the release checklist, tag convention, and suggested GitHub repository topics.
@@ -179,6 +193,7 @@ Every extension also keeps its own changelog beside the implementation:
 | Study Mode | [functions/filters/study-mode/CHANGELOG.md](functions/filters/study-mode/CHANGELOG.md) | `study-mode-v1.1.0` |
 | Quick Actions | [functions/actions/quick-actions/CHANGELOG.md](functions/actions/quick-actions/CHANGELOG.md) | `quick-actions-v3.0.1` |
 | Secure Dynamic Onboarding | [functions/events/secure-onboarding/CHANGELOG.md](functions/events/secure-onboarding/CHANGELOG.md) | `secure-onboarding-v9.3.0` |
+| Chat Gallery | [functions/events/chat-gallery/CHANGELOG.md](functions/events/chat-gallery/CHANGELOG.md) | `chat-gallery-v1.1.0` |
 
 ## License
 
