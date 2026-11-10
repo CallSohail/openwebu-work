@@ -1,0 +1,33 @@
+name: Validate Chat Inspector
+on:
+  push:
+    paths:
+      - 'functions/events/chat-inspector/**'
+      - 'functions/events/chat-gallery/chat_gallery.py'
+      - '.github/workflows/validate-chat-inspector.yml'
+  pull_request:
+    paths:
+      - 'functions/events/chat-inspector/**'
+      - 'functions/events/chat-gallery/chat_gallery.py'
+      - '.github/workflows/validate-chat-inspector.yml'
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: python -m pip install 'pydantic>=2,<3' 'starlette<1' httpx
+      - run: npm install --no-save --no-package-lock playwright@1.56.1
+      - run: npx playwright install --with-deps chromium
+      - run: python -m py_compile functions/events/chat-inspector/chat_inspector.py
+      - run: node --check functions/events/chat-inspector/inspector.js
+      - run: python -m unittest discover -s functions/events/chat-inspector/tests -v
+      - run: CHROMIUM_PATH="$(node -e "process.stdout.write(require('playwright').chromium.executablePath())")" node functions/events/chat-inspector/tests/browser.cjs

@@ -48,6 +48,10 @@ Creates one persistent, multilingual onboarding chat per eligible user. The Rich
 
 See [secure-onboarding/README.md](secure-onboarding/README.md) for installation, rollout, privacy, security, Valves, testing, and troubleshooting, and [secure-onboarding/CHANGELOG.md](secure-onboarding/CHANGELOG.md) for the release history.
 
+### Chat Inspector 0.1.0
+
+Shows reported token usage for the current branch's last assistant response and the response model's explicit capability settings. It reads data only on request and distinguishes configuration from effective availability. See [chat-inspector/README.md](chat-inspector/README.md) for installation, security, limitations and testing.
+
 ### Chat Gallery 1.1.0
 
 Adds a Gallery tab to the chat: every image in the current chat as a grid, and a second view with every image the person uploaded or generated in any chat. It has search, a kind filter, a viewer with zoom and generation details read from PNG files, copy, download, zip, attach to message, delete, and a jump back to the source message, in English and French. It runs in the browser with the person's own access and adds no server routes. A maintained fork of @G30's Chat Gallery; it requires Open WebUI 0.13.0 or newer.
