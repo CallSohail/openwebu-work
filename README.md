@@ -14,7 +14,7 @@ The goal is simple: keep each extension portable, documented, and safe to review
 | [Study Mode](functions/filters/study-mode/) | Filter | 1.1.0 | Stable | Guided learning, Socratic tutoring, adaptive pacing, native `ask_user`, multilingual interactive quizzes, LaTeX/keyboard/fullscreen/export options, and local-model compatibility hardening |
 | [Quick Actions](functions/actions/quick-actions/) | Action | 3.0.1 | Stable | Compact context-aware response transformations, Humanize actions, verification, creation workflows, English/French UI, and user/team custom actions |
 | [Secure Dynamic Onboarding](functions/events/secure-onboarding/) | Event | 9.3.0 | Stable | English, French, Spanish and Catalan permission-aware onboarding with a language dropdown, immediate Valve synchronization, UTF-8-safe Rich UI delivery, guided tutorials, and safe rollout |
-| [Chat Inspector](functions/events/chat-inspector/) | Event | 0.1.1 | Initial release | On-demand, read-only view of a chat response’s reported token usage and explicit model capability settings |
+| [Chat Inspector](functions/events/chat-inspector/) | Event | 0.2.0 | Stable | Live context estimate, response usage, saved tool inventory and model settings during a chat |
 | [Chat Gallery](functions/events/chat-gallery/) | Event | 1.1.0 | Stable | A Gallery tab with every image in the current chat and every image the person uploaded or generated: filters, zoom, generation details, copy, download, zip, delete and a jump back to the message. Maintained fork of @G30's Chat Gallery, in English and French |
 | [RAGFlow Advanced Connector](tools/ragflow/) | Tool | 3.0.0 | Stable | RAGFlow retrieval, dataset discovery, document search, and configurable retrieval controls |
 
@@ -79,6 +79,12 @@ The goal is simple: keep each extension portable, documented, and safe to review
     │       └── quick_actions.py
     └── events/
         ├── README.md
+        ├── chat-inspector/
+        │   ├── README.md
+        │   ├── CHANGELOG.md
+        │   ├── chat_inspector.py
+        │   ├── inspector.js
+        │   └── tests/
         ├── chat-gallery/
         │   ├── README.md
         │   ├── ARCHITECTURE.md

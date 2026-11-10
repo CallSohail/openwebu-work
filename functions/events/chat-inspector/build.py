@@ -11,9 +11,9 @@ shared = source[start:end]
 js = (HERE / 'inspector.js').read_text(encoding='utf-8')
 header = '''"""
 title: Chat Inspector
-description: View saved response usage and explicit model capability settings without exporting chat data.
+description: Inspect live chat context estimates, response usage, and saved model and tool settings.
 author: Muhammad Sohail
-version: 0.1.1
+version: 0.2.0
 license: MIT
 required_open_webui_version: 0.13.3
 """

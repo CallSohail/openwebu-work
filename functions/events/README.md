@@ -18,6 +18,12 @@ Event Functions were introduced in Open WebUI 0.10.0 and are auto-detected from 
 ```text
 events/
 ├── README.md
+├── chat-inspector/
+│   ├── README.md
+│   ├── CHANGELOG.md
+│   ├── chat_inspector.py
+│   ├── inspector.js
+│   └── tests/
 ├── chat-gallery/
 │   ├── README.md
 │   ├── ARCHITECTURE.md
@@ -48,9 +54,9 @@ Creates one persistent, multilingual onboarding chat per eligible user. The Rich
 
 See [secure-onboarding/README.md](secure-onboarding/README.md) for installation, rollout, privacy, security, Valves, testing, and troubleshooting, and [secure-onboarding/CHANGELOG.md](secure-onboarding/CHANGELOG.md) for the release history.
 
-### Chat Inspector 0.1.1
+### Chat Inspector 0.2.0
 
-Shows reported token usage for the current branch's last assistant response and the response model's explicit capability settings. It reads data only on request and distinguishes configuration from effective availability. See [chat-inspector/README.md](chat-inspector/README.md) for installation, security, limitations and testing.
+Shows a context estimate, reported token usage for the current branch's last assistant response, saved tool inventory and explicit model capability settings. The nonmodal panel updates every 30 seconds while visible and distinguishes configuration from effective availability. See [chat-inspector/README.md](chat-inspector/README.md) for installation, security, limitations and testing.
 
 ### Chat Gallery 1.1.0
 
