@@ -16,6 +16,8 @@ The goal is simple: keep each extension portable, documented, and safe to review
 | [Secure Dynamic Onboarding](functions/events/secure-onboarding/) | Event | 9.3.0 | Stable | English, French, Spanish and Catalan permission-aware onboarding with a language dropdown, immediate Valve synchronization, UTF-8-safe Rich UI delivery, guided tutorials, and safe rollout |
 | [Chat Inspector](functions/events/chat-inspector/) | Event | 0.2.0 | Stable | Live context estimate, response usage, saved tool inventory and model settings during a chat |
 | [Chat Gallery](functions/events/chat-gallery/) | Event | 1.1.0 | Stable | A Gallery tab with every image in the current chat and every image the person uploaded or generated: filters, zoom, generation details, copy, download, zip, delete and a jump back to the message. Maintained fork of @G30's Chat Gallery, in English and French |
+| [Chat Files](functions/events/chat-files/) | Event | 1.0.0 | Stable | A Files tab with every document, spreadsheet and other file in the chat and in the person's account: previews (PDF, tables, JSON, text, audio, extracted text), search, filters, rename, delete, zip and a jump back to the message. Companion to Chat Gallery, in English and French, checked for contrast in light, dark, OLED and Her themes |
+| [Chat Canvas](functions/events/chat-canvas/) | Event | 1.0.0 | Stable | A Canvas tab that turns the code and documents in a chat into editable pages: edit with line numbers, preview HTML, SVG, Markdown, JSON and CSV, compare changes, ask the model for a change to a selection, and save to files or notes. Companion to Chat Gallery and Chat Files, in English and French |
 | [RAGFlow Advanced Connector](tools/ragflow/) | Tool | 3.0.0 | Stable | RAGFlow retrieval, dataset discovery, document search, and configurable retrieval controls |
 
 ## Repository structure
@@ -79,6 +81,26 @@ The goal is simple: keep each extension portable, documented, and safe to review
     │       └── quick_actions.py
     └── events/
         ├── README.md
+        ├── chat-canvas/
+        │   ├── README.md
+        │   ├── ARCHITECTURE.md
+        │   ├── CHANGELOG.md
+        │   ├── chat_canvas.py
+        │   ├── screenshots/
+        │   └── tests/
+        │       ├── e2e.mjs
+        │       ├── seed.py
+        │       └── test_chat_canvas.py
+        ├── chat-files/
+        │   ├── README.md
+        │   ├── ARCHITECTURE.md
+        │   ├── CHANGELOG.md
+        │   ├── chat_files.py
+        │   ├── screenshots/
+        │   └── tests/
+        │       ├── e2e.mjs
+        │       ├── seed.py
+        │       └── test_chat_files.py
         ├── chat-inspector/
         │   ├── README.md
         │   ├── CHANGELOG.md
@@ -139,6 +161,10 @@ Study Mode and Quick Actions currently declare **Open WebUI 0.11.1 or newer** be
 
 Generative UI declares **Open WebUI 0.12.0 or newer** because it relies on Tool embeds returned as `(HTMLResponse, context)` and the embed prompt messages checked against the 0.12.5 source.
 
+Chat Canvas and Chat Files declare **Open WebUI 0.13.0 or newer** for the same reason. Canvas was tested on the same versions, with and without the other two.
+
+Chat Files: It was tested in a browser on 0.13.0 and 0.13.3, with and without Chat Gallery.
+
 Chat Gallery declares **Open WebUI 0.13.0 or newer**, the release that added the Tabs panel it lives in. It was tested in a browser on 0.13.0 and 0.13.3.
 
 Secure Dynamic Onboarding declares **Open WebUI 0.11.3 or newer** because it uses current Event Function hooks, Rich UI embeds, effective permission catalogs, Notes, Channels, Calendar, Automations, and current chat storage APIs.
@@ -177,6 +203,8 @@ quick-actions-v3.0.1
 ragflow-v3.0.0
 secure-onboarding-v9.3.0
 chat-gallery-v1.1.0
+chat-files-v1.0.0
+chat-canvas-v1.0.0
 ```
 
 See [RELEASING.md](RELEASING.md) for the release checklist, tag convention, and suggested GitHub repository topics.
@@ -201,6 +229,8 @@ Every extension also keeps its own changelog beside the implementation:
 | Quick Actions | [functions/actions/quick-actions/CHANGELOG.md](functions/actions/quick-actions/CHANGELOG.md) | `quick-actions-v3.0.1` |
 | Secure Dynamic Onboarding | [functions/events/secure-onboarding/CHANGELOG.md](functions/events/secure-onboarding/CHANGELOG.md) | `secure-onboarding-v9.3.0` |
 | Chat Gallery | [functions/events/chat-gallery/CHANGELOG.md](functions/events/chat-gallery/CHANGELOG.md) | `chat-gallery-v1.1.0` |
+| Chat Files | [functions/events/chat-files/CHANGELOG.md](functions/events/chat-files/CHANGELOG.md) | `chat-files-v1.0.0` |
+| Chat Canvas | [functions/events/chat-canvas/CHANGELOG.md](functions/events/chat-canvas/CHANGELOG.md) | `chat-canvas-v1.0.0` |
 
 ## License
 
