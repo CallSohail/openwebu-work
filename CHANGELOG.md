@@ -4,6 +4,10 @@ This repository contains independently versioned Open WebUI extensions. Plugin-s
 
 ## 2026-11-10
 
+### Chat Canvas 1.0.0
+
+Added a Canvas tab Event Function that turns a chat's code blocks and longer answers into editable pages. It has an editor with line numbers and indentation, previews for HTML (sandboxed), SVG, Markdown, JSON and CSV, a line-by-line view of what changed, an *Ask for a change* flow that puts a request and the current version in the message box without sending it, blank canvases, and saving to files or notes. Edits are kept in the browser per person and per chat. It works beside Chat Gallery and Chat Files, and Open WebUI's own Artifacts. Includes server tests, a browser suite that passed on Open WebUI 0.13.0 and 0.13.3 with and without the other two, and a CI workflow.
+
 ### Chat Files 1.0.0
 
 Added a Files tab Event Function, a companion to Chat Gallery for every other kind of file. *This chat* lists every file attached on every branch, files the model links to, and the knowledge bases, notes and web pages the chat refers to; *My files* lists every file the person owns. It previews PDFs, CSV and TSV tables, JSON, text, code, audio and video, and shows the text Open WebUI extracted from Word and PowerPoint files. It adds search, a kind filter, ordering, rename, delete, zip, copy, attach and show in chat, takes turns with Chat Gallery, and was measured at 4.5:1 text contrast in light, dark, OLED and Her themes. Includes server tests, a browser suite that passed on Open WebUI 0.13.0 and 0.13.3 with and without Chat Gallery, and a CI workflow.

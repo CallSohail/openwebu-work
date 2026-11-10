@@ -18,6 +18,13 @@ Event Functions were introduced in Open WebUI 0.10.0 and are auto-detected from 
 ```text
 events/
 ├── README.md
+├── chat-canvas/
+│   ├── README.md
+│   ├── ARCHITECTURE.md
+│   ├── CHANGELOG.md
+│   ├── chat_canvas.py
+│   ├── screenshots/
+│   └── tests/
 ├── chat-files/
 │   ├── README.md
 │   ├── ARCHITECTURE.md
@@ -66,3 +73,9 @@ See [chat-gallery/README.md](chat-gallery/README.md) for installation, Valves, s
 Adds a Files tab to the chat: every document, spreadsheet and other file in the current chat, including references to knowledge bases, notes and web pages, and a second view with every file the person owns. It previews PDFs, tables, JSON, text, code and audio, shows the text Open WebUI extracted from office files, and offers search, filters, rename, delete, zip, attach and a jump back to the message, in English and French. It is a companion to Chat Gallery and takes turns with it. It requires Open WebUI 0.13.0 or newer.
 
 See [chat-files/README.md](chat-files/README.md) for installation, Valves, security and limits, [chat-files/ARCHITECTURE.md](chat-files/ARCHITECTURE.md) for how it works, and [chat-files/CHANGELOG.md](chat-files/CHANGELOG.md) for the release history.
+
+### Chat Canvas 1.0.0
+
+Adds a Canvas tab to the chat: each code block and longer answer becomes a page to edit, preview, compare with the original and hand back to the model with a request. HTML previews run in a sandbox, edits are kept in the person's browser and never change the chat, and nothing is sent to the model without the person pressing send. It runs beside Open WebUI's own Artifacts, Chat Gallery and Chat Files, in English and French. It requires Open WebUI 0.13.0 or newer.
+
+See [chat-canvas/README.md](chat-canvas/README.md) for installation, Valves, security and limits, [chat-canvas/ARCHITECTURE.md](chat-canvas/ARCHITECTURE.md) for how it works, and [chat-canvas/CHANGELOG.md](chat-canvas/CHANGELOG.md) for the release history.
