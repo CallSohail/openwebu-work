@@ -4,6 +4,10 @@ This repository contains independently versioned Open WebUI extensions. Plugin-s
 
 ## 2026-11-10
 
+### Chat Inspector 1.0.0
+
+Rewrote Chat Inspector as a Context tab in the Tabs panel's + menu, beside Canvas, Files and Gallery, in place of its floating pop-up. It shows a Claude-style grid of the context window and a breakdown of what fills it, fitted to the token count the model reported where there is one, with estimates tuned against the GPT-4o, GPT-4, Llama 3.1, Qwen 2.5 and Mistral tokenizers elsewhere (7 to 12 % average error on held-out text, against 19 to 42 % for characters ÷ 4). It finds the context window from an administrator's rule, model settings or the provider, warns as the chat fills, stops polling, and adds French. Its CI no longer needs a browser install, which had stopped working on current GitHub runners. Includes server tests, a fake streaming model and a browser suite that passed on Open WebUI 0.13.0 and 0.13.3.
+
 ### Chat Canvas 1.0.0
 
 Added a Canvas tab Event Function that turns a chat's code blocks and longer answers into editable pages. It has an editor with line numbers and indentation, previews for HTML (sandboxed), SVG, Markdown, JSON and CSV, a line-by-line view of what changed, an *Ask for a change* flow that puts a request and the current version in the message box without sending it, blank canvases, and saving to files or notes. Edits are kept in the browser per person and per chat. It works beside Chat Gallery and Chat Files, and Open WebUI's own Artifacts. Includes server tests, a browser suite that passed on Open WebUI 0.13.0 and 0.13.3 with and without the other two, and a CI workflow.
