@@ -48,6 +48,34 @@ call("POST", "/api/v1/functions/id/chat_inspector/valves/update", admin_token, {
 # Plain users see a connection's models only when granted; make the fake models public
 for model_id in ("fake-gpt-4o", "fake-mini", "llama3.1:8b"):
     call("POST", "/api/v1/models/create", admin_token, {"id": model_id, "base_model_id": None, "name": model_id, "meta": {"capabilities": {"vision": True, "web_search": model_id != "fake-mini", "citations": True}}, "params": {}, "access_grants": [{"principal_type": "user", "principal_id": "*", "permission": "read"}], "is_active": True})
+# What the Tools and activity section needs: a workspace tool, an MCP server in the tool list, filters and an
+# action on a model that calls tools natively. The MCP server isn't reachable; only its listing is used.
+PUBLIC = [{"principal_type": "user", "principal_id": "*", "permission": "read"}]
+CALC = '''class Tools:
+    def add(self, a: int, b: int) -> str:
+        """Add two numbers.
+        :param a: first number
+        :param b: second number
+        """
+        return str(a + b)
+'''
+call("POST", "/api/v1/tools/create", admin_token, {"id": "calc", "name": "Calculator", "content": CALC, "meta": {"description": "Adds numbers"}, "access_grants": PUBLIC})
+call("POST", "/api/v1/configs/tool_servers", admin_token, {"TOOL_SERVER_CONNECTIONS": [{"url": "http://127.0.0.1:9", "path": "/mcp", "type": "mcp", "auth_type": "none", "key": "", "config": {"enable": True, "access_grants": PUBLIC}, "info": {"id": "docs", "name": "Docs MCP", "description": "University docs"}}]})
+FILTER = '''class Filter:
+    def inlet(self, body: dict) -> dict:
+        return body
+'''
+TOGGLE = FILTER.replace("class Filter:", "class Filter:\n    def __init__(self):\n        self.toggle = True\n")
+ACTION = '''class Action:
+    async def action(self, body: dict) -> dict:
+        return body
+'''
+for fid, name, content in (("tidy_filter", "Tidy input", FILTER), ("strict_mode", "Strict mode", TOGGLE), ("save_answer", "Save answer", ACTION)):
+    call("POST", "/api/v1/functions/create", admin_token, {"id": fid, "name": name, "content": content, "meta": {"description": name}})
+    call("POST", f"/api/v1/functions/id/{fid}/toggle", admin_token)
+call("POST", "/api/v1/models/create", admin_token, {"id": "fake-tools", "base_model_id": "fake-gpt-4o", "name": "Fake with tools",
+     "meta": {"capabilities": {"builtin_tools": True, "web_search": True, "code_interpreter": True}, "toolIds": ["calc", "server:mcp:docs"], "filterIds": ["tidy_filter", "strict_mode"], "actionIds": ["save_answer"]},
+     "params": {"function_calling": "native"}, "access_grants": PUBLIC, "is_active": True})
 call("POST", "/api/v1/auths/add", admin_token, {"name": "Inspector User", "email": "user@example.test", "password": PASSWORD, "role": "user"})
 user_token = call("POST", "/api/v1/auths/signin", body={"email": "user@example.test", "password": PASSWORD})["token"]
 call("POST", "/api/v1/users/user/settings/update", user_token, {"ui": {"system": "You are a helpful assistant for students at a French university. Answer clearly and cite sources when you can."}})
@@ -131,6 +159,38 @@ def seed(token):
         ("assistant", "Yes. " * 20, {"model": "retired-model"}),
     ])
     out["streaming"] = make_chat(token, "Live chat", ["fake-gpt-4o"], [])
+    out["live_tools"] = make_chat(token, "Live tools", ["fake-tools"], [])
+    out["tools"] = make_chat(token, "Tools chat", ["fake-tools"], [
+        ("user", "What did we add last time?"),
+        ("assistant", 'Earlier: <details type="tool_calls" done="true" id="c0" name="add" arguments="{&quot;a&quot;: 1, &quot;b&quot;: 1}" result="&quot;2&quot;">\n<summary>Tool Executed</summary>\n</details>\nIt was 2.', {"model": "fake-tools"}),
+        ("user", "Find the enrolment deadline, add 2 and 3, and plot it."),
+        ("assistant", "The deadline is 15 January. 2 + 3 = 5.", {"model": "fake-tools", "usage": {"input_tokens": 2400, "output_tokens": 300, "total_tokens": 2700, "prompt_tokens": 1300, "completion_tokens": 120, "cost": 0.0042},
+            "output": [
+                {"type": "reasoning", "id": "r1", "content": [{"type": "output_text", "text": "Plan the calls."}], "duration": 3.5, "status": "completed"},
+                {"type": "function_call", "id": "h1", "call_id": "h1", "name": "recall_memories", "hidden": True, "arguments": "{}", "status": "completed"},
+                {"type": "function_call_output", "id": "ho1", "call_id": "h1", "output": [{"type": "input_text", "text": "The student studies law."}], "status": "completed"},
+                {"type": "function_call", "id": "c1", "call_id": "c1", "name": "search_web", "arguments": "{\"query\": \"enrolment deadline 2026\"}", "status": "completed", "duration": 1.2},
+                {"type": "function_call", "id": "c2", "call_id": "c2", "name": "fetch_url", "arguments": "{\"url\": \"https://example.edu/dates\"}", "status": "completed", "duration": 0.8},
+                {"type": "function_call", "id": "c3", "call_id": "c3", "name": "docs_search_pages", "arguments": "{\"q\": \"deadline\"}", "status": "completed", "duration": 0.4},
+                {"type": "function_call", "id": "c4", "call_id": "c4", "name": "add", "arguments": "{\"a\": 2, \"b\": 3}", "status": "completed", "duration": 0.01},
+                {"type": "function_call", "id": "c5", "call_id": "c5", "name": "petstore_get_pet", "arguments": "{\"id\": 7}", "status": "completed"},
+                {"type": "function_call", "id": "c6", "call_id": "c6", "name": "get_current_timestamp", "arguments": "{}", "status": "completed"},
+                {"type": "function_call", "id": "c7", "call_id": "c7", "name": "delete_memory", "arguments": "{\"id\": \"m1\"}", "status": "rejected"},
+                {"type": "function_call_output", "id": "o1", "call_id": "c1", "output": [{"type": "input_text", "text": "Results: the deadline is 15 January."}], "status": "completed"},
+                {"type": "function_call_output", "id": "o2", "call_id": "c2", "output": [{"type": "input_text", "text": "Key dates page. " * 40}], "status": "completed"},
+                {"type": "function_call_output", "id": "o3", "call_id": "c3", "output": [{"type": "input_text", "text": "Page: Deadlines"}], "status": "completed"},
+                {"type": "function_call_output", "id": "o4", "call_id": "c4", "output": [{"type": "input_text", "text": "5"}], "status": "completed"},
+                {"type": "function_call_output", "id": "o5", "call_id": "c5", "output": [{"type": "input_text", "text": "{\"error\": \"Connection refused\"}"}], "status": "completed"},
+                {"type": "function_call_output", "id": "o6", "call_id": "c6", "output": [{"type": "input_text", "text": "2026-11-12T10:00:00Z"}], "status": "completed"},
+                {"type": "function_call_output", "id": "o7", "call_id": "c7", "output": [{"type": "input_text", "text": "Declined by the user"}], "status": "rejected"},
+                {"type": "open_webui:code_interpreter", "id": "ci1", "lang": "python", "code": "print(2 + 3)", "output": {"stdout": "5"}, "status": "completed", "duration": 0.3},
+                {"type": "message", "id": "msg1", "status": "completed", "role": "assistant", "content": [{"type": "output_text", "text": "The deadline is 15 January. 2 + 3 = 5."}]}],
+            "statusHistory": [{"action": "web_search_queries_generated", "queries": ["uni deadlines"], "done": False}, {"action": "web_search", "urls": ["https://example.edu/a", "https://example.edu/b"], "done": True},
+                              {"action": "tool_connection", "description": "Failed to connect to MCP server 'wiki'", "error": True, "done": True}],
+            "sources": [{"source": {"name": "Handbook"}, "document": ["First part", "Second part"], "metadata": [{"source": "Handbook"}]},
+                        {"source": {"name": "calc/add"}, "document": ["5"], "metadata": [{"source": "calc/add", "parameters": {"a": 2, "b": 3}}], "tool_result": True}],
+            "files": [{"type": "image", "url": "data:image/png;base64,AAAA"}]}),
+    ])
     return out
 
 

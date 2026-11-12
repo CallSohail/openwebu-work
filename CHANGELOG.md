@@ -4,6 +4,10 @@ This repository contains independently versioned Open WebUI extensions. Plugin-s
 
 ## 2026-11-12
 
+### Chat Inspector 1.2.0
+
+Context now lists every tool a conversation called, counted and told apart as MCP (by server), workspace tool, tool server, each group of built-in tools, provider-run or automatic, with web searches, pages, sources, code runs, images, failed and declined calls, timings and token cost; the last answer's calls open to show their input and result. Tool results are their own part of the context, answers with tool calls are fitted to the last round's prompt count rather than the total over all rounds, and the model's filters, actions and pipe are shown. The extra explanatory text is gone. The browser suite, now with a real native tool call, passed 103 of 103 checks on Open WebUI 0.13.0 and 0.13.3.
+
 ### Chat Inspector 1.1.0
 
 Context moved to the chat's ⋯ menu, under Overview, which every account has, and opens as a pop-up beside the chat instead of a full tab: clear of the message box, so people can keep chatting while it updates, and a sheet from the bottom on phones. Its wording now uses the platform's own name from `WEBUI_NAME`, such as EveGPT. New valves choose the name, the pop-up or the full view, and each way in. The browser suite passed 76 of 76 checks on Open WebUI 0.13.0 and 0.13.3.

@@ -5,6 +5,24 @@ This project follows [Semantic Versioning](https://semver.org/).
 
 Released as `chat-inspector-v<version>`. See [RELEASING.md](../../../RELEASING.md) for the release process.
 
+## [1.2.0] - 2026-11-12
+
+### Added
+
+- **Tools and activity**: every tool the conversation called, counted and told apart by kind: MCP tools (named by their server), workspace tools, OpenAPI tool servers, each group of built-in tools (web search, knowledge, memory, chat files, notes, past chats, channels, images, code, time, skills, sub-agents, tasks, automations, calendar, notifications), tools the provider ran itself, and calls Open WebUI made by itself, such as recalling memories. With counts of web searches, pages read, knowledge lookups, sources, code runs and images, failed, declined and running calls, time and token cost per tool, the queries searched for, and tool servers that couldn't connect.
+- **The last answer's calls**, in order, each with its state and time; opening one shows its input and result.
+- Calls made through the prompt (without native function calling) and calls saved in the answer text by older Open WebUI versions are counted too.
+- **Tool calls and results** as their own part of the context.
+- Model calls per answer and in all, thinking time, and cost when the provider reports one.
+- Under the model: its tools by name, the filters that run on it (toggleable ones *when switched on*), its actions and its pipe function.
+- A workspace model built on another one takes that model's context window.
+
+### Changed
+
+- Answers with tool calls are fitted to the last round's own prompt count instead of Open WebUI's total over all rounds, which overstated how full the chat was.
+- Tool calls are counted as the name, input and result the model is sent, not the stored record.
+- Shorter wording: the "How these numbers are made" notes, the grid caption and "Plenty of room" are gone; whether the model counted is one word on the summary line, with details on hover.
+
 ## [1.1.0] - 2026-11-12
 
 ### Added

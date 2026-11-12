@@ -1,8 +1,8 @@
 """
 title: Chat Inspector
-description: Context, in the chat's ⋯ menu: a pop-up showing how much of the model's context window the chat uses, Claude-style, with a grid of what fills it, the model's own token counts, the last answer's numbers and a warning before it overflows.
+description: Context, in the chat's ⋯ menu: a pop-up showing how much of the model's context window the chat uses, Claude-style, with a grid of what fills it, the model's own token counts, every tool call, web search and source it used, and a warning before it overflows.
 author: Muhammad Sohail
-version: 1.1.0
+version: 1.2.0
 license: MIT
 required_open_webui_version: 0.13.0
 """
@@ -432,9 +432,9 @@ INSPECTOR_CSS = r"""
 .ci-tabrow{overflow-x:auto;overflow-y:hidden;scrollbar-width:none}
 .ci-tabrow::-webkit-scrollbar{display:none}
 .ci-dialog{--ci-surface:#fff;--ci-text:var(--color-gray-800,#262626);--ci-muted:var(--color-gray-600,#5d5d5d);--ci-soft:var(--color-gray-50,#f9f9f9);--ci-hover:var(--color-gray-100,#ececec);--ci-line:var(--color-gray-100,#ececec);--ci-accent:var(--color-blue-600,#2563eb);--ci-ok:#166534;--ci-warn:#92400e;--ci-danger-text:#b91c1c;
---ci-c-system:#7c3aed;--ci-c-extras:#d97706;--ci-c-summary:#64748b;--ci-c-messages:#2563eb;--ci-c-latest:#0d9488;--ci-c-newer:#0ea5e9;--ci-c-free:var(--color-gray-200,#e3e3e3);--ci-c-reserve:var(--color-gray-300,#cdcdcd)}
+--ci-c-system:#7c3aed;--ci-c-extras:#d97706;--ci-c-summary:#64748b;--ci-c-messages:#2563eb;--ci-c-latest:#0d9488;--ci-c-newer:#0ea5e9;--ci-c-tools:#db2777;--ci-bad:#b91c1c;--ci-c-free:var(--color-gray-200,#e3e3e3);--ci-c-reserve:var(--color-gray-300,#cdcdcd)}
 .dark .ci-dialog{--ci-surface:var(--color-gray-900,#171717);--ci-text:var(--color-gray-100,#ececec);--ci-muted:var(--color-gray-400,#b4b4b4);--ci-soft:var(--color-gray-850,#262626);--ci-hover:var(--color-gray-800,#333);--ci-line:var(--color-gray-800,#333);--ci-accent:var(--color-blue-400,#60a5fa);--ci-ok:#4ade80;--ci-warn:#fbbf24;--ci-danger-text:#f87171;color-scheme:dark;
---ci-c-system:#a78bfa;--ci-c-extras:#fbbf24;--ci-c-summary:#94a3b8;--ci-c-messages:#60a5fa;--ci-c-latest:#2dd4bf;--ci-c-newer:#7dd3fc;--ci-c-free:var(--color-gray-800,#333);--ci-c-reserve:var(--color-gray-700,#4e4e4e)}
+--ci-c-system:#a78bfa;--ci-c-extras:#fbbf24;--ci-c-summary:#94a3b8;--ci-c-messages:#60a5fa;--ci-c-latest:#2dd4bf;--ci-c-newer:#7dd3fc;--ci-c-tools:#f472b6;--ci-bad:#f87171;--ci-c-free:var(--color-gray-800,#333);--ci-c-reserve:var(--color-gray-700,#4e4e4e)}
 .ci-dialog{position:fixed;left:0;top:0;z-index:45;box-sizing:border-box;display:flex;flex-direction:column;container:ci/inline-size;margin:0;padding:0;border:0;background:transparent;color:var(--ci-text);overflow:hidden;font-family:inherit;font-size:.875rem;line-height:1.45}
 .ci-dialog[hidden]{display:none}
 .ci-dialog.ci-solo{background:var(--ci-surface)}
@@ -477,7 +477,7 @@ INSPECTOR_CSS = r"""
 .ci-cell{aspect-ratio:1;border-radius:3px;background:var(--ci-cell)}
 .ci-cell[data-c=free]{background:transparent;box-shadow:inset 0 0 0 1px var(--ci-c-free)}
 .ci-cell[data-c=reserve]{background:repeating-linear-gradient(45deg,var(--ci-c-reserve) 0 2px,transparent 2px 5px);box-shadow:inset 0 0 0 1px var(--ci-c-reserve)}
-[data-c=system]{--ci-cell:var(--ci-c-system)}[data-c=extras]{--ci-cell:var(--ci-c-extras)}[data-c=summary]{--ci-cell:var(--ci-c-summary)}[data-c=messages]{--ci-cell:var(--ci-c-messages)}[data-c=latest]{--ci-cell:var(--ci-c-latest)}[data-c=newer]{--ci-cell:var(--ci-c-newer)}
+[data-c=system]{--ci-cell:var(--ci-c-system)}[data-c=extras]{--ci-cell:var(--ci-c-extras)}[data-c=summary]{--ci-cell:var(--ci-c-summary)}[data-c=messages]{--ci-cell:var(--ci-c-messages)}[data-c=latest]{--ci-cell:var(--ci-c-latest)}[data-c=newer]{--ci-cell:var(--ci-c-newer)}[data-c=tools]{--ci-cell:var(--ci-c-tools)}
 .ci-section h3{margin:0 0 .5rem;font-size:.75rem;font-weight:600;color:var(--ci-muted);text-transform:uppercase;letter-spacing:.04em}
 .ci-legend{display:flex;flex-direction:column;gap:.25rem;margin:0;padding:0;list-style:none}
 .ci-legend li{display:grid;grid-template-columns:auto minmax(0,1fr) auto 3rem auto;align-items:center;gap:.5rem;padding:.25rem 0;border-bottom:1px solid var(--ci-line);font-variant-numeric:tabular-nums}
@@ -496,7 +496,40 @@ INSPECTOR_CSS = r"""
 .ci-facts dd{margin:0;text-align:end;overflow-wrap:anywhere;font-variant-numeric:tabular-nums}
 .ci-chips{display:flex;flex-wrap:wrap;gap:.375rem;margin:0;padding:0;list-style:none}
 .ci-chips li{padding:.125rem .625rem;border-radius:999px;background:var(--ci-soft);box-shadow:inset 0 0 0 1px var(--ci-line);font-size:.8125rem}
-.ci-notes{margin:0;padding-inline-start:1.125rem;color:var(--ci-muted);font-size:.8125rem;display:flex;flex-direction:column;gap:.25rem}
+.ci-line{display:flex;flex-wrap:wrap;gap:.125rem .5rem}
+.ci-line>span+span::before{content:"·";margin-inline-end:.5rem;color:var(--ci-muted)}
+.ci-line>span[title]{cursor:help}
+.ci-gridwrap[title]{cursor:help}
+.ci-facts-wide{margin-top:.625rem}
+.ci-facts-wide dd{text-align:start}
+.ci-tiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(7.5rem,1fr));gap:.5rem;margin:0 0 .75rem;padding:0;list-style:none}
+.ci-tiles li{display:flex;flex-direction:column;gap:.125rem;padding:.5rem .75rem;border-radius:.75rem;background:var(--ci-soft);box-shadow:inset 0 0 0 1px var(--ci-line)}
+.ci-tiles strong{font-size:1.125rem;font-weight:600;font-variant-numeric:tabular-nums}
+.ci-tiles span{color:var(--ci-muted);font-size:.75rem}
+.ci-tiles em{font-style:normal;font-size:.75rem;color:var(--ci-bad)}
+.ci-tools,.ci-calls{display:flex;flex-direction:column;margin:0;padding:0;list-style:none}
+.ci-tools li{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:baseline;gap:0 .75rem;padding:.375rem 0;border-bottom:1px solid var(--ci-line)}
+.ci-tname{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:.8125rem;overflow-wrap:anywhere}
+.ci-tcount{text-align:end;font-variant-numeric:tabular-nums;font-weight:600}
+.ci-tkind{color:var(--ci-muted);font-size:.75rem;overflow-wrap:anywhere}
+.ci-tmeta{color:var(--ci-muted);font-size:.75rem;text-align:end;font-variant-numeric:tabular-nums}
+.ci-tmeta[data-bad=true]{color:var(--ci-bad)}
+.ci-queries{margin-top:.5rem}
+.ci-q{color:var(--ci-text)}
+.ci-calls{margin-top:.75rem;gap:.25rem}
+.ci-calls details{border-radius:.625rem;background:var(--ci-soft);box-shadow:inset 0 0 0 1px var(--ci-line)}
+.ci-calls summary{display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:.125rem .5rem;padding:.375rem .625rem;cursor:pointer;list-style:none;border-radius:.625rem}
+.ci-calls summary::-webkit-details-marker{display:none}
+.ci-calls summary:hover{background:var(--ci-hover)}
+.ci-calls summary .ci-tkind{grid-column:2/3}
+.ci-calls summary .ci-tmeta{grid-row:1;grid-column:3}
+.ci-dot{grid-row:1/3;width:.5rem;height:.5rem;border-radius:999px;background:var(--ci-ok)}
+.ci-dot[data-status=failed],.ci-dot[data-status=noresult]{background:var(--ci-bad)}
+.ci-dot[data-status=denied]{background:var(--ci-muted)}
+.ci-dot[data-status=running]{background:var(--ci-accent)}
+.ci-io{display:flex;flex-direction:column;gap:.25rem;padding:0 .625rem .5rem}
+.ci-io>span{color:var(--ci-muted);font-size:.6875rem;text-transform:uppercase;letter-spacing:.04em}
+.ci-io pre{margin:0;max-height:14rem;overflow:auto;padding:.5rem;border-radius:.5rem;background:var(--ci-surface);box-shadow:inset 0 0 0 1px var(--ci-line);font:.75rem/1.45 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;white-space:pre-wrap;overflow-wrap:anywhere}
 .ci-notice{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.375rem;min-height:12rem;padding:2rem;color:var(--ci-muted);text-align:center;max-width:none}
 .ci-notice strong{color:var(--ci-text);font-weight:500}
 .ci-notice .ci-btn{margin-top:.5rem;color:var(--ci-text)}
@@ -514,6 +547,7 @@ INSPECTOR_CSS = r"""
 @media(prefers-reduced-motion:no-preference){.ci-dialog.ci-pop:not([hidden]){animation:ci-in .14s ease-out}@keyframes ci-in{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:none}}.ci-dialog.ci-sheet:not([hidden]){animation:ci-up .18s ease-out}@keyframes ci-up{from{transform:translateY(16px);opacity:.4}to{transform:none;opacity:1}}}
 @media(forced-colors:active){.ci-cell,.ci-swatch{forced-color-adjust:none}.ci-btn,.ci-select{border:1px solid CanvasText}}
 @container ci (max-width:520px){
+.ci-tiles{grid-template-columns:repeat(2,minmax(0,1fr))}
 .ci-head{padding:.75rem .75rem .5rem}
 .ci-body{padding:.25rem .75rem 1rem}
 .ci-grid{grid-template-columns:repeat(10,minmax(0,1fr));max-width:16rem}
@@ -539,27 +573,28 @@ LOADER_SCRIPT = r"""
       denied: 'You no longer have access to this chat.', failed: 'Couldn’t read this chat', failed_hint: 'Check your connection, then try again.', retry: 'Try again',
       empty_chat: 'Nothing in this chat yet', empty_chat_hint: 'Send a message and its context appears here.',
       of_window: '{used} of {window} tokens', used_only: '{used} tokens in use', pct: '{pct}% full', free: '{n} free', over_by: '{n} over the window',
-      window_admin: 'Context window set by your administrator', window_model: 'Context window from the model’s settings', window_chat: 'Context window from this chat’s settings', window_user: 'Context window from your settings', window_provider: 'Context window reported by the provider',
-      window_unknown: 'This model’s context window isn’t known, so only the tokens in use are shown.', window_unknown_admin: 'An administrator can set it in the Chat Inspector valves.',
-      st_ok: 'Plenty of room', st_warn: 'Getting full', st_full: 'Over the window', st_warn_hint: 'Long chats lose their oldest messages, or have them summarised, once the window is full. Starting a new chat keeps answers sharp.', st_full_hint: 'The model can’t see everything any more. The oldest messages are cut or summarised before each answer.',
-      compaction_at: '{app} summarises older messages at {n} tokens', compaction_left: '{n} until it summarises', compaction_past: 'Past the point where {app} summarises older messages',
-      exchanges: 'About {n} more exchanges like the recent ones fit.', exchanges_one: 'About one more exchange like the recent ones fits.', exchanges_none: 'Not even one more exchange like the recent ones fits.',
-      grid_label: 'Each square is one percent of the context window.', grid_share: 'The window isn’t known: each square is one percent of what the chat uses.',
-      c_system: 'System prompt', c_extras: 'Tools, documents and instructions {app} added', c_summary: 'Summary of earlier messages', c_messages: 'Messages', c_latest: 'Latest answer', c_newer: 'Since the last count', c_free: 'Free space', c_reserve: 'Reserved before summarising',
+      window_admin: 'Window set by your administrator', window_model: 'Window from the model’s settings', window_chat: 'Window from this chat’s settings', window_user: 'Window from your settings', window_provider: 'Window reported by the provider',
+      window_unknown: 'Window not known', window_unknown_admin: 'An administrator can set it in the Chat Inspector valves.',
+      st_warn: 'Getting full', st_full: 'Over the window', st_warn_hint: 'Older messages get cut or summarised once it’s full.', st_full_hint: 'The oldest messages are cut or summarised before each answer.',
+      compaction_at: 'Summarised at {n}', compaction_left: '{n} to go', compaction_past: 'past that point',
+      exchanges: '≈ {n} more exchanges fit', exchanges_one: '≈ 1 more exchange fits', exchanges_none: 'No room for another exchange',
+      grid_label: 'Each square is one percent of the context window.', grid_share: 'Each square is one percent of what the chat uses.',
+      c_system: 'System prompt', c_extras: 'Tool definitions, documents and instructions {app} added', c_summary: 'Summary of earlier messages', c_messages: 'Messages', c_tools: 'Tool calls and results', c_latest: 'Latest answer', c_newer: 'Since the last count', c_free: 'Free space', c_reserve: 'Reserved before summarising',
       k_reported: 'reported', k_estimated: 'estimated', k_inferred: 'worked out', k_reported_hint: 'Counted by the model itself', k_estimated_hint: 'Estimated from the text', k_inferred_hint: 'The model’s own count, minus what could be estimated',
-      breakdown: 'What is using the context', last: 'Last answer', branch: 'This conversation', capabilities: 'This model', notes: 'How these numbers are made',
-      f_model: 'Model', f_input: 'Read by the model', f_output: 'Written', f_reasoning: 'of which reasoning', f_cached: 'Read from cache', f_total: 'Total', f_speed: 'Speed', f_time: 'Time',
+      count_reported: 'Model’s own count', count_estimated: 'Estimated', count_family: 'Estimates tuned for {family} models', count_general: 'Estimates use general tuning',
+      breakdown: 'What is using the context', last: 'Last answer', branch: 'This conversation', capabilities: 'This model', activity: 'Tools and activity',
+      f_model: 'Model', f_input: 'Read by the model', f_output: 'Written', f_reasoning: 'of which reasoning', f_cached: 'Read from cache', f_total: 'Total', f_speed: 'Speed', f_time: 'Time', f_cost: 'Cost reported', f_rounds: 'Model calls', f_thinking: 'Thinking',
       tokens: '{n} tokens', per_sec: '{n} tokens/s', seconds: '{n} s', not_reported: 'Not reported',
-      b_messages: 'Messages on this branch', b_answers: 'Answers', b_reported: 'Answers the model counted', b_read: 'Tokens read in all', b_written: 'Tokens written in all', b_summarised: 'Older messages', b_summarised_yes: 'Summarised by {app}',
+      b_messages: 'Messages on this branch', b_answers: 'Answers', b_reported: 'Answers the model counted', b_read: 'Tokens read in all', b_written: 'Tokens written in all', b_summarised: 'Older messages', b_summarised_yes: 'Summarised by {app}', b_rounds: 'Model calls in all',
       cap_vision: 'Reads images', cap_file_upload: 'Takes files', cap_web_search: 'Searches the web', cap_image_generation: 'Makes images', cap_code_interpreter: 'Runs code', cap_citations: 'Cites sources', cap_builtin_tools: 'Built-in tools', cap_memory: 'Memory',
       tools_n: '{n} tools attached', knowledge_n: '{n} knowledge bases attached', no_caps: 'No features are set on this model.', model_missing: 'This model isn’t in the list of models you can use.',
-      n_reported: 'The model counted its own prompt for the last answer ({n} tokens). Everything above is fitted to that count.',
-      n_estimated: 'The model hasn’t reported its own count, so these are estimates from the text. Tools, retrieved documents and other instructions {app} adds aren’t included.',
-      n_family: 'Estimates are tuned for {family} models.', n_family_default: 'Estimates use general tuning, as this model’s family isn’t recognised.',
-      n_images: '{n} images in this chat aren’t counted in the estimates.', n_sources: 'The last answer used {n} retrieved sources; their text is in the worked-out share.',
-      n_reasoning: 'Reasoning is usually not sent back to the model, so it isn’t counted as context.',
-      n_multi: 'This chat asks several models at once; each has its own context. Pick one above.',
-      n_compaction: '{app}’s summary threshold is about when it compacts the chat; it is not the model’s window.'
+      m_tools: 'Tools', m_filters: 'Filters', m_actions: 'Actions', m_pipe: 'Answered by', fn_global: 'everywhere', fn_toggle: 'when switched on',
+      a_calls: 'Tool calls', a_failed: 'failed', a_denied: 'declined', a_running: 'running', a_searches: 'Web searches', a_pages: 'Pages read', a_knowledge: 'Knowledge lookups', a_sources: 'Sources used', a_code: 'Code runs', a_images: 'Images made', a_auto: 'Added by {app}', a_tool_tokens: 'Tool results in the chat',
+      a_none: 'No tools, searches or sources in this conversation.', a_queries: 'Searched for', a_more: '+{n} more', a_conn: 'Couldn’t connect: {what}', a_args: 'Input', a_result: 'Result', a_empty: '(empty)', a_cut: '… {n} more characters', a_noquery: '(no query saved)',
+      s_ok: 'done', s_failed: 'failed', s_noresult: 'no result', s_denied: 'declined', s_running: 'running', s_prompted: 'called through the prompt',
+      kind_mcp: 'MCP', kind_workspace: 'Workspace tool', kind_server: 'Tool server', kind_builtin: 'Built-in', kind_provider: 'Run by the provider', kind_auto: 'Automatic', kind_other: 'Tool',
+      cat_time: 'Time', cat_web: 'Web search', cat_knowledge: 'Knowledge', cat_files: 'Chat files', cat_memory: 'Memory', cat_images: 'Images', cat_code: 'Code', cat_notes: 'Notes', cat_chats: 'Past chats', cat_channels: 'Channels', cat_skills: 'Skills', cat_agents: 'Sub-agents', cat_ask: 'Questions', cat_tasks: 'Tasks', cat_automations: 'Automations', cat_calendar: 'Calendar', cat_notify: 'Notifications', cat_make_tools: 'Tool builder', cat_computer: 'Computer use', cat_mcp: 'MCP',
+      last_calls: 'Calls in this answer'
     },
     fr: {
       context: 'Contexte', close_context: 'Fermer le contexte', refresh: 'Actualiser', model: 'Modèle', updated: 'Mis à jour à {time}', updating: 'Une réponse est en cours ; les chiffres se mettent à jour à la fin',
@@ -568,27 +603,28 @@ LOADER_SCRIPT = r"""
       denied: 'Vous n’avez plus accès à cette conversation.', failed: 'Impossible de lire cette conversation', failed_hint: 'Vérifiez votre connexion, puis réessayez.', retry: 'Réessayer',
       empty_chat: 'Rien dans cette conversation pour l’instant', empty_chat_hint: 'Envoyez un message et son contexte apparaîtra ici.',
       of_window: '{used} sur {window} jetons', used_only: '{used} jetons utilisés', pct: 'Rempli à {pct} %', free: '{n} libres', over_by: '{n} au-delà de la fenêtre',
-      window_admin: 'Fenêtre de contexte définie par votre administrateur', window_model: 'Fenêtre de contexte issue des réglages du modèle', window_chat: 'Fenêtre de contexte issue des réglages de cette conversation', window_user: 'Fenêtre de contexte issue de vos réglages', window_provider: 'Fenêtre de contexte indiquée par le fournisseur',
-      window_unknown: 'La fenêtre de contexte de ce modèle n’est pas connue : seuls les jetons utilisés sont affichés.', window_unknown_admin: 'Un administrateur peut la définir dans les valves de Chat Inspector.',
-      st_ok: 'Beaucoup de place', st_warn: 'Bientôt plein', st_full: 'Au-delà de la fenêtre', st_warn_hint: 'Une fois la fenêtre pleine, les messages les plus anciens sont coupés ou résumés. Une nouvelle conversation garde des réponses précises.', st_full_hint: 'Le modèle ne voit plus tout. Les messages les plus anciens sont coupés ou résumés avant chaque réponse.',
-      compaction_at: '{app} résume les anciens messages à partir de {n} jetons', compaction_left: '{n} avant le résumé', compaction_past: 'Au-delà du seuil où {app} résume les anciens messages',
-      exchanges: 'Environ {n} échanges de plus comme les derniers tiennent encore.', exchanges_one: 'Environ un échange de plus comme les derniers tient encore.', exchanges_none: 'Plus aucun échange comme les derniers ne tient.',
-      grid_label: 'Chaque carré représente un pour cent de la fenêtre de contexte.', grid_share: 'La fenêtre n’est pas connue : chaque carré représente un pour cent de ce que la conversation utilise.',
-      c_system: 'Prompt système', c_extras: 'Outils, documents et instructions ajoutés par {app}', c_summary: 'Résumé des messages précédents', c_messages: 'Messages', c_latest: 'Dernière réponse', c_newer: 'Depuis le dernier comptage', c_free: 'Espace libre', c_reserve: 'Réservé avant le résumé',
+      window_admin: 'Fenêtre définie par votre administrateur', window_model: 'Fenêtre issue des réglages du modèle', window_chat: 'Fenêtre issue des réglages de cette conversation', window_user: 'Fenêtre issue de vos réglages', window_provider: 'Fenêtre indiquée par le fournisseur',
+      window_unknown: 'Fenêtre inconnue', window_unknown_admin: 'Un administrateur peut la définir dans les valves de Chat Inspector.',
+      st_warn: 'Bientôt plein', st_full: 'Au-delà de la fenêtre', st_warn_hint: 'Une fois plein, les anciens messages sont coupés ou résumés.', st_full_hint: 'Les messages les plus anciens sont coupés ou résumés avant chaque réponse.',
+      compaction_at: 'Résumé à {n}', compaction_left: 'encore {n}', compaction_past: 'seuil dépassé',
+      exchanges: '≈ {n} échanges de plus tiennent', exchanges_one: '≈ 1 échange de plus tient', exchanges_none: 'Plus de place pour un autre échange',
+      grid_label: 'Chaque carré représente un pour cent de la fenêtre de contexte.', grid_share: 'Chaque carré représente un pour cent de ce que la conversation utilise.',
+      c_system: 'Prompt système', c_extras: 'Définitions d’outils, documents et instructions ajoutés par {app}', c_summary: 'Résumé des messages précédents', c_messages: 'Messages', c_tools: 'Appels d’outils et résultats', c_latest: 'Dernière réponse', c_newer: 'Depuis le dernier comptage', c_free: 'Espace libre', c_reserve: 'Réservé avant le résumé',
       k_reported: 'compté', k_estimated: 'estimé', k_inferred: 'déduit', k_reported_hint: 'Compté par le modèle lui-même', k_estimated_hint: 'Estimé à partir du texte', k_inferred_hint: 'Le comptage du modèle, moins ce qui a pu être estimé',
-      breakdown: 'Ce qui occupe le contexte', last: 'Dernière réponse', branch: 'Cette conversation', capabilities: 'Ce modèle', notes: 'Comment ces chiffres sont obtenus',
-      f_model: 'Modèle', f_input: 'Lu par le modèle', f_output: 'Écrit', f_reasoning: 'dont raisonnement', f_cached: 'Lu depuis le cache', f_total: 'Total', f_speed: 'Vitesse', f_time: 'Durée',
+      count_reported: 'Comptage du modèle', count_estimated: 'Estimation', count_family: 'Estimations ajustées pour les modèles {family}', count_general: 'Estimations avec un réglage général',
+      breakdown: 'Ce qui occupe le contexte', last: 'Dernière réponse', branch: 'Cette conversation', capabilities: 'Ce modèle', activity: 'Outils et activité',
+      f_model: 'Modèle', f_input: 'Lu par le modèle', f_output: 'Écrit', f_reasoning: 'dont raisonnement', f_cached: 'Lu depuis le cache', f_total: 'Total', f_speed: 'Vitesse', f_time: 'Durée', f_cost: 'Coût indiqué', f_rounds: 'Appels au modèle', f_thinking: 'Réflexion',
       tokens: '{n} jetons', per_sec: '{n} jetons/s', seconds: '{n} s', not_reported: 'Non indiqué',
-      b_messages: 'Messages sur cette branche', b_answers: 'Réponses', b_reported: 'Réponses comptées par le modèle', b_read: 'Jetons lus au total', b_written: 'Jetons écrits au total', b_summarised: 'Anciens messages', b_summarised_yes: 'Résumés par {app}',
+      b_messages: 'Messages sur cette branche', b_answers: 'Réponses', b_reported: 'Réponses comptées par le modèle', b_read: 'Jetons lus au total', b_written: 'Jetons écrits au total', b_summarised: 'Anciens messages', b_summarised_yes: 'Résumés par {app}', b_rounds: 'Appels au modèle au total',
       cap_vision: 'Lit les images', cap_file_upload: 'Accepte des fichiers', cap_web_search: 'Cherche sur le web', cap_image_generation: 'Crée des images', cap_code_interpreter: 'Exécute du code', cap_citations: 'Cite ses sources', cap_builtin_tools: 'Outils intégrés', cap_memory: 'Mémoire',
       tools_n: '{n} outils associés', knowledge_n: '{n} bases de connaissances associées', no_caps: 'Aucune fonctionnalité n’est définie pour ce modèle.', model_missing: 'Ce modèle ne figure pas parmi ceux que vous pouvez utiliser.',
-      n_reported: 'Le modèle a compté son propre prompt pour la dernière réponse ({n} jetons). Tout ce qui précède est ajusté à ce comptage.',
-      n_estimated: 'Le modèle n’a pas indiqué son propre comptage : ce sont des estimations à partir du texte. Les outils, documents récupérés et autres instructions ajoutés par {app} ne sont pas inclus.',
-      n_family: 'Les estimations sont ajustées pour les modèles {family}.', n_family_default: 'Les estimations utilisent un réglage général, car la famille de ce modèle n’est pas reconnue.',
-      n_images: '{n} images de cette conversation ne sont pas comptées dans les estimations.', n_sources: 'La dernière réponse a utilisé {n} sources récupérées ; leur texte est dans la part déduite.',
-      n_reasoning: 'Le raisonnement n’est généralement pas renvoyé au modèle ; il n’est donc pas compté dans le contexte.',
-      n_multi: 'Cette conversation interroge plusieurs modèles à la fois ; chacun a son propre contexte. Choisissez-en un ci-dessus.',
-      n_compaction: 'Le seuil de résumé d’{app} indique quand il compacte la conversation ; ce n’est pas la fenêtre du modèle.'
+      m_tools: 'Outils', m_filters: 'Filtres', m_actions: 'Actions', m_pipe: 'Répond via', fn_global: 'partout', fn_toggle: 'si activé',
+      a_calls: 'Appels d’outils', a_failed: 'en échec', a_denied: 'refusés', a_running: 'en cours', a_searches: 'Recherches web', a_pages: 'Pages lues', a_knowledge: 'Recherches dans les connaissances', a_sources: 'Sources utilisées', a_code: 'Exécutions de code', a_images: 'Images créées', a_auto: 'Ajoutés par {app}', a_tool_tokens: 'Résultats d’outils dans la conversation',
+      a_none: 'Aucun outil, recherche ni source dans cette conversation.', a_queries: 'Recherché', a_more: '+{n} de plus', a_conn: 'Connexion impossible : {what}', a_args: 'Entrée', a_result: 'Résultat', a_empty: '(vide)', a_cut: '… {n} caractères de plus', a_noquery: '(requête non enregistrée)',
+      s_ok: 'terminé', s_failed: 'échec', s_noresult: 'sans résultat', s_denied: 'refusé', s_running: 'en cours', s_prompted: 'appelé via le prompt',
+      kind_mcp: 'MCP', kind_workspace: 'Outil de l’espace de travail', kind_server: 'Serveur d’outils', kind_builtin: 'Intégré', kind_provider: 'Exécuté par le fournisseur', kind_auto: 'Automatique', kind_other: 'Outil',
+      cat_time: 'Heure', cat_web: 'Recherche web', cat_knowledge: 'Connaissances', cat_files: 'Fichiers de la conversation', cat_memory: 'Mémoire', cat_images: 'Images', cat_code: 'Code', cat_notes: 'Notes', cat_chats: 'Anciennes conversations', cat_channels: 'Canaux', cat_skills: 'Compétences', cat_agents: 'Sous-agents', cat_ask: 'Questions', cat_tasks: 'Tâches', cat_automations: 'Automatisations', cat_calendar: 'Agenda', cat_notify: 'Notifications', cat_make_tools: 'Création d’outils', cat_computer: 'Utilisation de l’ordinateur', cat_mcp: 'MCP',
+      last_calls: 'Appels dans cette réponse'
     }
   };
   const icons = {
@@ -773,7 +809,12 @@ LOADER_SCRIPT = r"""
     if (speed == null && evalCount && evalNs) speed = evalCount / (evalNs / 1e9);
     const totalNs = firstNum(usage, ['total_duration']);
     if (input == null && output == null && total == null) return null;
-    return {input, output, total: total ?? (input != null || output != null ? (input || 0) + (output || 0) : null), reasoning, cached, speed, seconds: totalNs ? totalNs / 1e9 : null};
+    // Across tool-call rounds Open WebUI adds input_tokens up, but keeps the provider's own prompt_tokens from the
+    // last round: that one is what the model last held in its context
+    const prompt = firstNum(usage, ['prompt_tokens', 'prompt_eval_count']);
+    let cost = null;
+    for (const key of ['cost', 'total_cost']) { const value = usage[key]; if (typeof value === 'number' && Number.isFinite(value) && value > 0) { cost = value; break; } }
+    return {input, output, prompt, cost, total: total ?? (input != null || output != null ? (input || 0) + (output || 0) : null), reasoning, cached, speed, seconds: totalNs ? totalNs / 1e9 : null};
   }
   // The path from the first message to the one shown, as Open WebUI follows it
   function branchOf(chat) {
@@ -789,13 +830,25 @@ LOADER_SCRIPT = r"""
     }
     return out.reverse();
   }
+  // What of a saved output item goes back to the model: the text, a call's name and arguments, a result's text
+  const partsText = value => Array.isArray(value) ? value.map(part => typeof part === 'string' ? part : typeof part?.text === 'string' ? part.text : '').join('') : typeof value === 'string' ? value : '';
+  const itemText = item => {
+    if (!item || typeof item !== 'object') return '';
+    if (item.type === 'message') return partsText(item.content);
+    if (item.type === 'function_call') return String(item.name || '') + ' ' + (typeof item.arguments === 'string' ? item.arguments : (() => { try { return JSON.stringify(item.arguments ?? ''); } catch { return ''; } })());
+    if (item.type === 'function_call_output') return partsText(item.output) || (typeof item.output === 'object' ? (() => { try { return JSON.stringify(item.output); } catch { return ''; } })() : '');
+    if (item.type === 'open_webui:code_interpreter') return [item.code, typeof item.output === 'string' ? item.output : item.output ? JSON.stringify(item.output) : ''].filter(Boolean).join('\n');
+    try { return JSON.stringify(item); } catch { return ''; }
+  };
+  // Each call and each result also costs a few tokens of framing
+  const ITEM_OVERHEAD = {function_call: 8, function_call_output: 4};
   const textOf = message => {
     // Structured output already holds the visible text and the tool calls; reasoning blocks aren't sent back
-    if (Array.isArray(message.output) && message.output.length) return message.output.filter(part => part?.type !== 'reasoning');
+    if (Array.isArray(message.output) && message.output.length) return message.output.filter(part => part?.type !== 'reasoning').map(itemText);
     const content = typeof message.content === 'string' ? message.content.replace(/<details\b[^>]*type="reasoning"[^>]*>[\s\S]*?<\/details>/gi, '') : message.content;
     return [content, message.tool_calls].filter(Boolean);
   };
-  const messageTokens = (message, family) => 4 + textOf(message).reduce((sum, part) => sum + countTokens(part, family), 0);
+  const messageTokens = (message, family) => 4 + textOf(message).reduce((sum, part) => sum + countTokens(part, family), 0) + (Array.isArray(message.output) ? message.output.reduce((sum, item) => sum + (ITEM_OVERHEAD[item?.type] || 0), 0) : 0);
   const imagesIn = message => (Array.isArray(message.files) ? message.files.filter(file => file?.type === 'image' || String(file?.content_type || file?.meta?.content_type || '').startsWith('image/')).length : 0) + ((typeof message.content === 'string' ? message.content.match(/!\[[^\]]*\]\(/g) : null)?.length || 0);
   // "gpt-4o* = 128000, llama3* = 128k": the first pattern that matches wins
   function adminWindow(...names) {
@@ -810,7 +863,7 @@ LOADER_SCRIPT = r"""
     return null;
   }
   const positive = value => { const n = typeof value === 'string' ? parseInt(value, 10) : value; return Number.isSafeInteger(n) && n > 0 ? n : null; };
-  function windowOf(modelId, model, chat, settings) {
+  function windowOf(modelId, model, chat, settings, baseModel) {
     const raw = model?.openai || model?.ollama || model || {};
     const base = model?.info?.base_model_id;
     const admin = adminWindow(modelId, base, model?.name);
@@ -824,10 +877,230 @@ LOADER_SCRIPT = r"""
     if (fromUser && (model?.owned_by === 'ollama' || model?.ollama)) return {tokens: fromUser, source: 'user'};
     const provider = positive(raw.context_length) || positive(raw.top_provider?.context_length) || positive(model?.context_length) || positive(model?.info?.meta?.context_length);
     if (provider) return {tokens: provider, source: 'provider'};
+    // A model made in the workspace on top of another one has the window of the one underneath
+    if (baseModel && baseModel !== model) { const below = windowOf(base, baseModel, null, settings, null); if (below.tokens && below.source !== 'chat') return below; }
     return {tokens: null, source: null};
   }
+  /* ---- tools, searches and functions, read from what each answer saved ---- */
+  // Open WebUI saves a native tool call as a function_call item and its result as a function_call_output with the
+  // same call_id. The kind of tool isn't saved, so it is told from the name: the built-ins below, the workspace
+  // tools and tool servers this person can see, and MCP servers, whose tools are named "<server id>_<tool>".
+  const BUILTIN_TOOLS = {
+    time: ['get_current_timestamp', 'calculate_timestamp'],
+    web: ['search_web', 'fetch_url'],
+    knowledge: ['kb_exec', 'list_knowledge', 'list_knowledge_bases', 'search_knowledge_bases', 'query_knowledge_bases', 'search_knowledge_files', 'query_knowledge_files', 'grep_knowledge_files', 'view_knowledge_file'],
+    files: ['list_chat_files', 'query_chat_files', 'grep_chat_files', 'view_file', 'display_file'],
+    memory: ['search_memories', 'list_memory_paths', 'read_memory_path', 'list_memories', 'update_memory', 'add_memory', 'replace_memory_content', 'delete_memory', 'recall_memories'],
+    images: ['generate_image', 'edit_image'],
+    code: ['execute_code'],
+    notes: ['search_notes', 'view_note', 'write_note', 'replace_note_content'],
+    chats: ['search_chats', 'view_chat'],
+    channels: ['search_channels', 'search_channel_messages', 'view_channel_thread', 'view_channel_message'],
+    skills: ['view_skill', 'read_skill_file', 'grep_skill_files', 'update_skill_files', 'create_skill', 'list_available_skills'],
+    agents: ['delegate_task', 'timer'],
+    ask: ['ask_user'],
+    tasks: ['create_tasks', 'update_task'],
+    automations: ['create_automation', 'update_automation', 'list_automations', 'toggle_automation', 'delete_automation'],
+    calendar: ['search_calendar_events', 'create_calendar_event', 'update_calendar_event', 'delete_calendar_event'],
+    notify: ['notify'],
+    make_tools: ['create_tool']
+  };
+  const BUILTIN_BY_NAME = new Map();
+  for (const [category, names] of Object.entries(BUILTIN_TOOLS)) for (const name of names) if (!BUILTIN_BY_NAME.has(name)) BUILTIN_BY_NAME.set(name, category);
+  BUILTIN_BY_NAME.set('list_attached_knowledge', 'knowledge');
+  // Tools the model's provider runs itself (OpenAI Responses), saved as their own item types
+  const PROVIDER_ITEMS = {web_search_call: 'web', file_search_call: 'files', computer_call: 'computer', code_interpreter_call: 'code', image_generation_call: 'images', mcp_call: 'mcp'};
+  const OK = new Set(['completed', 'success', 'answered', 'done']), FAILED = new Set(['failed', 'error', 'incomplete']), DENIED = new Set(['rejected', 'cancelled', 'canceled', 'denied']);
+  const RUNNING = new Set(['in_progress', 'pending', 'queued', 'requires_approval', 'searching', 'running']);
+  // Who provides each tool name, from the lists this person is allowed to read
+  function catalogOf(tools) {
+    const exact = new Map(), prefixes = [], byId = new Map();
+    for (const tool of Array.isArray(tools) ? tools : []) {
+      const id = String(tool?.id || ''); if (!id) continue;
+      const name = String(tool.name || id);
+      if (id.startsWith('server:mcp:')) { const server = id.slice(11); if (server) prefixes.push({prefix: server + '_', kind: 'mcp', source: name}); byId.set(id, {kind: 'mcp', source: name}); continue; }
+      const kind = id.startsWith('server:') ? 'server' : 'workspace';
+      byId.set(id, {kind, source: name});
+      const own = kind === 'server' ? id.slice(7) : id;
+      for (const spec of Array.isArray(tool.specs) ? tool.specs : []) {
+        const fn = typeof spec?.name === 'string' ? spec.name : '';
+        if (!fn) continue;
+        if (!exact.has(fn)) exact.set(fn, {kind, source: name, id});
+        // Open WebUI puts the tool's id in front of a name two tools share
+        exact.set(own + '_' + fn, {kind, source: name, id});
+      }
+    }
+    prefixes.sort((a, b) => b.prefix.length - a.prefix.length);
+    return {exact, prefixes, byId};
+  }
+  function classify(name, catalog, hidden) {
+    const known = catalog.exact.get(name);
+    if (known) return {kind: known.kind, source: known.source};
+    for (const entry of catalog.prefixes) if (name.startsWith(entry.prefix) && name.length > entry.prefix.length) return {kind: 'mcp', source: entry.source, tool: name.slice(entry.prefix.length)};
+    const category = BUILTIN_BY_NAME.get(name);
+    if (category) return {kind: hidden ? 'auto' : 'builtin', category};
+    if (hidden) return {kind: 'auto', category: null};
+    return {kind: 'other'};
+  }
+  const asText = value => {
+    if (value == null) return '';
+    if (typeof value === 'string') return value;
+    if (Array.isArray(value)) return value.map(part => typeof part === 'string' ? part : typeof part?.text === 'string' ? part.text : part?.type === 'input_image' || part?.image_url ? '[image]' : (() => { try { return JSON.stringify(part); } catch { return ''; } })()).join('\n');
+    try { return JSON.stringify(value); } catch { return String(value); }
+  };
+  const parseArgs = value => { if (value && typeof value === 'object') return value; try { const parsed = JSON.parse(value); return parsed && typeof parsed === 'object' ? parsed : {}; } catch { return {}; } };
+  const failedResult = text => { const trimmed = text.trim(); if (!trimmed.startsWith('{')) return false; try { const value = JSON.parse(trimmed); return value && typeof value === 'object' && !Array.isArray(value) && typeof value.error === 'string' && Object.keys(value).length <= 2; } catch { return false; } };
+  const statusOf = (raw, fallback) => { const s = String(raw || '').toLowerCase(); return OK.has(s) ? 'ok' : FAILED.has(s) ? 'failed' : DENIED.has(s) ? 'denied' : RUNNING.has(s) ? 'running' : fallback; };
+  const seconds = (start, end, duration) => isNum(duration) ? duration : isNum(start) && isNum(end) && end >= start ? end - start : null;
+  // Older Open WebUI wrote tool calls into the answer text as <details type="tool_calls" ...> blocks
+  const DETAILS = /<details\b([^>]*)>([\s\S]*?)<\/details>/gi;
+  const attrsOf = text => { const out = {}; text.replace(/([\w-]+)="([^"]*)"/g, (_, key, value) => { out[key] = decodeEntities(value); return ''; }); return out; };
+  // Everything one answer did
+  function activityOf(message, catalog, family) {
+    const calls = [], other = {code: 0, reasoning: 0, thinking: 0, provider: 0};
+    const done = message.done !== false;
+    let rounds = 0, inCalls = false;
+    const output = Array.isArray(message.output) ? message.output : [];
+    const results = new Map();
+    for (const item of output) if (item?.type === 'function_call_output' && item.call_id) results.set(item.call_id, item);
+    const paired = new Set();
+    for (const item of output) {
+      if (!item || typeof item !== 'object') continue;
+      const type = item.type;
+      if (type === 'function_call') {
+        const name = String(item.name || '?'), hidden = item.hidden === true;
+        if (!hidden && !inCalls) { rounds++; inCalls = true; }
+        const result = results.get(item.call_id ?? item.id);
+        if (result) paired.add(result);
+        const text = asText(result?.output);
+        let status = statusOf(item.status, done ? 'ok' : 'running');
+        if (status === 'ok' && result) status = statusOf(result.status, 'ok');
+        if (status === 'ok' && !result && done) status = 'noresult';
+        if (status === 'ok' && failedResult(text)) status = 'failed';
+        const args = typeof item.arguments === 'string' ? item.arguments : asText(item.arguments);
+        calls.push({name, hidden, ...classify(name, catalog, hidden), status, seconds: seconds(item.started_at, item.ended_at, item.duration), args, result: text,
+          tokens: countTokens(name + ' ' + args, family) + 8 + (result ? countTokens(text, family) + 4 : 0), files: (Array.isArray(result?.files) ? result.files.length : 0) + (Array.isArray(result?.embeds) ? result.embeds.length : 0), query: parseArgs(item.arguments)});
+        continue;
+      }
+      if (type === 'function_call_output') continue;
+      inCalls = false;
+      if (type === 'reasoning') { other.reasoning++; const s = seconds(item.started_at, item.ended_at, item.duration); if (s) other.thinking += s; continue; }
+      if (type === 'open_webui:code_interpreter') { other.code++; calls.push({name: 'code_interpreter', kind: 'builtin', category: 'code', status: statusOf(item.status, done ? 'ok' : 'running'), seconds: seconds(item.started_at, item.ended_at, item.duration), args: asText(item.code ?? item.content), result: asText(item.output ?? item.result), tokens: 0, files: 0, query: {}, interpreter: true}); continue; }
+      if (PROVIDER_ITEMS[type]) {
+        other.provider++;
+        const action = item.action || {};
+        calls.push({name: type.replace(/_call$/, ''), kind: 'provider', category: PROVIDER_ITEMS[type], status: statusOf(item.status, done ? 'ok' : 'running'), seconds: null, args: asText(action.query ?? action.queries ?? item.queries ?? item.arguments ?? ''), result: '', tokens: 0, files: 0, query: {query: action.query ?? (Array.isArray(item.queries) ? item.queries[0] : null)}});
+      }
+    }
+    // Results whose call wasn't saved still count as a call
+    for (const item of results.values()) if (!paired.has(item)) calls.push({name: '?', kind: 'other', status: statusOf(item.status, 'ok'), seconds: null, args: '', result: asText(item.output), tokens: countTokens(asText(item.output), family), files: 0, query: {}});
+    if (!output.length && typeof message.content === 'string' && message.content.includes('<details')) {
+      for (const match of message.content.matchAll(DETAILS)) {
+        const attrs = attrsOf(match[1]);
+        if (attrs.type === 'tool_calls') {
+          const name = attrs.name || '?', result = attrs.result || '', args = attrs.arguments || '';
+          if (!inCalls) { rounds++; inCalls = true; }
+          calls.push({name, ...classify(name, catalog, false), status: attrs.done === 'false' ? (done ? 'noresult' : 'running') : failedResult(result) ? 'failed' : 'ok', seconds: null, args, result, tokens: countTokens(args, family) + countTokens(result, family), files: 0, query: parseArgs(args)});
+        } else {
+          inCalls = false;
+          if (attrs.type === 'reasoning') { other.reasoning++; const s = parseFloat(attrs.duration); if (s > 0) other.thinking += s; }
+          else if (attrs.type === 'code_interpreter') { other.code++; calls.push({name: 'code_interpreter', kind: 'builtin', category: 'code', status: attrs.done === 'false' && !done ? 'running' : 'ok', seconds: null, args: match[2] || '', result: attrs.output || '', tokens: 0, files: 0, query: {}, interpreter: true}); }
+        }
+      }
+    }
+    // Tools called without native function calling leave their result in the answer's sources
+    const sources = Array.isArray(message.sources) ? message.sources : [];
+    let retrieved = 0, documents = 0;
+    const sourceNames = new Set();
+    for (const source of sources) {
+      if (!source || typeof source !== 'object') continue;
+      if (source.tool_result === true) {
+        const full = String(source.source?.name || source.metadata?.[0]?.source || '?');
+        const slash = full.indexOf('/'), id = slash > 0 ? full.slice(0, slash) : '', fn = slash > 0 ? full.slice(slash + 1) : full;
+        const owner = id && catalog.byId.get(id);
+        const result = asText(source.document);
+        calls.push({name: fn, ...(owner ? {kind: owner.kind, source: owner.source} : classify(fn, catalog, false)), status: failedResult(result) ? 'failed' : 'ok', seconds: null, args: asText(source.metadata?.[0]?.parameters ?? ''), result, tokens: countTokens(result, family), files: 0, query: parseArgs(source.metadata?.[0]?.parameters), prompted: true});
+        continue;
+      }
+      retrieved++;
+      documents += Array.isArray(source.document) ? source.document.length : 1;
+      const label = source.source?.name || source.source?.id || source.source?.url || source.metadata?.[0]?.source || source.metadata?.[0]?.name;
+      if (label) sourceNames.add(String(label));
+    }
+    // Web searches and knowledge lookups Open WebUI ran before the answer, from its status lines
+    const searches = [], pages = new Set();
+    let knowledge = 0, connectionErrors = [];
+    for (const status of Array.isArray(message.statusHistory) ? message.statusHistory : []) {
+      if (!status || typeof status !== 'object') continue;
+      const action = status.action;
+      if (action === 'web_search_queries_generated' || (action === 'queries_generated' && status.type !== 'knowledge')) for (const q of Array.isArray(status.queries) ? status.queries : []) { if (typeof q === 'string' && q.trim() && !searches.includes(q)) searches.push(q); }
+      else if (action === 'web_search' && Array.isArray(status.urls)) for (const url of status.urls) pages.add(String(url));
+      else if (action === 'knowledge_search') knowledge++;
+      else if (action === 'tool_connection' && status.error) connectionErrors.push(String(status.description || ''));
+    }
+    for (const call of calls) {
+      if (call.category !== 'web') continue;
+      const q = call.query?.query ?? call.query?.q ?? (Array.isArray(call.query?.queries) ? call.query.queries.join(' · ') : null);
+      if (call.name === 'fetch_url' || call.query?.url) { if (call.query?.url) pages.add(String(call.query.url)); }
+      else if (typeof q === 'string' && q.trim()) searches.push(q);
+      else searches.push('');
+    }
+    const images = (Array.isArray(message.files) ? message.files.filter(file => file?.type === 'image' || String(file?.content_type || file?.meta?.content_type || '').startsWith('image/')).length : 0);
+    return {calls, rounds: rounds + (output.length || message.content ? 1 : 0), searches, pages: pages.size, knowledge, retrieved, documents, sourceNames: [...sourceNames], images, connectionErrors, ...other};
+  }
+  // The token cost of tool calls and their results inside one saved answer, as sent back to the model later
+  function toolTokensOf(message, family) {
+    if (Array.isArray(message.output) && message.output.length) return message.output.reduce((sum, item) => sum + (ITEM_OVERHEAD[item?.type] ? countTokens(itemText(item), family) + ITEM_OVERHEAD[item.type] : 0), 0);
+    if (typeof message.content !== 'string' || !message.content.includes('type="tool_calls"')) return 0;
+    let sum = 0;
+    for (const match of message.content.matchAll(DETAILS)) if (/type="tool_calls"/.test(match[1])) sum += countTokens(match[0], family);
+    return sum;
+  }
+  // Adds up the answers of a conversation, tool by tool
+  function tally(activities) {
+    const byTool = new Map(), totals = {calls: 0, failed: 0, denied: 0, running: 0, hidden: 0, searches: 0, pages: 0, knowledge: 0, retrieved: 0, code: 0, images: 0, rounds: 0, reasoning: 0, thinking: 0, seconds: 0, tokens: 0, errors: [], queries: []};
+    for (const a of activities) {
+      for (const call of a.calls) {
+        if (call.hidden) totals.hidden++; else totals.calls++;
+        if (call.status === 'failed' || call.status === 'noresult') totals.failed++;
+        if (call.status === 'denied') totals.denied++;
+        if (call.status === 'running') totals.running++;
+        if (call.seconds) totals.seconds += call.seconds;
+        totals.tokens += call.tokens || 0;
+        const key = call.kind + '\u0000' + (call.source || call.category || '') + '\u0000' + call.name;
+        const row = byTool.get(key) || {name: call.name, kind: call.kind, source: call.source, category: call.category, tool: call.tool, hidden: !!call.hidden, count: 0, failed: 0, denied: 0, seconds: 0, tokens: 0};
+        row.count++; if (call.status === 'failed' || call.status === 'noresult') row.failed++; if (call.status === 'denied') row.denied++;
+        row.seconds += call.seconds || 0; row.tokens += call.tokens || 0;
+        byTool.set(key, row);
+      }
+      totals.searches += a.searches.length; totals.pages += a.pages; totals.knowledge += a.knowledge; totals.retrieved += a.retrieved; totals.code += a.code; totals.images += a.images;
+      totals.rounds += a.rounds; totals.reasoning += a.reasoning; totals.thinking += a.thinking;
+      for (const q of a.searches) if (q && !totals.queries.includes(q)) totals.queries.push(q);
+      for (const error of a.connectionErrors) if (error && !totals.errors.includes(error)) totals.errors.push(error);
+    }
+    const order = {mcp: 0, workspace: 1, server: 2, builtin: 3, provider: 4, other: 5, auto: 6};
+    const tools = [...byTool.values()].sort((a, b) => (order[a.kind] ?? 9) - (order[b.kind] ?? 9) || b.count - a.count || a.name.localeCompare(b.name));
+    return {tools, ...totals};
+  }
+  // The filters, actions and pipe that apply to a model, from the functions this person can read
+  function functionsFor(model, functions) {
+    if (!model || !Array.isArray(functions)) return null;
+    const meta = model.info?.meta || {};
+    const toggles = new Set((Array.isArray(model.filters) ? model.filters : []).map(f => f?.id).filter(Boolean));
+    const own = id => Array.isArray(meta[id]) ? meta[id] : [];
+    const pick = (type, ids) => functions.filter(f => f && f.type === type && f.is_active && (f.is_global || ids.includes(f.id)));
+    const filters = pick('filter', own('filterIds')).map(f => ({name: f.name || f.id, global: !!f.is_global, toggle: toggles.has(f.id)}));
+    const actions = pick('action', own('actionIds')).map(f => ({name: f.name || f.id, global: !!f.is_global}));
+    let pipe = null;
+    if (model.pipe || model.owned_by === 'function') {
+      const id = String(model.info?.base_model_id || model.id || '').split('.')[0];
+      const fn = functions.find(f => f?.id === id && f.type === 'pipe');
+      pipe = fn ? fn.name || fn.id : id || null;
+    }
+    return {filters, actions, pipe};
+  }
   const CAPS = ['vision', 'file_upload', 'web_search', 'image_generation', 'code_interpreter', 'citations', 'builtin_tools', 'memory'];
-  function snapshotOf(chat, models, settings, folder, pick) {
+  function snapshotOf(chat, models, settings, folder, pick, extra = {}) {
     const branch = branchOf(chat);
     const used = [...new Set(branch.filter(m => m.role === 'assistant' && typeof m.model === 'string').map(m => m.model))];
     const listed = Array.isArray(chat?.chat?.models) ? chat.chat.models.filter(id => typeof id === 'string' && id) : [];
@@ -846,43 +1119,53 @@ LOADER_SCRIPT = r"""
     const active = branch.slice(start);
     const summaryTokens = summary ? count(summary) + 4 : 0;
     // In a chat with several models, each answer of the last turn is a sibling; the chosen model's one counts
+    const catalog = catalogOf(extra.tools);
+    // What the model held in context for an answer: the last round's prompt when the provider gave it, and otherwise
+    // the reported input, unless tool rounds were added together into it
+    const contextCount = m => { const u = readUsage(usageOf(m)); if (!u) return null; if (u.prompt != null) return u.prompt; return u.input != null && activityOf(m, catalog, family).rounds <= 1 ? u.input : null; };
     const siblings = id => Object.values(chat?.chat?.history?.messages || {}).filter(m => m?.parentId === id && m.role === 'assistant');
     let anchor = -1, anchorMessage = null;
     for (let i = active.length - 1; i >= 0; i--) {
       const m = active[i];
       if (m.role !== 'assistant') continue;
       const candidate = m.model === modelId || !modelId ? m : siblings(m.parentId).find(s => s.model === modelId) || null;
-      if (candidate && readUsage(usageOf(candidate))?.input != null) { anchor = i; anchorMessage = candidate; break; }
+      if (candidate && contextCount(candidate) != null) { anchor = i; anchorMessage = candidate; break; }
     }
     const tokensOf = list => list.reduce((sum, m) => sum + messageTokens(m, family), 0);
+    const toolsOf = list => list.reduce((sum, m) => sum + Math.min(messageTokens(m, family), toolTokensOf(m, family)), 0);
     let categories, total, reported = null;
     const lastIndex = active.length - 1;
     const tail = active[lastIndex];
     const streaming = tail?.role === 'assistant' && tail.done === false;
     if (anchor >= 0) {
-      const usage = readUsage(usageOf(anchorMessage));
-      reported = usage.input;
-      const before = tokensOf(active.slice(0, anchor));
-      const base = system + summaryTokens + before;
+      reported = contextCount(anchorMessage);
+      const earlier = active.slice(0, anchor), later = active.slice(anchor + 1);
+      const before = tokensOf(earlier), toolsBefore = toolsOf(earlier);
+      // The answer's own tool calls and results were already in the prompt of its last round
+      const answerAll = messageTokens(anchorMessage, family), answerTools = Math.min(answerAll, toolTokensOf(anchorMessage, family));
+      const base = system + summaryTokens + before + answerTools;
       // When the estimate runs high, it is scaled down to the model's count rather than going over it
       const scale = base > reported && base > 0 ? reported / base : 1;
-      const answerTokens = messageTokens(anchorMessage, family) * scale;
-      const newer = tokensOf(active.slice(anchor + 1)) * scale;
+      const newer = tokensOf(later), toolsNewer = toolsOf(later);
       categories = [
         {key: 'system', tokens: system * scale, kind: 'estimated'},
         {key: 'extras', tokens: Math.max(0, reported - base), kind: 'inferred'},
         {key: 'summary', tokens: summaryTokens * scale, kind: 'estimated'},
-        {key: 'messages', tokens: before * scale, kind: 'estimated'},
-        {key: 'latest', tokens: answerTokens, kind: 'estimated'},
-        {key: 'newer', tokens: newer, kind: 'estimated'}
+        {key: 'messages', tokens: (before - toolsBefore) * scale, kind: 'estimated'},
+        {key: 'tools', tokens: (toolsBefore + answerTools + toolsNewer) * scale, kind: 'estimated'},
+        {key: 'latest', tokens: (answerAll - answerTools) * scale, kind: 'estimated'},
+        {key: 'newer', tokens: (newer - toolsNewer) * scale, kind: 'estimated'}
       ];
     } else {
       const latestIndex = tail?.role === 'assistant' ? lastIndex : -1;
+      const earlier = latestIndex >= 0 ? active.slice(0, latestIndex) : active;
+      const tailAll = latestIndex >= 0 ? messageTokens(tail, family) : 0, tailTools = latestIndex >= 0 ? Math.min(tailAll, toolTokensOf(tail, family)) : 0;
       categories = [
         {key: 'system', tokens: system, kind: 'estimated'},
         {key: 'summary', tokens: summaryTokens, kind: 'estimated'},
-        {key: 'messages', tokens: tokensOf(latestIndex >= 0 ? active.slice(0, latestIndex) : active), kind: 'estimated'},
-        {key: 'latest', tokens: latestIndex >= 0 ? messageTokens(tail, family) : 0, kind: 'estimated'}
+        {key: 'messages', tokens: tokensOf(earlier) - toolsOf(earlier), kind: 'estimated'},
+        {key: 'tools', tokens: toolsOf(earlier) + tailTools, kind: 'estimated'},
+        {key: 'latest', tokens: tailAll - tailTools, kind: 'estimated'}
       ];
     }
     categories = categories.filter(c => c.tokens > 0.5).map(c => ({...c, tokens: Math.round(c.tokens)}));
@@ -893,25 +1176,30 @@ LOADER_SCRIPT = r"""
       const m = branch[i];
       if (m.role !== 'assistant') continue;
       const candidate = m.model === modelId || !modelId ? m : siblings(m.parentId).find(s => s.model === modelId);
-      if (candidate) last = {model: candidate.model || modelId, ...(readUsage(usageOf(candidate)) || {})};
+      if (candidate) last = {model: candidate.model || modelId, ...(readUsage(usageOf(candidate)) || {}), activity: activityOf(candidate, catalog, family)};
     }
     // How much a recent exchange costs, to say how many more fit
     const exchanges = [];
     for (let i = active.length - 1; i > 0 && exchanges.length < 5; i--) if (active[i].role === 'assistant' && active[i - 1]?.role === 'user') exchanges.push(messageTokens(active[i], family) + messageTokens(active[i - 1], family));
     const perExchange = exchanges.length ? exchanges.reduce((a, b) => a + b, 0) / exchanges.length : 0;
     const answers = branch.filter(m => m.role === 'assistant');
+    // Every answer the chosen model gave on this branch, the other models' answers in a shared turn left out
+    const mine = [];
+    for (const m of answers) { const own = m.model === modelId || !modelId ? m : siblings(m.parentId).find(s => s.model === modelId); if (own && !mine.includes(own)) mine.push(own); }
+    const activity = tally(mine.map(m => activityOf(m, catalog, family)));
     const counted = answers.map(m => readUsage(usageOf(m))).filter(Boolean);
     const lastUser = [...branch].reverse().find(m => m.role === 'user');
     const sources = Array.isArray(anchorMessage?.sources) ? anchorMessage.sources.length : Array.isArray(lastAnswer?.sources) ? lastAnswer.sources.length : 0;
     const caps = model?.info?.meta?.capabilities || {};
     return {
       empty: !branch.length, branch, choices, modelId, modelName: model?.name || modelId, model, family,
-      window: windowOf(modelId, model, chat, settings), threshold: isNum(chat?.context_usage?.threshold) && chat.context_usage.threshold > 0 ? chat.context_usage.threshold : null,
+      window: windowOf(modelId, model, chat, settings, model?.info?.base_model_id ? models.find(each => each?.id === model.info.base_model_id) || null : null), threshold: isNum(chat?.context_usage?.threshold) && chat.context_usage.threshold > 0 ? chat.context_usage.threshold : null,
       categories, total, reported, streaming, summary: !!summary, last, perExchange,
-      stats: {messages: branch.length, answers: answers.length, counted: counted.length, read: counted.reduce((s, u) => s + (u.input || 0), 0), written: counted.reduce((s, u) => s + (u.output || 0), 0)},
+      stats: {messages: branch.length, answers: answers.length, counted: counted.length, read: counted.reduce((s, u) => s + (u.input || 0), 0), written: counted.reduce((s, u) => s + (u.output || 0), 0), cost: counted.reduce((s, u) => s + (u.cost || 0), 0)},
       images: anchor >= 0 ? 0 : branch.reduce((sum, m) => sum + imagesIn(m), 0), sources,
       caps: CAPS.filter(key => caps[key] === true), tools: (model?.info?.meta?.toolIds || []).length, knowledge: (model?.info?.meta?.knowledge || []).length,
-      hasLastUser: !!lastUser
+      hasLastUser: !!lastUser, activity, functions: functionsFor(model, extra.functions),
+      toolNames: (Array.isArray(model?.info?.meta?.toolIds) ? model.info.meta.toolIds : []).map(id => catalog.byId.get(id)?.source || (String(id).startsWith('server:mcp:') ? String(id).slice(11) : id))
     };
   }
 
@@ -947,6 +1235,16 @@ LOADER_SCRIPT = r"""
     catch (error) { if (signal.aborted) throw error; modelsCache = modelsCache || []; }
     return modelsCache;
   }
+  // The tools and functions this person can see, to tell what kind each called tool is. Either list can be refused
+  // or turned off; the panel then names tools without saying where they come from.
+  const lists = {};
+  async function listOf(path, signal) {
+    const entry = lists[path];
+    if (entry && Date.now() - entry.at < 300000) return entry.data;
+    try { const data = await api(path, signal); lists[path] = {data: Array.isArray(data) ? data : Array.isArray(data?.data) ? data.data : [], at: Date.now()}; }
+    catch (error) { if (signal.aborted) throw error; lists[path] = {data: entry?.data || null, at: Date.now() - 240000}; }
+    return lists[path].data;
+  }
   async function folderOf(id, signal) {
     if (!id) return null;
     if (!folders.has(id)) folders.set(id, api('/api/v1/folders/' + encodeURIComponent(id), signal).catch(() => null));
@@ -963,14 +1261,16 @@ LOADER_SCRIPT = r"""
     paintUpdated();
     if (!chatId) { loading = false; loadedChat = null; snapshot = null; render(); return; }
     try {
-      const [chat, models, settings] = await Promise.all([
+      const [chat, models, settings, tools, functions] = await Promise.all([
         api('/api/v1/chats/' + encodeURIComponent(chatId), signal),
         modelsList(signal),
-        api('/api/v1/users/user/settings', signal).catch(() => null)
+        api('/api/v1/users/user/settings', signal).catch(() => null),
+        listOf('/api/v1/tools/', signal),
+        listOf('/api/v1/functions/', signal)
       ]);
       const folder = await folderOf(chat?.folder_id, signal);
       if (signal.aborted) return;
-      snapshot = snapshotOf(chat, models, settings, folder, pick);
+      snapshot = snapshotOf(chat, models, settings, folder, pick, {tools, functions});
       loadedChat = chatId; loadedAt = Date.now();
     } catch (error) {
       if (signal.aborted) return;
@@ -1023,10 +1323,10 @@ LOADER_SCRIPT = r"""
     if (s.empty) { body.append(notice(t('empty_chat'), t('empty_chat_hint'))); return; }
     paintSummary(s);
     paintBreakdown(s);
+    paintActivity(s);
     paintLast(s);
     paintConversation(s);
     if (CONFIG.showCapabilities) paintModel(s);
-    paintNotes(s);
     body.scrollTop = scroll;
   }
   function paintSummary(s) {
@@ -1037,22 +1337,22 @@ LOADER_SCRIPT = r"""
     big.append(el('strong', null, win ? t('of_window', {used: n(s.total), window: n(win)}) : t('used_only', {used: n(s.total)})));
     if (pct != null) { const badge = el('span', 'ci-state', t('pct', {pct: pct < 1 && pct > 0 ? '<1' : Math.round(pct)})); badge.dataset.state = state; big.append(badge); }
     box.append(big);
-    const line = [];
-    if (win) line.push(s.total <= win ? t('free', {n: n(win - s.total)}) : t('over_by', {n: n(s.total - win)}));
-    line.push(t(win ? 'window_' + s.window.source : 'window_unknown'));
-    box.append(el('p', 'ci-sub', line.join(' · ')));
-    if (!win) box.append(el('p', 'ci-sub', t('window_unknown_admin')));
+    // One short line: room left, where the window comes from, and whether the model counted
+    const line = el('p', 'ci-sub ci-line');
+    const bit = (text, title) => { const span = el('span', null, text); if (title) span.title = title; line.append(span); };
+    if (win) bit(s.total <= win ? t('free', {n: n(win - s.total)}) : t('over_by', {n: n(s.total - win)}));
+    bit(t(win ? 'window_' + s.window.source : 'window_unknown'), win ? null : t('window_unknown_admin'));
+    bit(t(s.reported != null ? 'count_reported' : 'count_estimated'), s.reported != null ? t('tokens', {n: n(s.reported)}) : s.family ? t('count_family', {family: s.family}) : t('count_general'));
+    box.append(line);
     box.append(grid(s));
     if (state && state !== 'ok') { const warn = el('p', 'ci-alert'); warn.dataset.state = state; warn.append(el('strong', null, t('st_' + state) + '. '), document.createTextNode(t('st_' + state + '_hint'))); box.append(warn); }
-    else if (state === 'ok') box.append(el('p', 'ci-sub', t('st_ok') + '.'));
-    if (s.threshold) {
-      const left = s.threshold - s.total;
-      box.append(el('p', 'ci-sub', t('compaction_at', {n: n(s.threshold)}) + ' · ' + (left > 0 ? t('compaction_left', {n: n(left)}) : t('compaction_past'))));
-    }
+    const more = el('p', 'ci-sub ci-line');
+    if (s.threshold) { const left = s.threshold - s.total; more.append(el('span', null, t('compaction_at', {n: n(s.threshold)}) + ' · ' + (left > 0 ? t('compaction_left', {n: n(left)}) : t('compaction_past')))); }
     if (win && s.perExchange > 0) {
-      const room = Math.min(win, s.threshold || win) - s.total, more = Math.floor(room / s.perExchange);
-      box.append(el('p', 'ci-sub', more <= 0 ? t('exchanges_none') : more === 1 ? t('exchanges_one') : t('exchanges', {n: more > 999 ? '999+' : more})));
+      const room = Math.min(win, s.threshold || win) - s.total, count = Math.floor(room / s.perExchange);
+      more.append(el('span', null, count <= 0 ? t('exchanges_none') : count === 1 ? t('exchanges_one') : t('exchanges', {n: count > 999 ? '999+' : count})));
     }
+    if (more.children.length) box.append(more);
   }
   // A 10 by 10 grid, one square per percent, coloured by what fills it
   function grid(s) {
@@ -1077,7 +1377,8 @@ LOADER_SCRIPT = r"""
     const wrap = el('div', 'ci-gridwrap');
     const board = el('div', 'ci-grid'); board.setAttribute('aria-hidden', 'true');
     for (const key of cells.slice(0, 100)) { const cell = el('span', 'ci-cell'); cell.dataset.c = key; board.append(cell); }
-    wrap.append(board, el('p', 'ci-sub ci-gridnote', t(win ? 'grid_label' : 'grid_share')));
+    wrap.title = t(win ? 'grid_label' : 'grid_share');
+    wrap.append(board);
     return wrap;
   }
   function paintBreakdown(s) {
@@ -1098,6 +1399,84 @@ LOADER_SCRIPT = r"""
     }
     box.append(list);
   }
+  const kindLabel = call => {
+    if (call.kind === 'mcp') return t('kind_mcp') + (call.source ? ' · ' + call.source : '');
+    if (call.kind === 'workspace' || call.kind === 'server') return call.source || t('kind_' + call.kind);
+    if (call.kind === 'auto') return t('a_auto');
+    if (call.kind === 'builtin' || call.kind === 'provider') return t('kind_' + call.kind) + (call.category ? ' · ' + t('cat_' + call.category) : '');
+    return t('kind_other');
+  };
+  const secondsText = value => value >= 60 ? Math.floor(value / 60) + ' min ' + Math.round(value % 60) + ' s' : t('seconds', {n: value.toLocaleString(lang, {maximumFractionDigits: value < 10 ? 1 : 0})});
+  const costText = value => value.toLocaleString(lang, {maximumSignificantDigits: 3, maximumFractionDigits: 6});
+  const clip = (text, max = 1200) => text.length > max ? text.slice(0, max) + '\n' + t('a_cut', {n: n(text.length - max)}) : text;
+  const pretty = text => { const trimmed = String(text || '').trim(); if (!/^[[{]/.test(trimmed)) return trimmed; try { return JSON.stringify(JSON.parse(trimmed), null, 2); } catch { return trimmed; } };
+  // Tool calls, searches and sources over the whole conversation, the way Claude lists what it used
+  function paintActivity(s) {
+    const a = s.activity, box = section(t('activity'));
+    box.classList.add('ci-activity');
+    const tiles = el('ul', 'ci-tiles');
+    const tile = (value, label, note, key) => { if (!value && !note) return; const li = el('li'); li.dataset.k = key; li.append(el('strong', null, n(value)), el('span', null, label)); if (note) li.append(el('em', null, note)); tiles.append(li); };
+    const problems = [a.failed && a.failed + ' ' + t('a_failed'), a.denied && a.denied + ' ' + t('a_denied'), a.running && a.running + ' ' + t('a_running')].filter(Boolean).join(' · ');
+    tile(a.calls, t('a_calls'), problems, 'calls');
+    tile(a.searches, t('a_searches'), '', 'searches');
+    tile(a.pages, t('a_pages'), '', 'pages');
+    tile(a.knowledge, t('a_knowledge'), '', 'knowledge');
+    tile(a.retrieved, t('a_sources'), '', 'sources');
+    tile(a.code, t('a_code'), '', 'code');
+    tile(a.images, t('a_images'), '', 'images');
+    if (!tiles.children.length && !a.hidden && !a.errors.length) { box.append(el('p', 'ci-sub', t('a_none'))); return; }
+    if (tiles.children.length) box.append(tiles);
+    for (const error of a.errors.slice(0, 3)) box.append(el('p', 'ci-warn', t('a_conn', {what: error})));
+    if (a.tools.length) {
+      const list = el('ul', 'ci-tools');
+      for (const row of a.tools) {
+        const li = el('li'); li.dataset.kind = row.kind;
+        const name = nameSpan('ci-tname', row.tool || row.name);
+        const where = el('span', 'ci-tkind', kindLabel(row));
+        const count = el('span', 'ci-tcount', '× ' + n(row.count));
+        const info = [];
+        if (row.failed) info.push(row.failed + ' ' + t('a_failed'));
+        if (row.denied) info.push(row.denied + ' ' + t('a_denied'));
+        if (row.seconds >= 0.05) info.push(secondsText(row.seconds));
+        if (row.tokens) info.push(t('tokens', {n: n(row.tokens)}));
+        const meta = el('span', 'ci-tmeta', info.join(' · '));
+        if (row.failed || row.denied) meta.dataset.bad = 'true';
+        li.append(name, count, where, meta);
+        list.append(li);
+      }
+      box.append(list);
+    }
+    const queries = a.queries;
+    if (queries.length) {
+      const p = el('p', 'ci-sub ci-queries'); p.append(el('span', null, t('a_queries') + ': '));
+      queries.slice(0, 5).forEach((q, i) => { if (i) p.append(document.createTextNode(' · ')); p.append(nameSpan('ci-q', '“' + q + '”')); });
+      if (queries.length > 5) p.append(document.createTextNode(' ' + t('a_more', {n: queries.length - 5})));
+      box.append(p);
+    }
+  }
+  function paintCalls(box, activity) {
+    const calls = activity.calls;
+    if (!calls.length) return;
+    const list = el('ol', 'ci-calls'); list.setAttribute('aria-label', t('last_calls'));
+    const shown = calls.slice(0, 40);
+    for (const call of shown) {
+      const li = el('li');
+      const details = el('details');
+      const summary = el('summary');
+      const mark = el('span', 'ci-dot'); mark.dataset.status = call.status; mark.setAttribute('aria-hidden', 'true');
+      const state = [t('s_' + call.status)];
+      if (call.prompted) state.push(t('s_prompted'));
+      if (call.seconds >= 0.05) state.push(secondsText(call.seconds));
+      summary.append(mark, nameSpan('ci-tname', call.tool || call.name), el('span', 'ci-tkind', kindLabel(call)), el('span', 'ci-tmeta', state.join(' · ')));
+      details.append(summary);
+      const pre = (label, text) => { const wrap = el('div', 'ci-io'); wrap.append(el('span', null, label)); const code = el('pre', null, clip(pretty(text)) || t('a_empty')); code.dir = 'auto'; wrap.append(code); details.append(wrap); };
+      // Built lazily: a long result is only laid out once someone opens it
+      details.addEventListener('toggle', () => { if (details.open && details.children.length === 1) { pre(t('a_args'), call.args); pre(t('a_result'), call.result); } });
+      li.append(details); list.append(li);
+    }
+    box.append(list);
+    if (calls.length > shown.length) box.append(el('p', 'ci-sub', t('a_more', {n: calls.length - shown.length})));
+  }
   function paintLast(s) {
     if (!s.last) return;
     const u = s.last, box = section(t('last'));
@@ -1105,14 +1484,21 @@ LOADER_SCRIPT = r"""
     if (u.reasoning) rows.push([t('f_reasoning'), t('tokens', {n: n(u.reasoning)})]);
     if (u.cached) rows.push([t('f_cached'), t('tokens', {n: n(u.cached)})]);
     if (u.total != null) rows.push([t('f_total'), t('tokens', {n: n(u.total)})]);
+    if (u.activity?.rounds > 1) rows.push([t('f_rounds'), n(u.activity.rounds)]);
+    if (u.activity?.thinking >= 0.05) rows.push([t('f_thinking'), secondsText(u.activity.thinking)]);
     if (u.speed) rows.push([t('f_speed'), t('per_sec', {n: u.speed.toLocaleString(lang, {maximumFractionDigits: 1})})]);
     if (u.seconds) rows.push([t('f_time'), t('seconds', {n: u.seconds.toLocaleString(lang, {maximumFractionDigits: 1})})]);
+    if (u.cost) rows.push([t('f_cost'), costText(u.cost)]);
     facts(box, rows);
+    if (u.activity) paintCalls(box, u.activity);
   }
   function paintConversation(s) {
     const box = section(t('branch'));
     const rows = [[t('b_messages'), n(s.stats.messages)], [t('b_answers'), n(s.stats.answers)], [t('b_reported'), n(s.stats.counted) + ' / ' + n(s.stats.answers)]];
     if (s.stats.counted) rows.push([t('b_read'), t('tokens', {n: n(s.stats.read)})], [t('b_written'), t('tokens', {n: n(s.stats.written)})]);
+    if (s.activity.rounds > s.stats.answers) rows.push([t('b_rounds'), n(s.activity.rounds)]);
+    if (s.activity.tokens) rows.push([t('a_tool_tokens'), t('tokens', {n: n(s.activity.tokens)})]);
+    if (s.stats.cost) rows.push([t('f_cost'), costText(s.stats.cost)]);
     if (s.summary) rows.push([t('b_summarised'), t('b_summarised_yes')]);
     facts(box, rows);
   }
@@ -1121,22 +1507,15 @@ LOADER_SCRIPT = r"""
     if (!s.model) { box.append(el('p', 'ci-sub', t('model_missing'))); return; }
     const chips = el('ul', 'ci-chips');
     for (const key of s.caps) chips.append(el('li', null, t('cap_' + key)));
-    if (s.tools) chips.append(el('li', null, t('tools_n', {n: s.tools})));
     if (s.knowledge) chips.append(el('li', null, t('knowledge_n', {n: s.knowledge})));
     if (chips.children.length) box.append(chips); else box.append(el('p', 'ci-sub', t('no_caps')));
-  }
-  function paintNotes(s) {
-    const box = section(t('notes'));
-    const list = el('ul', 'ci-notes');
-    const add = text => list.append(el('li', null, text));
-    add(s.reported != null ? t('n_reported', {n: n(s.reported)}) : t('n_estimated'));
-    add(s.family ? t('n_family', {family: s.family}) : t('n_family_default'));
-    if (s.images) add(t('n_images', {n: s.images}));
-    if (s.sources && s.reported != null) add(t('n_sources', {n: s.sources}));
-    if (s.last?.reasoning) add(t('n_reasoning'));
-    if (s.choices.length > 1) add(t('n_multi'));
-    if (s.threshold) add(t('n_compaction'));
-    box.append(list);
+    const rows = [];
+    if (s.toolNames.length) rows.push([t('m_tools'), s.toolNames.join(', ')]);
+    const fn = s.functions;
+    if (fn?.pipe) rows.push([t('m_pipe'), fn.pipe]);
+    if (fn?.filters.length) rows.push([t('m_filters'), fn.filters.map(f => f.name + (f.toggle ? ' (' + t('fn_toggle') + ')' : f.global ? ' (' + t('fn_global') + ')' : '')).join(', ')]);
+    if (fn?.actions.length) rows.push([t('m_actions'), fn.actions.map(f => f.name).join(', ')]);
+    if (rows.length) facts(box, rows).classList.add('ci-facts-wide');
   }
 
   // While the tab is in front, a new or growing answer is read once it has stopped changing

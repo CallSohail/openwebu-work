@@ -9,6 +9,10 @@ messages' length / 4 plus 300, standing in for the tools and instructions a
 server adds, so the Inspector's inferred share can be checked. A message
 containing SLOW streams over about five seconds; one containing NOUSAGE
 reports no usage at all.
+
+Given tools, a message containing TOOLS calls each offered tool whose name
+appears in it (natively, as OpenAI streams tool calls), then answers once the
+results come back. "TOOLS add" calls add(a=2, b=3).
 """
 
 import json
@@ -57,6 +61,11 @@ class Handler(BaseHTTPRequestHandler):
             reply = '{"title": "Test chat", "tags": ["test"], "follow_ups": []}' if "### Task" in (text or "") else "Short reply."
             return self.send(200, {"id": "x", "object": "chat.completion", "model": body.get("model"), "choices": [{"index": 0, "message": {"role": "assistant", "content": reply}, "finish_reason": "stop"}],
                                    "usage": {"prompt_tokens": prompt_tokens(messages), "completion_tokens": 5, "total_tokens": prompt_tokens(messages) + 5}})
+        offered = [t.get("function", {}).get("name") for t in body.get("tools") or [] if isinstance(t, dict)]
+        if messages and messages[-1].get("role") == "user" and "TOOLS" in (text or "") and offered:
+            wanted = [name for name in offered if name and name in text]
+            if wanted:
+                return self.tool_calls(body, messages, wanted)
         words = ("This is a streamed answer from the fake model about " + (text or "")[:60] + ". " + "It keeps going for a while. " * (8 if "SLOW" in (text or "") else 2)).split(" ")
         self.send_response(200)
         self.send_header("Content-Type", "text/event-stream")
@@ -76,6 +85,28 @@ class Handler(BaseHTTPRequestHandler):
         self.wfile.write(b"data: " + json.dumps(final).encode() + b"\n\n")
         self.wfile.write(b"data: [DONE]\n\n")
         self.wfile.flush()
+
+    def stream(self, chunks):
+        self.send_response(200)
+        self.send_header("Content-Type", "text/event-stream")
+        self.send_header("Cache-Control", "no-cache")
+        self.end_headers()
+        for chunk in chunks:
+            self.wfile.write(b"data: " + json.dumps(chunk).encode() + b"\n\n")
+            self.wfile.flush()
+        self.wfile.write(b"data: [DONE]\n\n")
+        self.wfile.flush()
+
+    def tool_calls(self, body, messages, names):
+        model = body.get("model")
+        calls = [{"index": i, "id": f"call_{i}_{name}", "type": "function",
+                  "function": {"name": name, "arguments": json.dumps({"a": 2, "b": 3} if name == "add" else {})}} for i, name in enumerate(names)]
+        p = prompt_tokens(messages) + len(json.dumps(body.get("tools")))  // 4
+        self.stream([
+            {"id": "x", "object": "chat.completion.chunk", "model": model, "choices": [{"index": 0, "delta": {"role": "assistant", "tool_calls": calls}, "finish_reason": None}]},
+            {"id": "x", "object": "chat.completion.chunk", "model": model, "choices": [{"index": 0, "delta": {}, "finish_reason": "tool_calls"}],
+             "usage": {"prompt_tokens": p, "completion_tokens": 20, "total_tokens": p + 20}},
+        ])
 
 
 if __name__ == "__main__":

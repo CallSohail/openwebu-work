@@ -69,9 +69,9 @@ Creates one persistent, multilingual onboarding chat per eligible user. The Rich
 
 See [secure-onboarding/README.md](secure-onboarding/README.md) for installation, rollout, privacy, security, Valves, testing, and troubleshooting, and [secure-onboarding/CHANGELOG.md](secure-onboarding/CHANGELOG.md) for the release history.
 
-### Chat Inspector 1.1.0
+### Chat Inspector 1.2.0
 
-Adds Context to the chat's ⋯ menu, opening a pop-up that shows how much of the model's context window a chat uses, the way Claude does: a grid of 100 squares coloured by what fills them, and a breakdown into system prompt, the tools and documents Open WebUI added, messages and free space. Where the model reported its own prompt size, every part is fitted to that count; elsewhere, estimates are tuned against the real tokenizers of five model families. It also shows the last answer's token counts and warns before the chat overflows. It reads only, doesn't poll, and is in English and French. It requires Open WebUI 0.13.0 or newer.
+Adds Context to the chat's ⋯ menu, opening a pop-up that shows how much of the model's context window a chat uses, the way Claude does: a grid of 100 squares coloured by what fills them, and a breakdown into system prompt, the tools and documents Open WebUI added, messages, tool results and free space. It lists every tool the chat called, told apart as MCP, workspace tool, tool server, built-in (by group), provider-run or automatic, with web searches, pages, sources, code runs and images, failures and timings, each call's input and result, and the filters, actions and pipe that apply to the model. Where the model reported its own prompt size, every part is fitted to that count; elsewhere, estimates are tuned against the real tokenizers of five model families. It also shows the last answer's token counts and warns before the chat overflows. It reads only, doesn't poll, and is in English and French. It requires Open WebUI 0.13.0 or newer.
 
 See [chat-inspector/README.md](chat-inspector/README.md) for installation, Valves, how the numbers are made and limits, and [chat-inspector/ARCHITECTURE.md](chat-inspector/ARCHITECTURE.md) for how it works.
 

@@ -73,6 +73,7 @@ async function session(account, { viewport = { width: 1400, height: 900 }, theme
 }
 const shot = (page, name) => shots ? page.screenshot({ path: `${shots}/${name}.png` }) : null;
 const panelText = page => page.locator('#owui-chat-inspector .ci-body').innerText().catch(() => '');
+const titles = page => page.$$eval('#owui-chat-inspector .ci-body [title]', nodes => nodes.map(node => node.title).join(' | ')).catch(() => '');
 const legend = page => page.$$eval('#owui-chat-inspector .ci-legend li', rows => Object.fromEntries(rows.map(row => [row.querySelector('.ci-swatch').dataset.c, { tokens: +row.querySelector('.ci-lvalue').textContent.replace(/[^\d]/g, ''), kind: row.querySelector('.ci-tag')?.dataset.kind || '' }])));
 const facts = page => page.$$eval('#owui-chat-inspector .ci-facts dt', dts => Object.fromEntries(dts.map(dt => [dt.textContent, dt.nextElementSibling.textContent])));
 const cells = page => page.$$eval('#owui-chat-inspector .ci-cell', nodes => nodes.reduce((all, node) => { all[node.dataset.c] = (all[node.dataset.c] || 0) + 1; return all; }, {}));
@@ -136,9 +137,10 @@ console.log('Administrator, wide screen' + (others ? ', with Canvas, Files and G
   const last = await facts(page);
   check('the last answer shows read, written, reasoning and cached tokens', last['Read by the model'] === '1,180 tokens' && last.Written === '210 tokens' && last['of which reasoning'] === '40 tokens' && last['Read from cache'] === '512 tokens' && last.Total === '1,390 tokens', JSON.stringify(last));
   check('the conversation totals add up the model’s counts', last['Answers the model counted'] === '2 / 2' && last['Tokens read in all'] === '1,820 tokens' && last['Tokens written in all'] === '470 tokens', JSON.stringify(last));
-  check('notes say the numbers are fitted to the model’s count, tuned for GPT-4o, and mention sources and reasoning', /counted its own prompt for the last answer \(1,180 tokens\)/.test(await panelText(page)) && /tuned for GPT-4o/.test(await panelText(page)) && /2 retrieved sources|1 retrieved sources/.test(await panelText(page)) && /Reasoning is usually not sent back/.test(await panelText(page)));
+  check('one short line says the model counted, with its count on hover, and the long notes are gone', /Model’s own count/.test(await panelText(page)) && /^1,180 tokens$|\| 1,180 tokens|1,180 tokens \|/.test(await titles(page)) && !/How these numbers are made|Plenty of room|Each square is one percent/.test(await panelText(page)), await titles(page));
+  check('the source the answer used is counted under Tools and activity', /1\s*Sources used/.test(await panelText(page)));
   check('the model’s set-up is listed', /Reads images/.test(await panelText(page)) && /Searches the web/.test(await panelText(page)));
-  check('it says how many more exchanges fit', /About \d+ more exchanges/.test(await panelText(page)));
+  check('it says how many more exchanges fit', /≈ \d+ more exchanges fit/.test(await panelText(page)));
   await shot(page, 'counted-light');
   const reads = state.chatReads;
   await page.waitForTimeout(8000);
@@ -148,7 +150,7 @@ console.log('Administrator, wide screen' + (others ? ', with Canvas, Files and G
   await goChat(page, ready, A.estimated); await ready();
   const est = await legend(page);
   check('without the model’s count everything is estimated, and the administrator’s window applies', Object.values(est).filter(p => p.kind).every(p => p.kind === 'estimated') && !est.extras && /of 4,000 tokens/.test(await big(page)) && /set by your administrator/.test(await panelText(page)), JSON.stringify(est) + ' ' + await big(page));
-  check('the note says tools and documents aren’t included, and counts the image', /hasn’t reported its own count/.test(await panelText(page)) && /1 images in this chat aren’t counted|1 image/.test(await panelText(page)) && /general tuning/.test(await panelText(page)));
+  check('it says the numbers are estimated, with the tuning on hover', /Estimated/.test(await panelText(page)) && /general tuning/.test(await titles(page)));
   const estimate = est.messages.tokens + est.latest.tokens;
   check('French, Arabic and Chinese text is counted far above characters ÷ 4 would give for Chinese', estimate > 300, String(estimate));
 
@@ -157,25 +159,25 @@ console.log('Administrator, wide screen' + (others ? ', with Canvas, Files and G
   check('a nearly full chat says it is getting full', /Getting full/.test(await panelText(page)) && (await page.locator('.ci-state').getAttribute('data-state')) === 'warn', await big(page));
   await shot(page, 'full-light');
   await goChat(page, ready, A.over); await ready();
-  check('a chat past the window says so and how far over', /Over the window/.test(await panelText(page)) && /over the window/.test(await panelText(page)) && (await page.locator('.ci-state').getAttribute('data-state')) === 'full' && /Not even one more exchange/.test(await panelText(page)));
+  check('a chat past the window says so and how far over', /Over the window/.test(await panelText(page)) && /over the window/.test(await panelText(page)) && (await page.locator('.ci-state').getAttribute('data-state')) === 'full' && /No room for another exchange/.test(await panelText(page)));
   const overGrid = await cells(page);
   check('the grid never shows more than 100 squares', Object.values(overGrid).reduce((a, b) => a + b, 0) === 100 && !overGrid.free, JSON.stringify(overGrid));
 
   // Two models
   await goChat(page, ready, A.multi); await ready();
-  check('a chat with two models offers a choice, starting with the shown answer', await page.locator('.ci-head .ci-select').isVisible() && (await page.locator('.ci-head .ci-select').inputValue()) === 'fake-gpt-4o' && /several models at once/.test(await panelText(page)));
+  check('a chat with two models offers a choice, starting with the shown answer', await page.locator('.ci-head .ci-select').isVisible() && (await page.locator('.ci-head .ci-select').inputValue()) === 'fake-gpt-4o');
   const firstModel = (await facts(page))['Read by the model'];
   await page.selectOption('.ci-head .ci-select', 'llama3.1:8b');
   await ready(); await page.waitForTimeout(500);
   const second = await facts(page);
-  check('choosing the other model shows its own answer, window and tuning', firstModel === '500 tokens' && second['Read by the model'] === '520 tokens' && second.Model === 'llama3.1:8b' && /of 131,072 tokens/.test(await big(page)) && /tuned for Llama/.test(await panelText(page)), firstModel + ' ' + JSON.stringify(second) + ' ' + await big(page));
+  check('choosing the other model shows its own answer, window and count', firstModel === '500 tokens' && second['Read by the model'] === '520 tokens' && second.Model === 'llama3.1:8b' && /of 131,072 tokens/.test(await big(page)) && /520 tokens/.test(await titles(page)), firstModel + ' ' + JSON.stringify(second) + ' ' + await big(page));
 
   // Summarised history, unknown model
   await goChat(page, ready, A.summary); await ready();
   const summary = await legend(page);
   check('a summarised chat counts the summary, not the old messages', summary.summary?.tokens > 5 && summary.messages.tokens < 200 && /Summarised by EveGPT/.test(await panelText(page)), JSON.stringify(summary));
   await goChat(page, ready, A.unknown); await ready();
-  check('a model that is gone: no window, no %, and it says so', !/ of [\d,]+ tokens/.test(await big(page)) && /tokens in use/.test(await big(page)) && /isn’t known/.test(await panelText(page)) && /isn’t in the list of models/.test(await panelText(page)) && (await cells(page)).free === undefined);
+  check('a model that is gone: no window, no %, and it says so', !/ of [\d,]+ tokens/.test(await big(page)) && /tokens in use/.test(await big(page)) && /Window not known/.test(await panelText(page)) && /valves/.test(await titles(page)) && /isn’t in the list of models/.test(await panelText(page)) && (await cells(page)).free === undefined);
 
   // A real answer, streamed by the fake model, and Context updating by itself
   await goChat(page, ready, A.streaming); await ready();
@@ -194,7 +196,7 @@ console.log('Administrator, wide screen' + (others ? ', with Canvas, Files and G
   if (reopenAfter) await openContext(); else await page.click('#owui-chat-inspector-tab').catch(() => {});
   await page.waitForFunction(() => /being written/.test(document.querySelector('.ci-updated')?.textContent || ''), null, { timeout: 8000 }).catch(() => {});
   const during = await page.locator('.ci-updated').innerText().catch(() => '');
-  await page.waitForFunction(() => /counted its own prompt/.test(document.querySelector('#owui-chat-inspector .ci-body')?.textContent || ''), null, { timeout: 30000 }).catch(() => {});
+  await page.waitForFunction(() => /Model’s own count/.test(document.querySelector('#owui-chat-inspector .ci-body')?.textContent || ''), null, { timeout: 30000 }).catch(() => {});
   const after = await facts(page);
   check('while the answer streams it says so, then updates by itself with the model’s real count', /being written/.test(during) && /\d+ tokens/.test(after['Read by the model'] || '') && after['Answers the model counted'] === '1 / 1', during + ' ' + JSON.stringify(after));
   const live = await legend(page);
@@ -294,6 +296,57 @@ console.log('Plain user, with the button beside the tabs');
   await context.close();
 }
 
+/* ---- tools, searches, sources and functions ---- */
+console.log('Tools and activity');
+{
+  await setValves({});
+  const { context, page, state, open, openFromMenu, ready } = await session(U);
+  await open('/c/' + U.tools);
+  await openFromMenu();
+  const text = await panelText(page);
+  const tiles = await page.$$eval('#owui-chat-inspector .ci-tiles li', items => Object.fromEntries(items.map(li => [li.dataset.k, { n: +li.querySelector('strong').textContent.replace(/[^\d]/g, ''), note: li.querySelector('em')?.textContent || '' }])));
+  check('it counts every kind of activity over the conversation', tiles.calls?.n === 10 && /1 failed/.test(tiles.calls.note) && /1 declined/.test(tiles.calls.note) && tiles.searches?.n === 2 && tiles.pages?.n === 3 && tiles.sources?.n === 1 && tiles.code?.n === 1 && tiles.images?.n === 1, JSON.stringify(tiles));
+  const rows = await page.$$eval('#owui-chat-inspector .ci-tools li', items => items.map(li => ({ name: li.querySelector('.ci-tname').textContent, kind: li.dataset.kind, where: li.querySelector('.ci-tkind').textContent, count: li.querySelector('.ci-tcount').textContent, meta: li.querySelector('.ci-tmeta').textContent })));
+  const row = name => rows.find(r => r.name === name) || {};
+  check('an MCP tool is named by its server, without the server prefix', row('search_pages').kind === 'mcp' && row('search_pages').where === 'MCP · Docs MCP', JSON.stringify(rows[0]));
+  check('a workspace tool counts native, prompt-based and old-style calls together', row('add').kind === 'workspace' && row('add').where === 'Calculator' && row('add').count === '× 3', JSON.stringify(row('add')));
+  check('built-in tools are grouped by what they do', row('search_web').where === 'Built-in · Web search' && row('fetch_url').where === 'Built-in · Web search' && row('get_current_timestamp').where === 'Built-in · Time' && row('code_interpreter').where === 'Built-in · Code', JSON.stringify(rows.map(r => r.name + ':' + r.where)));
+  check('a failed and a declined call say so', /1 failed/.test(row('petstore_get_pet').meta) && /1 declined/.test(row('delete_memory').meta));
+  check('a call EveGPT added by itself is listed last, as automatic', rows[rows.length - 1].name === 'recall_memories' && rows[rows.length - 1].where === 'Added by EveGPT', JSON.stringify(rows[rows.length - 1]));
+  check('MCP servers, then workspace tools, then built-ins', rows.findIndex(r => r.kind === 'mcp') < rows.findIndex(r => r.kind === 'workspace') && rows.findIndex(r => r.kind === 'workspace') < rows.findIndex(r => r.kind === 'builtin'));
+  check('a server that couldn’t connect is shown', /Couldn’t connect: Failed to connect to MCP server 'wiki'/.test(text));
+  check('the web searches are quoted', /Searched for: “uni deadlines” · “enrolment deadline 2026”/.test(text));
+  const f = await facts(page);
+  check('the last answer counts its model calls, thinking time and cost', f['Model calls'] === '2' && f.Thinking === '3.5 s' && f['Cost reported'] === '0.0042' && f['Read by the model'] === '2,400 tokens', JSON.stringify(f));
+  const calls = await page.$$eval('#owui-chat-inspector .ci-calls summary', items => items.map(s => s.querySelector('.ci-tname').textContent + ':' + s.querySelector('.ci-dot').dataset.status));
+  check('the last answer lists its calls in order, with their state', calls.join() === 'recall_memories:ok,search_web:ok,fetch_url:ok,search_pages:ok,add:ok,petstore_get_pet:failed,get_current_timestamp:ok,delete_memory:denied,code_interpreter:ok,add:ok', calls.join());
+  await page.locator('#owui-chat-inspector .ci-calls summary').nth(3).click();
+  await page.waitForSelector('#owui-chat-inspector .ci-calls details[open] pre', { timeout: 3000 }).catch(() => {});
+  const io = await page.locator('#owui-chat-inspector .ci-calls details[open]').innerText().catch(() => '');
+  check('opening a call shows its input and result', /"q": "deadline"/.test(io) && /Page: Deadlines/.test(io), io);
+  const parts = await legend(page);
+  check('the context is counted from the last round’s prompt, with tool calls and results as their own part', /^1,\d{3} of 8,192 tokens/.test(await big(page)) && parts.tools?.tokens > 150 && parts.system.tokens + parts.extras.tokens + parts.messages.tokens + parts.tools.tokens <= 1300 + 2 && parts.system.tokens + parts.extras.tokens + parts.messages.tokens + parts.tools.tokens >= 1300 - 30, JSON.stringify(parts) + ' ' + await big(page));
+  check('a workspace model takes its window from the model it is built on', /of 8,192 tokens/.test(await big(page)) && /reported by the provider/.test(text));
+  check('the model lists its tools, filters and actions', f.Tools === 'Calculator, Docs MCP' && f.Filters === 'Tidy input, Strict mode (when switched on)' && f.Actions === 'Save answer', JSON.stringify(f));
+  check('the conversation adds up tool results and model calls', f['Model calls in all'] === '4' && /\d+ tokens/.test(f['Tool results in the chat'] || ''), JSON.stringify(f));
+  await shot(page, 'tools-light');
+
+  // A real tool call: the fake model calls the Calculator and the built-in clock, natively
+  await goChat(page, ready, U.live_tools); await ready();
+  check('a conversation without tools says so in one line', /No tools, searches or sources/.test(await panelText(page)) || /Nothing in this chat yet/.test(await panelText(page)));
+  await page.locator('#chat-input').click();
+  await page.keyboard.type('TOOLS add get_current_timestamp');
+  await page.keyboard.press('Enter');
+  await page.waitForFunction(() => document.querySelectorAll('#owui-chat-inspector .ci-tools li').length >= 2, null, { timeout: 40000 }).catch(() => {});
+  const liveRows = await page.$$eval('#owui-chat-inspector .ci-tools li', items => items.map(li => li.querySelector('.ci-tname').textContent + '|' + li.querySelector('.ci-tkind').textContent + '|' + li.querySelector('.ci-tcount').textContent));
+  check('a real native call to a workspace tool and a built-in is counted once each, after the answer', liveRows.includes('add|Calculator|× 1') && liveRows.includes('get_current_timestamp|Built-in · Time|× 1'), liveRows.join(' , '));
+  const lf = await facts(page);
+  check('its context comes from the last round, not the rounds added together', lf['Model calls'] === '2' && /Model’s own count/.test(await panelText(page)), JSON.stringify(lf));
+  check('no page errors', state.errors.length === 0, state.errors.slice(0, 3).join(' | '));
+  check('the sign-in token never left the site', state.leaks.length === 0, state.leaks.join());
+  await context.close();
+}
+
 /* ---- light, dark, OLED black and Her ---- */
 console.log('Themes');
 for (const theme of ['light', 'dark', 'oled-dark', 'her']) {
@@ -311,6 +364,11 @@ for (const theme of ['light', 'dark', 'oled-dark', 'her']) {
   const full = { alert: await contrastOf(page, '.ci-alert'), badge: await contrastOf(page, '.ci-state') };
   check(`${theme}: the over-the-window warning reaches 4.5:1`, Object.values(full).every(score => score >= 4.5), JSON.stringify(full));
   if (theme === 'dark') await shot(page, 'over-dark');
+  await goChat(page, ready, A.tools); await ready();
+  const toolScores = {};
+  for (const [label, selector] of Object.entries({ tiles: '.ci-tiles span', tileNum: '.ci-tiles strong', failed: '.ci-tiles em', names: '.ci-tools .ci-tname', kinds: '.ci-tools .ci-tkind', meta: '.ci-tools .ci-tmeta', bad: '.ci-tmeta[data-bad=true]', calls: '.ci-calls .ci-tkind', callMeta: '.ci-calls .ci-tmeta', warn: '.ci-warn' })) toolScores[label] = await contrastOf(page, selector);
+  check(`${theme}: Tools and activity reaches 4.5:1`, Object.values(toolScores).every(score => score >= 4.5), JSON.stringify(toolScores));
+  if (theme === 'dark') await shot(page, 'tools-dark');
   check(`${theme}: no page errors`, state.errors.length === 0, state.errors.slice(0, 2).join(' | '));
   await context.close();
 }
@@ -326,6 +384,13 @@ console.log('Phone, dark');
   check('on a phone it opens as a sheet from the bottom, full width, with a 10-column grid', sheet.sheet && sheet.backdrop && sheet.width >= 385 && sheet.bottom <= 1 && sheet.top > 80 && !sheet.overflow && sheet.columns === 10, JSON.stringify(sheet));
   await page.waitForTimeout(500);
   await shot(page, 'phone-dark');
+  await page.mouse.click(195, 40);
+  await page.locator('#owui-chat-inspector').waitFor({ state: 'hidden', timeout: 3000 }).catch(() => {});
+  await open('/c/' + U.tools);
+  await openFromMenu();
+  const wide = await page.evaluate(() => { const b = document.querySelector('#owui-chat-inspector .ci-body'); return document.documentElement.scrollWidth > innerWidth + 1 || b.scrollWidth > b.clientWidth + 1; });
+  check('the tools list fits a phone without scrolling sideways', !wide);
+  await shot(page, 'tools-phone-dark');
   await page.mouse.click(195, 40);
   await page.locator('#owui-chat-inspector').waitFor({ state: 'hidden', timeout: 3000 }).catch(() => {});
   check('a tap outside the sheet closes it', await page.locator('#owui-chat-inspector').isHidden() && await page.locator('.ci-backdrop').isHidden());

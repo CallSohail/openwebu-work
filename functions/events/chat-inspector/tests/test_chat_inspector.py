@@ -233,7 +233,7 @@ def test_wording_uses_the_platform_name(plugin):
     # The words come from the server's own name (WEBUI_NAME), so EveGPT reads "EveGPT", not "Open WebUI"
     script = plugin.LOADER_SCRIPT
     strings = script[script.index("  const STRINGS = {") : script.index("  const icons = {")]
-    assert "Open WebUI" not in strings and strings.count("{app}") >= 10
+    assert "Open WebUI" not in strings and strings.count("{app}") >= 6
     assert "api('/api/config')" in script and r"\(Open WebUI\)" in script
 
 
@@ -294,3 +294,100 @@ def test_shares_the_tab_protocol_with_the_others(plugin):
     for other in ("owui-chat-gallery-tabs", "owui-chat-files-tabs", "owui-chat-canvas-tabs", "owui-chat-canvas-header"):
         assert other in script, other
     assert "data-ci-covered" in script and not any(m in script for m in ("data-cg-covered", "data-cf-covered", "data-cv-covered"))
+
+
+@pytest.mark.skipif(shutil.which("node") is None, reason="Node.js is not installed")
+def test_tool_activity_is_classified_and_counted(plugin, tmp_path):
+    script = plugin.LOADER_SCRIPT
+    tokens = script[script.index("  const TUNING") : script.index("\n  }\n", script.index("  function countTokens")) + 4]
+    helpers = [line for line in script.split("\n") if line.lstrip().startswith(("const decodeEntities =", "const isNum ="))]
+    activity = script[script.index("  /* ---- tools, searches and functions") : script.index("  const CAPS = [")]
+    helpers.append(script[script.index("  // What of a saved output item") : script.index("  const textOf = ")])
+    runner = tmp_path / "activity.js"
+    runner.write_text(tokens + "\n".join(helpers) + "\n" + activity + r"""
+const assert = require('assert');
+const catalog = catalogOf([
+  {id: 'calc', name: 'Calculator', specs: [{name: 'add'}]},
+  {id: 'other', name: 'Other', specs: [{name: 'add'}]},
+  {id: 'server:mcp:docs', name: 'Docs MCP'},
+  {id: 'server:mcp:docs_v2', name: 'Docs v2'},
+  {id: 'server:shop', name: 'Shop API', specs: [{name: 'get_pet'}]},
+  null, {}, {id: 'broken', specs: 'nope'}
+]);
+const c = name => classify(name, catalog, false);
+assert.deepStrictEqual(c('add'), {kind: 'workspace', source: 'Calculator'});
+assert.deepStrictEqual(c('other_add'), {kind: 'workspace', source: 'Other'}, 'a shared name gets the tool id in front');
+assert.deepStrictEqual(c('docs_v2_search'), {kind: 'mcp', source: 'Docs v2', tool: 'search'}, 'the longest server id wins');
+assert.deepStrictEqual(c('docs_search'), {kind: 'mcp', source: 'Docs MCP', tool: 'search'});
+assert.strictEqual(c('docs_').kind, 'other', 'a bare prefix is not a tool');
+assert.deepStrictEqual(c('get_pet'), {kind: 'server', source: 'Shop API'});
+assert.deepStrictEqual(c('search_web'), {kind: 'builtin', category: 'web'});
+assert.deepStrictEqual(classify('recall_memories', catalog, true), {kind: 'auto', category: 'memory'});
+assert.deepStrictEqual(classify('mystery', catalogOf(null), false), {kind: 'other'});
+// One answer with every shape Open WebUI saves
+const message = {done: true, output: [
+  null, 'junk', {type: 'reasoning', duration: 2},
+  {type: 'function_call', call_id: 'h', name: 'view_skill', hidden: true, arguments: '{}', status: 'completed'},
+  {type: 'function_call_output', call_id: 'h', output: [{type: 'input_text', text: 'skill'}]},
+  {type: 'function_call', call_id: 'a', name: 'search_web', arguments: '{"query": "q1"}', status: 'completed', started_at: 10, ended_at: 11.5},
+  {type: 'function_call', call_id: 'b', name: 'add', arguments: {a: 1}, status: 'completed'},
+  {type: 'function_call', call_id: 'x', name: 'lost'},
+  {type: 'function_call_output', call_id: 'a', output: 'plain string result'},
+  {type: 'function_call_output', call_id: 'b', output: [{type: 'input_text', text: '{"error": "boom"}'}]},
+  {type: 'function_call_output', call_id: 'orphan', output: [{type: 'input_text', text: 'no call'}]},
+  {type: 'message', content: [{type: 'output_text', text: 'thinking more'}]},
+  {type: 'function_call', call_id: 'd', name: 'fetch_url', arguments: '{"url": "https://e.test/x"}', status: 'rejected'},
+  {type: 'function_call_output', call_id: 'd', output: [], status: 'rejected'},
+  {type: 'web_search_call', status: 'completed', action: {query: 'provider q'}},
+  {type: 'open_webui:code_interpreter', code: 'print(1)', status: 'completed'},
+  {type: 'message', content: [{type: 'output_text', text: 'done'}]}
+], statusHistory: [null, {action: 'web_search_queries_generated', queries: ['q0', 'q0', '']}, {action: 'web_search', urls: ['https://e.test/x', 'https://e.test/y']}, {action: 'knowledge_search'}, {action: 'tool_connection', error: true, description: 'down'}],
+  sources: [null, {source: {name: 'Doc'}, document: ['a', 'b']}, {source: {name: 'calc/add'}, document: ['3'], metadata: [{parameters: {a: 1, b: 2}}], tool_result: true}],
+  files: [{type: 'image'}, {type: 'file'}]};
+const a = activityOf(message, catalog, 'Llama');
+const byName = name => a.calls.filter(call => call.name === name);
+assert.strictEqual(byName('view_skill')[0].kind, 'auto');
+assert.strictEqual(byName('search_web')[0].seconds, 1.5);
+assert.strictEqual(byName('add')[0].status, 'failed', 'an {"error": ...} result is a failure');
+assert.strictEqual(byName('add')[1].prompted, true, 'a call made through the prompt is found in the sources');
+assert.strictEqual(byName('lost')[0].status, 'noresult');
+assert.strictEqual(byName('?').length, 1, 'a result without its call still counts');
+assert.strictEqual(byName('fetch_url')[0].status, 'denied');
+assert.strictEqual(byName('web_search')[0].kind, 'provider');
+assert.strictEqual(a.code, 1);
+assert.strictEqual(a.rounds, 3, 'two batches of calls, then the final answer');
+assert.deepStrictEqual(a.searches, ['q0', 'q1', 'provider q']);
+assert.strictEqual(a.pages, 2, 'the same page twice counts once');
+assert.strictEqual(a.knowledge, 1); assert.strictEqual(a.retrieved, 1); assert.strictEqual(a.images, 1);
+assert.deepStrictEqual(a.connectionErrors, ['down']);
+assert.strictEqual(a.thinking, 2);
+// A streaming answer: calls without a result are still running
+assert.strictEqual(activityOf({done: false, output: [{type: 'function_call', call_id: 'z', name: 'add'}]}, catalog).calls[0].status, 'running');
+// Older chats: tool calls inside the text
+const old = activityOf({content: 'x <details type="tool_calls" done="true" name="add" arguments="{&quot;a&quot;:1}" result="&quot;2&quot;"></details> <details type="reasoning" duration="4"></details>'}, catalog, 'Llama');
+assert.strictEqual(old.calls.length, 1); assert.strictEqual(old.calls[0].kind, 'workspace'); assert.strictEqual(old.reasoning, 1);
+// Nothing breaks on odd messages
+for (const odd of [{}, {output: 'x'}, {output: [{}]}, {content: 5}, {sources: 'x', statusHistory: {}}]) activityOf(odd, catalog);
+const sum = tally([a, old, activityOf({}, catalog)]);
+assert.strictEqual(sum.calls, 9); assert.strictEqual(sum.hidden, 1); assert.strictEqual(sum.failed, 2); assert.strictEqual(sum.denied, 1);
+assert.strictEqual(sum.tools.find(row => row.name === 'add').count, 3);
+assert.strictEqual(sum.tools[sum.tools.length - 1].kind, 'auto');
+assert.ok(toolTokensOf(message, 'Llama') > 0 && toolTokensOf({content: 'plain'}, 'Llama') === 0);
+// Filters, actions and pipes
+const functions = [
+  {id: 'g', type: 'filter', name: 'Global', is_active: true, is_global: true},
+  {id: 'm', type: 'filter', name: 'Mine', is_active: true, is_global: false},
+  {id: 'off', type: 'filter', name: 'Off', is_active: false, is_global: true},
+  {id: 'nope', type: 'filter', name: 'Not here', is_active: true, is_global: false},
+  {id: 'act', type: 'action', name: 'Act', is_active: true, is_global: false},
+  {id: 'pipey', type: 'pipe', name: 'Pipey', is_active: true}
+];
+const fn = functionsFor({id: 'pipey.sub', pipe: {type: 'pipe'}, filters: [{id: 'm'}], info: {meta: {filterIds: ['m', 'off'], actionIds: ['act']}}}, functions);
+assert.deepStrictEqual(fn.filters.map(f => f.name + ':' + f.toggle), ['Global:false', 'Mine:true']);
+assert.deepStrictEqual(fn.actions.map(f => f.name), ['Act']);
+assert.strictEqual(fn.pipe, 'Pipey');
+assert.strictEqual(functionsFor({id: 'x'}, null), null, 'without the list, nothing is claimed');
+console.log('ok');
+""", encoding="utf-8")
+    result = subprocess.run(["node", str(runner)], capture_output=True, text=True)
+    assert result.returncode == 0 and result.stdout.strip() == "ok", result.stderr[-2000:]
