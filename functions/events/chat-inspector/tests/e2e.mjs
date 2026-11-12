@@ -10,7 +10,7 @@ const { chromium } = createRequire(import.meta.url)('playwright');
 const seed = JSON.parse(fs.readFileSync(process.argv[2], 'utf8'));
 const shots = process.argv[3] || null;
 if (shots) fs.mkdirSync(shots, { recursive: true });
-const others = ['chat_canvas', 'chat_files', 'chat_gallery'].every(id => seed.installed.includes(id));
+const others = ['chat_files', 'chat_gallery'].every(id => seed.installed.includes(id));
 
 let passed = 0;
 const failed = [];
@@ -113,7 +113,7 @@ const measure = (page, selector) => page.evaluate(selector => {
 await setValves({});
 
 /* ---- the + menu, for an account that has one ---- */
-console.log('Administrator, wide screen' + (others ? ', with Canvas, Files and Gallery' : ''));
+console.log('Administrator, wide screen' + (others ? ', with Files and Gallery' : ''));
 {
   const { context, page, state, open, openContext, ready } = await session(A, { extra: { permissions: ['clipboard-read', 'clipboard-write'] } });
   await open('/c/' + A.usage);
@@ -208,17 +208,17 @@ console.log('Administrator, wide screen' + (others ? ', with Canvas, Files and G
     await ready();
     const plus = page.locator('#controls-container button[aria-label="New tab"]').first();
     await plus.click();
-    await page.waitForSelector('#owui-chat-canvas-button');
+    await page.waitForSelector('#owui-chat-files-button');
     const menu = await page.$$eval('.app-dropdown-menu > button', buttons => buttons.map(b => b.id).filter(Boolean));
-    check('the + menu lists Canvas, Files, Gallery and Context', ['owui-chat-canvas-button', 'owui-chat-files-button', 'owui-chat-gallery-button', 'owui-chat-inspector-button'].every(id => menu.includes(id)), menu.join());
-    await page.click('#owui-chat-canvas-button');
-    await page.locator('#owui-chat-canvas').waitFor({ state: 'visible', timeout: 8000 }).catch(() => {});
-    check('opening Canvas sets Context aside', await page.locator('#owui-chat-inspector').isHidden() && await page.locator('#owui-chat-canvas').isVisible());
+    check('the + menu lists Files, Gallery and Context', ['owui-chat-files-button', 'owui-chat-gallery-button', 'owui-chat-inspector-button'].every(id => menu.includes(id)), menu.join());
+    await page.click('#owui-chat-files-button');
+    await page.locator('#owui-chat-files').waitFor({ state: 'visible', timeout: 8000 }).catch(() => {});
+    check('opening Files sets Context aside', await page.locator('#owui-chat-inspector').isHidden() && await page.locator('#owui-chat-files').isVisible());
     const strips = await page.evaluate(() => [...document.querySelector('.panel-tab-strip').parentElement.children].map(node => node.id).filter(id => id.endsWith('-tabs')).join(' '));
-    check('the tabs keep their order, Context last', /owui-chat-canvas-tabs owui-chat-inspector-tabs$/.test(strips), strips);
+    check('the tabs keep their order, Context last', /owui-chat-files-tabs owui-chat-inspector-tabs$/.test(strips), strips);
     await page.click('#owui-chat-inspector-tab');
     await page.locator('#owui-chat-inspector').waitFor({ state: 'visible', timeout: 5000 }).catch(() => {});
-    check('choosing Context brings it back alone', await page.locator('#owui-chat-inspector').isVisible() && await page.locator('#owui-chat-canvas').isHidden() && await page.evaluate(() => !document.querySelector('[data-cv-covered],[data-cf-covered],[data-cg-covered]')));
+    check('choosing Context brings it back alone', await page.locator('#owui-chat-inspector').isVisible() && await page.locator('#owui-chat-files').isHidden() && await page.evaluate(() => !document.querySelector('[data-cv-covered],[data-cf-covered],[data-cg-covered]')));
   }
   await page.click('#owui-chat-inspector-tabs [aria-label="Close Context"]');
   check('closing removes the tab and uncovers the chat', await page.locator('#owui-chat-inspector').isHidden() && !(await page.locator('[data-ci-covered]').count()));
@@ -283,9 +283,9 @@ console.log('Plain user, with the button beside the tabs');
   await open('/c/' + U.usage);
   await page.waitForSelector('#owui-chat-inspector-header', { timeout: 10000 }).catch(() => {});
   if (others) {
-    const order = await page.evaluate(() => [...document.getElementById('owui-chat-inspector-header').parentElement.children].map(node => node.id).filter(id => id.endsWith('-header')).join(' '));
+    const order = await page.evaluate(() => [...document.getElementById('owui-chat-inspector-header').parentElement.children].map(node => node.id).filter(id => id.endsWith('-header') && id !== 'owui-chat-artifacts-header').join(' '));
     const inBar = await page.evaluate(() => !!document.getElementById('owui-chat-inspector-header').closest('#controls-container'));
-    check('with the button turned on, the four buttons keep a fixed order', order === (inBar ? 'owui-chat-inspector-header owui-chat-canvas-header owui-chat-files-header owui-chat-gallery-header' : 'owui-chat-gallery-header owui-chat-files-header owui-chat-canvas-header owui-chat-inspector-header'), order);
+    check('with the button turned on, the three buttons keep a fixed order', order === (inBar ? 'owui-chat-inspector-header owui-chat-files-header owui-chat-gallery-header' : 'owui-chat-gallery-header owui-chat-files-header owui-chat-inspector-header'), order);
     const moves = await page.evaluate(() => new Promise(done => { const host = document.getElementById('owui-chat-inspector-header').parentElement; let n = 0; const w = new MutationObserver(l => { n += l.length; }); w.observe(host, { childList: true }); setTimeout(() => { w.disconnect(); done(n); }, 1500); }));
     check('and stop moving', moves === 0, moves + ' moves');
   } else check('with the button turned on it appears', await page.locator('#owui-chat-inspector-header').isVisible());

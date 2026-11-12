@@ -18,11 +18,11 @@ Event Functions were introduced in Open WebUI 0.10.0 and are auto-detected from 
 ```text
 events/
 ├── README.md
-├── chat-canvas/
+├── chat-artifacts/
 │   ├── README.md
 │   ├── ARCHITECTURE.md
 │   ├── CHANGELOG.md
-│   ├── chat_canvas.py
+│   ├── chat_artifacts.py
 │   ├── screenshots/
 │   └── tests/
 ├── chat-files/
@@ -87,8 +87,8 @@ Adds a Files tab to the chat: every document, spreadsheet and other file in the 
 
 See [chat-files/README.md](chat-files/README.md) for installation, Valves, security and limits, [chat-files/ARCHITECTURE.md](chat-files/ARCHITECTURE.md) for how it works, and [chat-files/CHANGELOG.md](chat-files/CHANGELOG.md) for the release history.
 
-### Chat Canvas 1.0.0
+### Artifacts 1.0.0
 
-Adds a Canvas tab to the chat: each code block and longer answer becomes a page to edit, preview, compare with the original and hand back to the model with a request. HTML previews run in a sandbox, edits are kept in the person's browser and never change the chat, and nothing is sent to the model without the person pressing send. It runs beside Open WebUI's own Artifacts, Chat Gallery and Chat Files, in English and French. It requires Open WebUI 0.13.0 or newer.
+Claude-style Artifacts in a panel beside the chat: documents, slides, spreadsheets with formulas and charts, Mermaid diagrams, web pages, React apps, drawings, data and code, found in ordinary answers. Each artifact keeps its versions across answers, opens by itself while a model writes it, and offers Try fixing, asking about a selected part, private edits, downloads (Markdown, HTML, Word, PDF, CSV, Excel, SVG, PNG) and sharing through Open WebUI's own share links with a copy to continue. Pages and apps run in a sandbox without the site's origin, limited by a content policy to the configured libraries; they can ask the chat's model through `window.claude.complete()` after the person allows it. It replaces Chat Canvas and stands in for Open WebUI's built-in HTML/SVG Artifacts, in English and French. It requires Open WebUI 0.13.0 or newer.
 
-See [chat-canvas/README.md](chat-canvas/README.md) for installation, Valves, security and limits, [chat-canvas/ARCHITECTURE.md](chat-canvas/ARCHITECTURE.md) for how it works, and [chat-canvas/CHANGELOG.md](chat-canvas/CHANGELOG.md) for the release history.
+See [chat-artifacts/README.md](chat-artifacts/README.md) for installation, Valves, security and limits, [chat-artifacts/ARCHITECTURE.md](chat-artifacts/ARCHITECTURE.md) for how it works, and [chat-artifacts/CHANGELOG.md](chat-artifacts/CHANGELOG.md) for the release history.

@@ -4,6 +4,10 @@ This repository contains independently versioned Open WebUI extensions. Plugin-s
 
 ## 2026-11-12
 
+### Artifacts 1.0.0
+
+Replaced Chat Canvas with Artifacts, modelled on Claude's: documents, slides, spreadsheets, Mermaid diagrams, web pages, React apps, SVG drawings, JSON data and code open in a resizable panel beside the chat, with versions across answers and a Changes view, a live view that opens while a model writes, Try fixing, asking about a selected part, private edits that can be sent back to the chat, downloads in the usual formats (Excel keeps formulas), and sharing through Open WebUI's own share links pointed at the artifact, with a copy to continue for the people it is shared with. Generated code runs in a sandbox without the site's origin, held by a content policy to the configured libraries, and may use the chat's model or browser storage only with the person's consent. It stands in for Open WebUI's built-in HTML/SVG Artifacts. The browser suite passed 109 of 109 checks on Open WebUI 0.13.0 and 0.13.3, alone and with the other event functions; Chat Inspector's suite was updated to run beside it.
+
 ### Chat Inspector 1.2.0
 
 Context now lists every tool a conversation called, counted and told apart as MCP (by server), workspace tool, tool server, each group of built-in tools, provider-run or automatic, with web searches, pages, sources, code runs, images, failed and declined calls, timings and token cost; the last answer's calls open to show their input and result. Tool results are their own part of the context, answers with tool calls are fitted to the last round's prompt count rather than the total over all rounds, and the model's filters, actions and pipe are shown. The extra explanatory text is gone. The browser suite, now with a real native tool call, passed 103 of 103 checks on Open WebUI 0.13.0 and 0.13.3.

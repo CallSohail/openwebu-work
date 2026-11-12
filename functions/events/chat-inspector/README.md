@@ -4,7 +4,7 @@ How full is this chat? Chat Inspector adds **Context** to the chat's **⋯** men
 
 Version v1.2.0. Event Function. Requires Open WebUI v0.13.0 or later, the release that added the Tabs panel; tested in a browser on v0.13.0 and v0.13.3.
 
-It is a companion to [Chat Gallery](../chat-gallery/), [Chat Files](../chat-files/) and [Chat Canvas](../chat-canvas/), built the same way.
+It is a companion to [Chat Gallery](../chat-gallery/), [Chat Files](../chat-files/) and [Artifacts](../chat-artifacts/), built the same way.
 
 | The pop-up, from the ⋯ menu | Phone: a sheet from the bottom | Full view, over the window |
 | --- | --- | --- |
@@ -165,13 +165,13 @@ In a browser, against a **throwaway** Open WebUI with no users yet, wired to the
 ```bash
 python tests/fake_model.py 9999 &
 OPENAI_API_BASE_URL=http://127.0.0.1:9999/v1 OPENAI_API_KEY=test ENABLE_OPENAI_API=true open-webui serve
-python tests/seed.py http://127.0.0.1:8080 chat_inspector.py ../chat-canvas/chat_canvas.py ../chat-files/chat_files.py ../chat-gallery/chat_gallery.py > seed.json
+python tests/seed.py http://127.0.0.1:8080 chat_inspector.py ../chat-artifacts/chat_artifacts.py ../chat-files/chat_files.py ../chat-gallery/chat_gallery.py > seed.json
 node tests/e2e.mjs seed.json
 ```
 
 `fake_model.py` is an OpenAI-compatible server that streams answers and reports usage, adding 300 tokens of its own to every prompt the way a server's tools and instructions would. Given tools, a message containing `TOOLS` makes it call each offered tool named in the message, natively, the way OpenAI streams tool calls. Results on 2026-11-12:
 
-| Open WebUI | With Canvas, Files and Gallery | Checks |
+| Open WebUI | With Artifacts, Files and Gallery | Checks |
 | --- | --- | --- |
 | v0.13.3 | yes | 103 of 103 passed |
 | v0.13.3 | no | 98 of 98 passed |
