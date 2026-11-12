@@ -21,6 +21,7 @@ SOURCES = sys.argv[3:]
 PASSWORD = "artifacts-test-password"
 OPENER = urllib.request.build_opener(urllib.request.ProxyHandler({}))
 F = "```"
+F4 = "````"
 
 
 def call(method, path, token=None, body=None):
@@ -48,20 +49,24 @@ for path in SOURCES:
 VALVES = {"esm_cdn": CDN, "babel_url": CDN + "/babel.min.js", "tailwind_url": CDN + "/tailwind.js", "mermaid_url": CDN + "/mermaid.min.js", "extra_hosts": ""}
 call("POST", "/api/v1/functions/id/chat_artifacts/valves/update", admin_token, VALVES)
 call("POST", "/api/v1/models/create", admin_token, {"id": "fake-artist", "base_model_id": None, "name": "fake-artist", "meta": {"capabilities": {"vision": True}}, "params": {}, "access_grants": [{"principal_type": "user", "principal_id": "*", "permission": "read"}], "is_active": True})
+MODE = open(__import__("os").path.join(__import__("os").path.dirname(__file__), "..", "artifacts_mode.py"), encoding="utf-8").read()
+call("POST", "/api/v1/functions/create", admin_token, {"id": "artifacts_mode", "name": "Artifacts mode", "content": MODE, "meta": {"description": "Artifacts mode"}})
+call("POST", "/api/v1/functions/id/artifacts_mode/toggle", admin_token)
+call("POST", "/api/v1/models/create", admin_token, {"id": "fake-artist-mode", "base_model_id": "fake-artist", "name": "Artist with Artifacts mode", "meta": {"capabilities": {"vision": True}, "filterIds": ["artifacts_mode"], "defaultFilterIds": ["artifacts_mode"]}, "params": {}, "access_grants": [{"principal_type": "user", "principal_id": "*", "permission": "read"}], "is_active": True})
 call("POST", "/api/v1/auths/add", admin_token, {"name": "Artifacts User", "email": "user@example.test", "password": PASSWORD, "role": "user"})
 user_token = call("POST", "/api/v1/auths/signin", body={"email": "user@example.test", "password": PASSWORD})["token"]
 
 
-def make_chat(token, title, turns):
+def make_chat(token, title, turns, model="fake-artist"):
     now = int(time.time())
     messages, previous = {}, None
     for n, (role, content) in enumerate(turns):
         mid = f"m{n + 1}"
-        messages[mid] = {"id": mid, "parentId": previous, "childrenIds": [], "role": role, "timestamp": now - 900 + n * 10, "content": content, **({"model": "fake-artist", "done": True} if role == "assistant" else {})}
+        messages[mid] = {"id": mid, "parentId": previous, "childrenIds": [], "role": role, "timestamp": now - 900 + n * 10, "content": content, **({"model": model, "done": True} if role == "assistant" else {})}
         if previous:
             messages[previous]["childrenIds"].append(mid)
         previous = mid
-    chat = call("POST", "/api/v1/chats/new", token, {"chat": {"id": str(uuid.uuid4()), "title": title, "models": ["fake-artist"], "params": {}, "files": [], "tags": [], "history": {"messages": messages, "currentId": previous}, "messages": [], "timestamp": now * 1000}})
+    chat = call("POST", "/api/v1/chats/new", token, {"chat": {"id": str(uuid.uuid4()), "title": title, "models": [model], "params": {}, "files": [], "tags": [], "history": {"messages": messages, "currentId": previous}, "messages": [], "timestamp": now * 1000}})
     return chat["id"]
 
 
@@ -90,9 +95,9 @@ export default function HabitTracker() {
 SHEET = "Item,Cost,Quantity,Total\nBooks,12.5,2,=B2*C2\nPens,1.2,10,=B3*C3\nBag,30,1,=B4*C4\nSum,,=SUM(C2:C4),=SUM(D2:D4)"
 DIAGRAM = "%% artifact: Enrolment flow\nflowchart TD\n  A[Apply online] --> B{Documents ok?}\n  B -- yes --> C[Pay fees]\n  B -- no --> D[Send missing papers]\n  D --> B\n  C --> E[Enrolled]"
 SVG = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120"><title>Sun</title><circle cx="60" cy="60" r="40" fill="#f59e0b"/></svg>'
-DATA = json.dumps([{"name": "Ada", "year": 2, "grade": 15.5}, {"name": "Lin", "year": 1, "grade": 13}, {"name": "Sam", "year": 3, "grade": 17.25}], indent=2)
-DOC = "# Guide to the library\n\nThe library is open every weekday. This guide explains how to borrow books, book rooms and print.\n\n## Borrowing\n\nYou can borrow up to ten books for three weeks. " + "Renew them online before they are due. " * 20 + "\n\n## Rooms\n\nGroup rooms are booked through the portal. " + "Each booking lasts two hours at most. " * 15 + "\n\n## Printing\n\n" + "Printing costs five cents a page. " * 15 + "\n\n### Opening hours\n\n| Day | Opens | Closes |\n| --- | --- | --- |\n| Monday | 8:00 | 20:00 |\n| Tuesday | 8:00 | 20:00 |\n| Saturday | 10:00 | 16:00 |\n"
-CODE = "# file: grades.py\n" + "\n".join(f"def grade_{i}(score):\n    return 'pass' if score >= {10 + i % 3} else 'fail'\n" for i in range(6))
+DATA = "// artifact: Student data\n" + json.dumps([{"name": "Ada", "year": 2, "grade": 15.5}, {"name": "Lin", "year": 1, "grade": 13}, {"name": "Sam", "year": 3, "grade": 17.25}], indent=2)
+DOC_ANSWER = "# Guide to the library\n\nThe library is open every weekday. This guide explains how to borrow books, book rooms and print.\n\n## Borrowing\n\nYou can borrow up to ten books for three weeks. " + "Renew them online before they are due. " * 20 + "\n\n## Rooms\n\nGroup rooms are booked through the portal. " + "Each booking lasts two hours at most. " * 15 + "\n\n## Printing\n\n" + "Printing costs five cents a page. " * 15 + "\n\n### Opening hours\n\n| Day | Opens | Closes |\n| --- | --- | --- |\n| Monday | 8:00 | 20:00 |\n| Tuesday | 8:00 | 20:00 |\n| Saturday | 10:00 | 16:00 |\n"
+CODE = "# artifact: grades.py\n" + "\n".join(f"def grade_{i}(score):\n    return 'pass' if score >= {10 + i % 3} else 'fail'\n" for i in range(6))
 BROKEN = "<!doctype html>\n<html>\n<head><title>Live counter</title></head>\n<body>\n<h1>Counter</h1>\n<script>\n  document.getElementById('missing').textContent = 'boom';\n</script>\n</body>\n</html>"
 ATTACK = """<!doctype html>
 <html>
@@ -137,6 +142,15 @@ AI_APP = """<!doctype html>
   };
 </script>
 </body></html>"""
+DOC = "<!-- artifact: Guide to the library -->\n" + DOC_ANSWER + "\n> [!TIP]\n> Book rooms a week ahead.\n\nThe ==quiet floor== is on level 3.\n\n" + F + "mermaid\nflowchart LR\n  A[Find book] --> B[Borrow] --> C[Return]\n" + F + "\n\n" + F + "chart\ntype: bar\ntitle: Visits per day\nDay,Visits\nMon,120\nTue,98\nWed,143\n" + F + "\n"
+PIXEL = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=="
+RICH_DECK = ("<!-- artifact: Research methods -->\n<!-- layout: title -->\n# Research methods\nA ==short== guide\n\n---\n\n# How it flows\n" + F + "mermaid\nflowchart LR\n  Q[Question] --> D[Data] --> R[Result]\n" + F
+             + "\n\n---\n\n# Results\n" + F + "chart\ntype: line\ntitle: Responses\nWeek,Online,Paper\n1,10,4\n2,25,6\n3,40,5\n" + F
+             + "\n\n---\n\n# Two sides\n- Fast\n- Cheap\n|||\n- Slow\n- ==Costly==\n\n---\n\n<!-- layout: section -->\n# Part two\n\n---\n\n# Shapes\n> [!WARNING]\n> Check your sample.\n\n" + F + "svg\n<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 10 10\"><rect width=\"10\" height=\"10\" fill=\"#16a34a\"/></svg>\n" + F
+             + "\n\n![A pixel](" + PIXEL + ")\n![Elsewhere](https://example.com/spy.png)")
+CHART = "type: pie\ntitle: Budget split\nPart,Share\nRent,50\nFood,30\nOther,20"
+GENERAL = ("Sure! Here is a general answer about study habits. " * 40 + "\n\n## Tips\n\n| Habit | Why |\n| --- | --- |\n| Sleep | Memory |\n| Breaks | Focus |\n| Review | Retention |\n\n"
+           + "A short example:\n\n" + F + "python\n" + "\n".join(f"x{i} = {i}" for i in range(20)) + "\n" + F + "\n\nAnd data:\n\n" + F + "json\n{\"a\": 1, \"b\": [1, 2, 3], \"c\": {\"d\": true}}\n" + F)
 UNTITLED1 = "<!doctype html>\n<html>\n<body>\n<h1>First draft</h1>\n<p>One</p>\n</body>\n</html>"
 UNTITLED2 = UNTITLED1.replace("First draft", "Second draft")
 
@@ -150,7 +164,11 @@ def seed(token):
         "diagram": make_chat(token, "Diagram chat", [("user", "Enrolment flow"), ("assistant", F + "mermaid\n" + DIAGRAM + "\n" + F)]),
         "svg": make_chat(token, "Drawing chat", [("user", "A sun"), ("assistant", F + "svg\n" + SVG + "\n" + F)]),
         "data": make_chat(token, "Data chat", [("user", "Student data"), ("assistant", F + "json\n" + DATA + "\n" + F)]),
-        "doc": make_chat(token, "Doc chat", [("user", "Library guide"), ("assistant", DOC)]),
+        "doc": make_chat(token, "Doc chat", [("user", "Library guide"), ("assistant", "Here it is.\n\n" + F4 + "markdown\n" + DOC + "\n" + F4)]),
+        "answer": make_chat(token, "Long answer chat", [("user", "Library guide"), ("assistant", DOC_ANSWER)]),
+        "general": make_chat(token, "General chat", [("user", "How should I study?"), ("assistant", GENERAL)]),
+        "rich": make_chat(token, "Rich deck chat", [("user", "Slides on research"), ("assistant", F4 + "slides\n" + RICH_DECK + "\n" + F4)]),
+        "chart": make_chat(token, "Chart chat", [("user", "Budget chart"), ("assistant", F + "chart\n" + CHART + "\n" + F)]),
         "code": make_chat(token, "Code chat", [("user", "Grading code"), ("assistant", F + "python\n" + CODE + "\n" + F)]),
         "broken": make_chat(token, "Broken chat", [("user", "A counter"), ("assistant", F + "html\n" + BROKEN + "\n" + F)]),
         "attack": make_chat(token, "Attack chat", [("user", "Test"), ("assistant", F + "html\n" + ATTACK + "\n" + F)]),
@@ -159,6 +177,7 @@ def seed(token):
         "untitled": make_chat(token, "Untitled chat", [("user", "A page"), ("assistant", F + "html\n" + UNTITLED1 + "\n" + F), ("user", "Change it"), ("assistant", "Done:\n\n" + F + "html\n" + UNTITLED2 + "\n" + F)]),
         "plain": make_chat(token, "Plain chat", [("user", "Hello"), ("assistant", "Hi! A short answer with `inline code` only.")]),
         "live": make_chat(token, "Live chat", [("user", "Hello"), ("assistant", "Hi.")]),
+        "mode": make_chat(token, "Mode chat", [("user", "Hello"), ("assistant", "Hi.")], model="fake-artist-mode"),
     }
 
 

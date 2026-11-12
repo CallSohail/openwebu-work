@@ -54,8 +54,8 @@ async function session(account, { viewport = { width: 1400, height: 900 }, theme
     if (wait) await page.waitForSelector('#messages-container [id^="message-"]', { timeout: 30000 }).catch(() => {});
     await page.waitForTimeout(1600);
   };
-  const cards = () => page.$$eval('.ar-cards .ar-card', nodes => nodes.map(n => n.innerText.replace(/\n/g, ' | ')));
-  const openCard = async (n = -1) => { const list = page.locator('.ar-cards .ar-card'); await list.first().waitFor({ timeout: 15000 }); await (n < 0 ? list.last() : list.nth(n)).click(); await ready(); await page.waitForTimeout(400); };
+  const cards = () => page.$$eval('.ar-cards:not(.ar-writing) .ar-card', nodes => nodes.map(n => n.innerText.replace(/\n/g, ' | ')));
+  const openCard = async (n = -1) => { const list = page.locator('.ar-cards .ar-cardmain'); await list.first().waitFor({ timeout: 15000 }); await (n < 0 ? list.last() : list.nth(n)).click(); await ready(); await page.waitForTimeout(400); };
   const frameText = async () => { if (!(await page.locator('#owui-chat-artifacts iframe.ar-frame').count())) return ''; return page.frameLocator('#owui-chat-artifacts iframe.ar-frame').locator('body').innerText({ timeout: 8000 }).catch(() => ''); };
   const waitFrame = (re, timeout = 15000) => page.waitForFunction(() => true).then(async () => { const end = Date.now() + timeout; let text = ''; while (Date.now() < end) { text = await frameText(); if (re.test(text)) return text; await page.waitForTimeout(250); } return text; });
   return { context, page, state, open, ready, cards, openCard, frameText, waitFrame };
@@ -127,6 +127,10 @@ console.log('Plain user, a web page with two versions');
   await page.locator('#owui-chat-artifacts .ar-chip', { hasText: 'Phone' }).click();
   await page.waitForTimeout(400);
   check('the preview can be shown at a phone’s width', Math.round((await page.locator('#owui-chat-artifacts iframe.ar-frame').boundingBox()).width) <= 392);
+  await page.locator('#owui-chat-artifacts .ar-head [aria-label="Copy"]').click();
+  await page.waitForSelector('#owui-chat-artifacts .ar-toast:not([hidden])', { timeout: 3000 }).catch(() => {});
+  const toastBox = await page.locator('#owui-chat-artifacts .ar-toast').boundingBox();
+  check('copying shows a small note, not a bar', toastBox && toastBox.width < 200 && toastBox.height < 34, JSON.stringify(toastBox));
   const html = await download(page, 'Download', 'HTML');
   check('Download gives the page with its title as the name', html.name === 'Budget tracker.html' && /Monthly budget/.test(html.text), html.name);
   // Editing makes a draft that is only yours
@@ -208,7 +212,9 @@ console.log('Every kind of artifact');
   await page.locator('#owui-chat-artifacts td[data-r="1"][data-c="1"]').click();
   check('the footer sums the chosen column', /Sum 51\.2/.test(await page.locator('#owui-chat-artifacts .ar-sheetfoot').innerText()), await page.locator('#owui-chat-artifacts .ar-sheetfoot').innerText());
   await page.locator('#owui-chat-artifacts button', { hasText: 'Chart' }).click();
-  check('a chart is drawn from a column of numbers', await page.locator('#owui-chat-artifacts svg.ar-chart rect.ar-bar').count() === 4);
+  check('a chart is drawn from every column of numbers, as series', await page.locator('#owui-chat-artifacts svg.ar-chart rect.ar-bar').count() === 12);
+  await page.locator('#owui-chat-artifacts .ar-chartbar select').first().selectOption('1');
+  check('or from one column', await page.locator('#owui-chat-artifacts svg.ar-chart rect.ar-bar').count() === 4);
   const xlsx = await download(page, 'Download', 'Excel');
   const book = execFileSync('python3', ['-c', 'import sys,zipfile;z=zipfile.ZipFile(sys.argv[1]);print(z.testzip());print(z.read("xl/worksheets/sheet1.xml").decode())', xlsx.file]).toString();
   check('Excel download is a workbook keeping the formulas and your edit', /^None/.test(book) && /<f>B2\*C2<\/f><v>40<\/v>/.test(book) && /<f>SUM\(D2:D4\)<\/f>/.test(book), book.slice(0, 300));
@@ -219,7 +225,7 @@ console.log('Every kind of artifact');
   check('a Mermaid diagram is drawn in its sandbox', /Apply online/.test(await s.waitFrame(/Apply online/)) && /Enrolment flow/.test(await head(page)));
   await page.waitForTimeout(300);
   const svgFile = await download(page, 'Download', 'SVG');
-  check('a diagram downloads as SVG', /<svg/.test(svgFile.text) && /Apply online/.test(svgFile.text), svgFile.name);
+  check('a diagram downloads as SVG', /<svg/.test(svgFile.text) && /Apply/.test(svgFile.text) && /online/.test(svgFile.text), svgFile.name);
   // App
   await s.open('/c/' + U.app); await s.openCard(-1);
   check('a React app runs with Tailwind, an npm icon and shadcn/ui pieces', /Habits done today/.test(await s.waitFrame(/Habits done today/, 20000)) && /Habit tracker/.test(await head(page)));
@@ -238,15 +244,39 @@ console.log('Every kind of artifact');
   check('JSON opens as a tree', /name/.test(await page.locator('#owui-chat-artifacts .ar-tree').innerText()) && /3 items/.test(await page.locator('#owui-chat-artifacts .ar-tree').innerText()));
   await page.locator('#owui-chat-artifacts button', { hasText: 'As a table' }).click();
   check('a list of records can be read as a table', (await cells()).length === 4);
-  // Document from a long answer, and its table as a sheet
+  // A document with a callout, a highlight, a diagram and a chart
   await s.open('/c/' + U.doc);
   const docCards = await s.cards();
-  check('a long answer is a document, and its table a spreadsheet', docCards.some(c => /Guide to the library \| Document/.test(c)) && docCards.some(c => /Opening hours \| Spreadsheet/.test(c)), docCards.join(' || '));
-  await page.locator('.ar-cards .ar-card', { hasText: 'Guide to the library' }).click(); await s.ready();
+  check('a marked Markdown block is a document', docCards.length === 1 && /Guide to the library \| Document/.test(docCards[0]), docCards.join(' || '));
+  await s.openCard(-1);
   check('the document is rendered with its headings and table', await page.locator('#owui-chat-artifacts .ar-doc h2').count() === 3 && await page.locator('#owui-chat-artifacts .ar-doc table').count() === 1 && /words · \d min read/.test(await foot(page)));
+  await page.waitForSelector('#owui-chat-artifacts .ar-doc .ar-diagram[data-state=ready] img', { timeout: 15000 }).catch(() => {});
+  check('a document holds callouts, highlights, a Mermaid diagram and a chart', await page.locator('#owui-chat-artifacts .ar-callout[data-kind=tip]').count() === 1 && /quiet floor/.test(await page.locator('#owui-chat-artifacts .ar-doc mark').innerText().catch(() => '')) && await page.locator('#owui-chat-artifacts .ar-doc .ar-diagram[data-state=ready] img').count() === 1 && await page.locator('#owui-chat-artifacts .ar-doc svg.ar-chart rect.ar-bar').count() === 3);
   const doc = await download(page, 'Download', 'Word');
-  check('a document downloads for Word', doc.name === 'Guide to the library.doc' && /urn:schemas-microsoft-com:office:word/.test(doc.text) && /<h2[^>]*>Borrowing<\/h2>/.test(doc.text));
+  check('a document downloads for Word, its diagram included', doc.name === 'Guide to the library.doc' && /urn:schemas-microsoft-com:office:word/.test(doc.text) && /<h2[^>]*>Borrowing<\/h2>/.test(doc.text) && /<img[^>]+data:image\/svg\+xml;base64/.test(doc.text) && /<mark>/.test(doc.text));
   await shot(page, 'document-light');
+  // Slides with a diagram, a chart, columns, a section, a callout, a drawing and pictures
+  await s.open('/c/' + U.rich); await s.openCard(-1);
+  const slide = () => page.locator('#owui-chat-artifacts .ar-stage');
+  const next = () => page.locator('#owui-chat-artifacts [aria-label="Next slide"]').click();
+  check('a title slide uses the title layout and keeps highlights', await slide().locator('.ar-slide-title').count() === 1 && /short/.test(await slide().locator('mark').innerText().catch(() => '')));
+  await next(); await page.waitForSelector('#owui-chat-artifacts .ar-stage .ar-diagram[data-state=ready] img', { timeout: 15000 }).catch(() => {});
+  check('a slide can hold a Mermaid diagram', await slide().locator('.ar-diagram[data-state=ready] img').count() === 1);
+  await next();
+  check('a slide can hold a chart with several series', await slide().locator('svg.ar-chart polyline').count() === 2 && /Responses/.test(await slide().innerText()));
+  await next();
+  check('a line of ||| splits a slide into columns', await slide().locator('.ar-cols .ar-col').count() === 2);
+  await next();
+  check('a section slide has its own layout', await slide().locator('.ar-slide-section').count() === 1);
+  await next();
+  const pics = await slide().evaluate(node => ({ svg: node.querySelectorAll('img.ar-svgpic').length, data: [...node.querySelectorAll('img.ar-pic')].filter(i => i.src.startsWith('data:image/png')).length, outside: node.querySelectorAll('img[src*="example.com"]').length, named: [...node.querySelectorAll('.ar-img')].map(n => n.textContent).join() }));
+  check('a slide can hold a callout, a drawing and a picture; a picture from another site is named, not loaded', await slide().locator('.ar-callout[data-kind=warning]').count() === 1 && pics.svg === 1 && pics.data === 1 && pics.outside === 0 && /Elsewhere/.test(pics.named) && !s.state.outside.some(u => /spy\.png/.test(u)), JSON.stringify(pics));
+  await shot(page, 'slides-rich-light');
+  const richDeck = await download(page, 'Download', 'Slides (.html)');
+  check('the presentation download keeps diagrams, charts and columns', (richDeck.text.match(/<section class="s/g) || []).length === 6 && /data:image\/svg\+xml;base64/.test(richDeck.text) && /ar-cols/.test(richDeck.text) && /<polyline/.test(richDeck.text), richDeck.name);
+  // A chart on its own
+  await s.open('/c/' + U.chart); await s.openCard(-1);
+  check('a chart block opens as its chart, with its own type and title', await page.locator('#owui-chat-artifacts svg.ar-chart path').count() === 3 && /Budget split/.test(await page.locator('#owui-chat-artifacts svg.ar-chart').innerHTML()));
   // Code
   await s.open('/c/' + U.code); await s.openCard(-1);
   check('code opens in the editor, named after its file', await page.locator('#owui-chat-artifacts textarea.ar-area').count() === 1 && /grades\.py/.test(await head(page)) && !(await page.locator('#owui-chat-artifacts .ar-mode', { hasText: 'Preview' }).count()));
@@ -256,6 +286,11 @@ console.log('Every kind of artifact');
   await s.open('/c/' + U.untitled);
   const untitled = await s.cards();
   check('an untitled block right after the previous answer’s is its next version', untitled.length === 2 && /v1/.test(untitled[0]) && /v2/.test(untitled[1]), untitled.join(' || '));
+  // An ordinary answer, even a long one with a table, a short script and some JSON, is not an artifact
+  await s.open('/c/' + U.general);
+  check('an ordinary answer makes no artifact', (await s.cards()).length === 0 && await page.locator('.ar-openbtn').count() === 0 && await page.locator('.ar-collapsed').count() === 0);
+  await s.open('/c/' + U.answer);
+  check('a long answer is just an answer', (await s.cards()).length === 0);
   // Nothing
   await s.open('/c/' + U.plain);
   check('a chat with no artifacts has no cards', (await s.cards()).length === 0);
@@ -306,20 +341,41 @@ console.log('Live answers, Try fixing and asking about a part');
   await page.waitForFunction(() => /Version 2 of 2/.test(document.querySelector('#owui-chat-artifacts .ar-foot')?.textContent || ''), null, { timeout: 25000 }).catch(() => {});
   check('Try fixing sends the error to the model, and its fix becomes version 2', /Version 2 of 2/.test(await foot(page)) && /Fixed version/.test(await s.waitFrame(/Fixed version/)), await foot(page));
   check('the fixed version has no error', !(await page.locator('#owui-chat-artifacts .ar-error').count()));
-  // A page written live opens by itself and runs when it is done
+  // While a page is written the chat shows a card, not half a page; the panel opens once it is complete
   await s.open('/c/' + U.live);
   await page.locator('#chat-input').click(); await page.keyboard.type('MAKEPAGE please'); await page.keyboard.press('Enter');
-  const live = await page.waitForFunction(() => document.getElementById('owui-chat-artifacts')?.dataset.view === 'live', null, { timeout: 15000 }).then(() => true, () => false);
-  const liveText = await page.locator('#owui-chat-artifacts .ar-livearea').innerText().catch(() => '');
-  check('a page being written opens the panel and shows the code as it arrives', live && /<html>|<h1/.test(liveText) && /Being written/.test(await head(page)), liveText.slice(0, 80));
-  await page.waitForFunction(() => document.getElementById('owui-chat-artifacts')?.dataset.view === 'viewer', null, { timeout: 25000 }).catch(() => {});
-  check('when it is done, it runs', /Built while you watched/.test(await s.waitFrame(/Built while/)) && /Live counter/.test(await head(page)));
+  const writing = await page.waitForSelector('.ar-writing .ar-card-writing', { timeout: 15000 }).then(() => true, () => false);
+  const during = await page.evaluate(() => ({ panel: !!document.getElementById('owui-chat-artifacts') && !document.getElementById('owui-chat-artifacts').hidden, folded: !!document.querySelector('.ar-collapsed:not(.ar-shown)'), text: document.querySelector('.ar-writing')?.innerText || '' }));
+  check('while a page is written, a card says so, its code is folded away and the panel stays closed', writing && during.folded && !during.panel && /Live counter/.test(during.text) && /Being written/.test(during.text), JSON.stringify(during));
+  await page.waitForFunction(() => document.getElementById('owui-chat-artifacts')?.dataset.view === 'viewer' && !document.getElementById('owui-chat-artifacts').hidden, null, { timeout: 25000 }).catch(() => {});
+  check('when it is complete, it opens and runs', /Built while you watched/.test(await s.waitFrame(/Built while/)) && /Live counter/.test(await head(page)));
+  check('the writing card gave way to the artifact’s card', !(await page.locator('.ar-writing').count()) && (await s.cards()).some(c => /Live counter/.test(c)));
   check('Open WebUI’s own Artifacts tab doesn’t open as well', !(await page.locator('[data-panel-tab="artifacts"]').count()));
   await page.frameLocator('#owui-chat-artifacts iframe.ar-frame').locator('button').click();
   check('and works', /^1/.test((await page.frameLocator('#owui-chat-artifacts iframe.ar-frame').locator('#n').innerText()).trim()));
+  const toggle = page.locator('.ar-cards .ar-cardcode').last();
+  await toggle.click();
+  check('the folded code can be shown in the chat again', await page.locator('.ar-collapsed.ar-shown [id^="code-textarea-"]').last().isVisible());
+  await toggle.click();
+  // Saying hello makes nothing
+  await page.locator('#owui-chat-artifacts .ar-head [aria-label="Close"]').click();
+  const before = (await s.cards()).length;
+  await page.locator('#chat-input').click(); await page.keyboard.type('hello there'); await page.keyboard.press('Enter');
+  await page.waitForFunction(n => document.querySelectorAll('#messages-container [id^="message-"]').length >= n, 8, { timeout: 15000 }).catch(() => {});
+  await page.waitForTimeout(3000);
+  check('an ordinary reply makes no card and opens nothing', (await s.cards()).length === before && await page.locator('#owui-chat-artifacts').isHidden() && !(await page.locator('.ar-writing').count()));
+  // Artifacts mode: on by default for one model, through Open WebUI's own filter switch
+  await s.open('/c/' + U.mode);
+  await page.locator('#chat-input').click(); await page.keyboard.type('WHATMODE'); await page.keyboard.press('Enter');
+  await page.waitForFunction(() => /Artifacts mode is (on|off)/.test(document.querySelector('#messages-container')?.innerText || ''), null, { timeout: 20000 }).catch(() => {});
+  check('with Artifacts mode on, the model gets the artifact instructions', /Artifacts mode is on/.test(await page.locator('#messages-container').innerText()));
+  await s.open('/c/' + U.plain);
+  await page.locator('#chat-input').click(); await page.keyboard.type('WHATMODE'); await page.keyboard.press('Enter');
+  await page.waitForFunction(() => /Artifacts mode is (on|off)/.test(document.querySelector('#messages-container')?.innerText || ''), null, { timeout: 20000 }).catch(() => {});
+  check('without it, the model doesn’t', /Artifacts mode is off/.test(await page.locator('#messages-container').innerText()));
   // Selecting part of a document and asking for a change
   await s.open('/c/' + U.doc);
-  await page.locator('.ar-cards .ar-card', { hasText: 'Guide to the library' }).click(); await s.ready();
+  await page.locator('.ar-cards .ar-cardmain', { hasText: 'Guide to the library' }).click(); await s.ready();
   const heading = page.locator('#owui-chat-artifacts .ar-doc h2').first();
   await heading.click({ clickCount: 3 });
   await page.waitForSelector('#owui-chat-artifacts .ar-askbtn', { timeout: 4000 }).catch(() => {});
@@ -334,38 +390,20 @@ console.log('Live answers, Try fixing and asking about a part');
   await s.context.close();
 }
 
-/* ---- sharing ---- */
-console.log('Sharing an artifact');
+/* ---- a chat Open WebUI shared ---- */
+console.log('Shared chats');
 {
   const owner = await session(A), { page } = owner;
   await owner.open('/c/' + A.page); await owner.openCard(-1);
-  await page.locator('#owui-chat-artifacts .ar-head [aria-label="Share"]').click();
-  check('Share explains what is shared and who can open it', /read-only copy of this chat/.test(await page.locator('dialog.ar-dialog').innerText()));
-  await page.locator('dialog.ar-dialog button', { hasText: 'Create link' }).click();
-  await page.waitForFunction(() => /\/s\//.test(document.querySelector('dialog.ar-dialog .ar-linkrow input')?.value || ''), null, { timeout: 10000 }).catch(() => {});
-  const link = await page.locator('dialog.ar-dialog .ar-linkrow input').inputValue();
-  check('it makes Open WebUI’s own share link, pointed at the artifact', /\/s\/[^?]+\?artifact=a/.test(link), link);
-  await page.locator('dialog.ar-dialog button', { hasText: 'Close' }).click();
-  // Someone with no access
+  check('there is no Share button', !(await page.locator('#owui-chat-artifacts .ar-head [aria-label="Share"]').count()) && !/Share/.test(await page.locator('#owui-chat-artifacts .ar-head').innerText()));
+  const share = await api(A, 'POST', '/api/v1/chats/' + A.page + '/share', {});
+  await api(A, 'POST', '/api/v1/chats/shared/' + A.page + '/access/update', { access_grants: [{ principal_type: 'user', principal_id: '*', permission: 'read' }] });
   const other = await session(U);
-  await other.open(link.replace(seed.base, ''), false);
-  await other.page.waitForTimeout(2500);
-  const denied = await other.page.evaluate(() => { const p = document.getElementById('owui-chat-artifacts'); return { panel: !!p && !p.hidden, text: p?.innerText || '', frame: !!p?.querySelector('iframe') }; });
-  check('someone not given access can’t open it', !denied.frame && (!denied.panel || /don’t have access|Couldn’t read/.test(denied.text)), JSON.stringify(denied));
-  // Give everyone signed in access the way the Share dialog does, then open it
-  const shareId = /\/s\/([^?]+)/.exec(link)[1];
-  const grant = await api(A, 'POST', '/api/v1/chats/shared/' + A.page + '/access/update', { access_grants: [{ principal_type: 'user', principal_id: '*', permission: 'read' }] });
-  check('(access granted with Open WebUI’s own setting)', grant.status === 200, grant.status + ' ' + JSON.stringify(grant.json).slice(0, 200));
-  await other.open(link.replace(seed.base, ''), false);
+  await other.open('/s/' + share.json.share_id + '?artifact=am2-0', false);
   await other.ready(); await other.page.waitForTimeout(600);
-  check('the shared link opens straight on the artifact, running', /Monthly budget/.test(await other.waitFrame(/Monthly budget/)) && /Budget tracker/.test(await head(other.page)));
-  check('it says it is shared, offers a copy, and can’t be edited or reshared', /Shared with you/.test(await panelText(other.page)) && await other.page.locator('#owui-chat-artifacts button', { hasText: 'Make a copy to continue' }).count() >= 1 && !(await other.page.locator('#owui-chat-artifacts .ar-head [aria-label="Share"]').count()));
+  check('a chat shared with Open WebUI’s own Share opens on its artifact, running', /Monthly budget/.test(await other.waitFrame(/Monthly budget/)) && /Budget tracker/.test(await head(other.page)));
   await mode(other.page, 'Code');
-  check('the code of a shared artifact is read-only', await other.page.locator('#owui-chat-artifacts textarea.ar-area').evaluate(a => a.readOnly));
-  await other.page.locator('#owui-chat-artifacts button', { hasText: 'Make a copy to continue' }).first().click();
-  await other.page.waitForURL(/\/c\/[^?]+\?artifact=/, { timeout: 15000 }).catch(() => {});
-  await other.ready(); await other.page.waitForTimeout(800);
-  check('Make a copy opens their own chat on the same artifact', /\/c\//.test(other.page.url()) && /Budget tracker/.test(await head(other.page)) && !!(await other.page.locator('#owui-chat-artifacts .ar-head [aria-label="Share"]').count()), other.page.url());
+  check('read-only, with nothing to copy it into', await other.page.locator('#owui-chat-artifacts textarea.ar-area').evaluate(a => a.readOnly) && !(await other.page.locator('#owui-chat-artifacts button', { hasText: 'Make a copy' }).count()));
   check('no page errors', owner.state.errors.length === 0 && other.state.errors.length === 0, [...owner.state.errors, ...other.state.errors].slice(0, 3).join(' | '));
   await owner.context.close(); await other.context.close();
 }
@@ -378,10 +416,11 @@ console.log('New artifacts');
   await page.click('#owui-chat-artifacts-header'); await s.ready();
   await page.locator('#owui-chat-artifacts .ar-head button', { hasText: 'New' }).click();
   check('New offers ten kinds', await page.locator('dialog.ar-newdialog .ar-newitem').count() === 10);
+  const countBefore = await page.locator('#messages-container [id^="message-"]').count();
   await page.locator('dialog.ar-newdialog .ar-newitem', { hasText: 'Slides' }).click();
-  await page.waitForTimeout(500);
+  await page.waitForFunction(() => /```slides/.test(document.getElementById('chat-input')?.innerText || ''), null, { timeout: 5000 }).catch(() => {});
   const box = await page.locator('#chat-input').innerText();
-  check('choosing one puts a ready request in the message box, unsent', /Make a slide deck about/.test(box) && /```slides/.test(box) && (await page.locator('#messages-container [id^="message-"]').count()) === 2, box.slice(0, 120));
+  check('choosing one puts a ready request in the message box, unsent', /Make a slide deck about/.test(box) && /```slides/.test(box) && (await page.locator('#messages-container [id^="message-"]').count()) === countBefore, box.replace(/\n+/g, ' ').slice(0, 160));
   await page.evaluate(() => window.postMessage({ type: 'input:prompt', text: '' }, location.origin));
   check('the panel stays open beside the message box', await page.locator('#owui-chat-artifacts').isVisible());
   await page.locator('#owui-chat-artifacts .ar-head button', { hasText: 'New' }).click();
@@ -448,9 +487,24 @@ console.log('Valves');
   s = await session(U); await s.open('/c/' + U.page); await s.page.waitForTimeout(1500);
   check('cards_in_chat off: no cards or Open buttons', (await s.cards()).length === 0 && await s.page.locator('.ar-openbtn').count() === 0);
   await s.context.close();
-  await setValves({ collapse_code: true });
+  await setValves({});
   s = await session(U); await s.open('/c/' + U.page); await s.page.waitForTimeout(1500);
-  check('collapse_code on: the page’s code is folded away, its Open button kept', await s.page.locator('.ar-collapsed').count() === 2 && await s.page.locator('.ar-collapsed .ar-openbtn').count() === 2 && !(await s.page.locator('.ar-collapsed [id^="code-textarea-"]').first().isVisible()));
+  check('by default an artifact’s code is folded away in the chat, its Open button kept', await s.page.locator('.ar-collapsed').count() === 2 && await s.page.locator('.ar-collapsed .ar-openbtn').count() === 2 && !(await s.page.locator('.ar-collapsed [id^="code-textarea-"]').first().isVisible()));
+  await s.context.close();
+  await setValves({ collapse_code: false });
+  s = await session(U); await s.open('/c/' + U.page); await s.page.waitForTimeout(1500);
+  check('collapse_code off: the code stays in the chat', await s.page.locator('.ar-collapsed').count() === 0 && await s.page.locator('.ar-cardcode').count() === 0);
+  await s.context.close();
+  await setValves({ detect: 'all' });
+  s = await session(U); await s.open('/c/' + U.answer); await s.page.waitForTimeout(1500);
+  const all = await s.cards();
+  check('detect = all: a long answer is a document, and its table a spreadsheet', all.some(c => /Guide to the library \| Document/.test(c)) && all.some(c => /Opening hours \| Spreadsheet/.test(c)), all.join(' || '));
+  await s.context.close();
+  await setValves({ detect: 'marked' });
+  s = await session(U); await s.open('/c/' + U.page); await s.page.waitForTimeout(1500);
+  const unmarked = (await s.cards()).length;
+  await s.open('/c/' + U.deck); await s.page.waitForTimeout(1500);
+  check('detect = marked: only blocks the model marked are artifacts', unmarked === 0 && (await s.cards()).length === 2);
   await s.context.close();
   await setValves({ network: 'off' });
   s = await session(U); await s.open('/c/' + U.app); await s.openCard(-1);

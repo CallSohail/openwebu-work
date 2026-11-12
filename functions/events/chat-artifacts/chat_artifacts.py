@@ -1,13 +1,13 @@
 """
 title: Artifacts
-description: Claude-style Artifacts for Open WebUI: documents, slides, spreadsheets, diagrams, web pages, React apps, drawings and data open in a panel beside the chat, with versions, live preview, editing, exports (PDF, Word, Excel, PNG), sharing and a sandbox.
+description: Claude-style Artifacts for Open WebUI: documents, slides, spreadsheets, diagrams, web pages, React apps, drawings and data open in a panel beside the chat, with versions, editing, exports (PDF, Word, Excel, PNG) and a sandbox. Pair it with Artifacts mode, the switch that tells the model when and how to make them.
 author: Muhammad Sohail
-version: 1.0.0
+version: 1.1.0
 license: MIT
 required_open_webui_version: 0.13.0
 """
 
-# Artifacts 1.0.0 replaces Chat Canvas. The two protocol blocks below are Classic298's Shared Assets Protocol and its
+# Artifacts replaces Chat Canvas. The two protocol blocks below are Classic298's Shared Assets Protocol and its
 # live reload add-on (BSD 3-Clause), copied byte for byte.
 
 import json as _json
@@ -524,6 +524,21 @@ ARTIFACTS_CSS = r"""
 .ar-pre{margin:.75rem 0;padding:.75rem;border-radius:.625rem;background:var(--ar-soft);box-shadow:inset 0 0 0 1px var(--ar-line);overflow:auto;font:.8125rem/1.5 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;white-space:pre}
 .ar-pre code{background:none;padding:0}
 .ar-img{color:var(--ar-muted);font-style:italic}
+.ar-pic{max-width:100%;height:auto;border-radius:.375rem}
+mark{background:#fde68a;color:#111;padding:0 .15em;border-radius:.2em}
+.ar-callout{margin:.75rem 0;padding:.6rem .9rem;border-radius:.625rem;border-inline-start:4px solid #2563eb;background:color-mix(in srgb,#2563eb 9%,transparent)}
+.ar-callout[data-kind=tip]{border-color:#16a34a;background:color-mix(in srgb,#16a34a 9%,transparent)}
+.ar-callout[data-kind=important]{border-color:#7c3aed;background:color-mix(in srgb,#7c3aed 9%,transparent)}
+.ar-callout[data-kind=warning]{border-color:#d97706;background:color-mix(in srgb,#d97706 11%,transparent)}
+.ar-callout-title{display:block;font-weight:700;margin-bottom:.15rem}
+.ar-callout>p{margin:.2rem 0}
+.ar-figure{margin:.75rem 0;text-align:center}
+.ar-figure .ar-chart{margin:0 auto}
+.ar-diagram{background:#fff;border-radius:.625rem;padding:.5rem;box-shadow:inset 0 0 0 1px var(--ar-line)}
+.ar-diagram[data-state=loading]{min-height:4rem;display:flex;align-items:center;justify-content:center}
+.ar-diagram .ar-muted{color:#5d5d5d}
+.ar-cols{display:grid;grid-template-columns:repeat(var(--ar-cols,2),minmax(0,1fr));gap:1.5em;align-items:start}
+.ar-hiddenframe{position:fixed;left:-10000px;top:0;width:900px;height:700px;opacity:0;pointer-events:none;border:0}
 .ar-tablebox{overflow:auto;margin:.75rem 0;max-width:100%}
 .ar-table{border-collapse:collapse;font-size:.8125rem;min-width:50%}
 .ar-table th,.ar-table td{border:1px solid var(--ar-strong-line);padding:.3rem .55rem;text-align:start;vertical-align:top}
@@ -552,7 +567,16 @@ ARTIFACTS_CSS = r"""
 .ar-slide .ar-table th,.ar-slide .ar-table td{border-color:#ccc}
 .ar-slide .ar-table th{background:#f3f3f3}
 .ar-slide a{color:#1d4ed8}
-.ar-slide-title .ar-slide-inner{align-items:center;text-align:center}
+.ar-slide-title .ar-slide-inner,.ar-slide-center .ar-slide-inner{align-items:center;text-align:center}
+.ar-slide-section{background:#1e293b;color:#fff}
+.ar-slide-section .ar-slide-inner{justify-content:flex-end}
+.ar-slide-visual .ar-slide-inner{justify-content:flex-start}
+.ar-slide .ar-figure{flex:1;min-height:0;margin:.3em 0;display:flex;align-items:center;justify-content:center}
+.ar-slide .ar-figure img,.ar-slide .ar-figure svg{max-height:100%;max-width:100%}
+.ar-slide .ar-diagram{box-shadow:none;padding:0}
+.ar-slide .ar-callout{font-size:.9em}
+.ar-slide .ar-chart text{font-size:17px}
+.ar-slide .ar-chart .ar-caption{font-size:19px}
 .ar-slide-title h1{font-size:3.2em}
 .ar-notes{flex:none!important;margin:0 auto .5rem;width:min(100% - 2rem,64rem);padding:.625rem .875rem;border-radius:.625rem;background:var(--ar-soft);white-space:pre-wrap;font-size:.8125rem}
 .ar-notes[hidden]{display:none}
@@ -583,9 +607,6 @@ ARTIFACTS_CSS = r"""
 .ar-gridline{stroke:var(--ar-line)}
 .ar-axis{fill:var(--ar-muted);font-size:11px}
 .ar-caption{fill:var(--ar-text);font-size:13px;font-weight:600}
-.ar-bar{fill:var(--ar-t-sheet)}
-.ar-line{stroke:var(--ar-t-sheet);stroke-width:2.5}
-.ar-dot{fill:var(--ar-t-sheet)}
 .ar-data{display:flex;flex-direction:column;min-height:0}
 .ar-tree{flex:1;overflow:auto;padding:.75rem 1rem 1.5rem;font:.8125rem/1.6 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
 .ar-tree details>summary{cursor:pointer;border-radius:.25rem;padding-inline:.25rem}
@@ -630,17 +651,24 @@ ARTIFACTS_CSS = r"""
 .ar-linkrow{display:flex;gap:.375rem;margin:.5rem 0}
 .ar-linkrow[hidden]{display:none}
 .ar-quote{max-height:9rem;overflow:auto;margin:0 0 .75rem;padding:.5rem .625rem;border-radius:.5rem;background:var(--ar-soft);font:.75rem/1.5 ui-monospace,Menlo,monospace;white-space:pre-wrap}
-.ar-toast{position:absolute;inset-inline:.75rem;bottom:3.5rem;z-index:30;padding:.5rem .75rem;border-radius:.625rem;background:var(--ar-text);color:var(--ar-surface);font-size:.8125rem;box-shadow:0 8px 24px -8px rgb(0 0 0/.4);text-align:center}
+.ar-toast{position:absolute;left:50%;transform:translateX(-50%);bottom:3.25rem;z-index:30;max-width:min(22rem,calc(100% - 2rem));padding:.3rem .75rem;border-radius:999px;background:var(--ar-text);color:var(--ar-surface);font-size:.75rem;line-height:1.3;box-shadow:0 4px 12px -4px rgb(0 0 0/.35);text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;pointer-events:none}
 .ar-toast[hidden]{display:none}
-.ar-askbtn{position:absolute;z-index:25;box-shadow:0 6px 16px -6px rgb(0 0 0/.4)}
+.ar-askbtn{position:absolute;z-index:25;min-height:1.625rem;padding:0 .5rem;gap:.25rem;font-size:.75rem;border-radius:999px;box-shadow:0 3px 10px -3px rgb(0 0 0/.35)}
+.ar-askbtn svg{width:.8125rem;height:.8125rem}
 .ar-printframe{position:fixed;inset-inline-end:0;bottom:0;width:0;height:0;border:0}
 .ar-cards{display:flex;flex-direction:column;gap:.375rem;margin:.75rem 0 .25rem;max-width:34rem}
-.ar-card{padding:.625rem .75rem;border-radius:.875rem;background:var(--ar-surface);box-shadow:inset 0 0 0 1px var(--ar-strong-line);transition:background .12s}
-.ar-card:hover{background:var(--ar-soft)}
+.ar-card{display:flex;align-items:center;gap:.25rem;padding:.25rem;border-radius:.875rem;background:var(--ar-surface);box-shadow:inset 0 0 0 1px var(--ar-strong-line);color:var(--ar-text)}
+.ar-cardmain{display:flex;align-items:center;gap:.75rem;flex:1;min-width:0;padding:.375rem .5rem;border:0;border-radius:.625rem;background:transparent;cursor:pointer;text-align:start;color:inherit;font:inherit}
+.ar-cardmain:hover{background:var(--ar-soft)}
+.ar-cardcode{width:1.875rem;height:1.875rem;color:var(--ar-muted)}
+.ar-cardcode[aria-pressed=true]{background:var(--ar-soft);color:var(--ar-text)}
+.ar-card-writing{padding:.625rem .75rem;gap:.75rem}
+.ar-spinner{flex:none;width:1rem;height:1rem;border-radius:999px;border:2px solid var(--ar-strong-line);border-top-color:var(--ar-accent);animation:ar-spin .8s linear infinite}
+@keyframes ar-spin{to{transform:rotate(360deg)}}
 .ar-cardopen{flex:none;font-size:.75rem;font-weight:600;color:var(--ar-muted);padding:.25rem .5rem;border-radius:.5rem;box-shadow:inset 0 0 0 1px var(--ar-strong-line)}
 .ar-openbtn svg{width:.875rem;height:.875rem}
 html.ar-replace #chat-artifacts-button{display:none!important}
-.ar-collapsed>:not(:first-child){display:none!important}
+.ar-collapsed:not(.ar-shown)>:not(:first-child){display:none!important}
 .ar-headerbtn svg{width:1.25rem;height:1.25rem}
 .ar-headerbtn[aria-pressed=true]{background:var(--color-gray-100,#ececec)}
 .dark .ar-headerbtn[aria-pressed=true]{background:var(--color-gray-800,#333)}
@@ -673,14 +701,14 @@ LOADER_SCRIPT = r"""
       d_document: 'A report, letter, guide or plan', d_slides: 'A presentation, one slide at a time', d_sheet: 'A table you can sort, filter, chart and calculate in', d_diagram: 'A flowchart, timeline, mind map or sequence', d_html: 'A page or interactive tool', d_react: 'An interactive app with React', d_svg: 'An illustration, icon or chart', d_data: 'Structured data in JSON', d_design: 'A screen or interface mock-up', d_code: 'A program or script',
       preview: 'Preview', code: 'Code', changes: 'Changes', version: 'Version', version_n: 'Version {n} of {total}', latest: 'latest', v_draft: 'Your edit', v_local: 'Only on this device', prev_version: 'Previous version', next_version: 'Next version',
       from_answer: 'From answer {n}', writing: 'Being written…', unfinished: 'This version was cut off before it finished.', edited_by_you: 'Your edit, not in the chat yet.', send_edit: 'Send my edit to the chat', discard_edit: 'Discard my edit', discard_confirm: 'Discard your edit?', discard_text: 'Your changes to this version are deleted from this device.', discard: 'Discard', cancel: 'Cancel', edits_kept: 'Edits are kept on this device.', edits_session: 'Edits last until you close this page.', edit_too_big: 'Too large to keep: this edit lasts until you close this page.',
-      copy: 'Copy', copied: 'Copied', copy_failed: 'Couldn’t copy. Select the text and copy it.', download: 'Download', share: 'Share', fullscreen: 'Full screen', exit_fullscreen: 'Exit full screen', more: 'More', reload: 'Reload', print: 'Print or save as PDF', save_files: 'Save to my files', save_note: 'Save as a note', saved_file: 'Saved to your files as {name}', saved_note: 'Saved as a note', save_failed: 'Couldn’t save. Try again.', note_denied: 'You aren’t allowed to create notes.', show_in_chat: 'Show in chat', delete: 'Delete', delete_confirm: 'Delete this artifact?', delete_text: 'It only exists on this device, so it can’t be brought back.',
+      copy: 'Copy', copied: 'Copied', copy_failed: 'Couldn’t copy. Select the text and copy it.', download: 'Download', fullscreen: 'Full screen', exit_fullscreen: 'Exit full screen', more: 'More', reload: 'Reload', print: 'Print or save as PDF', save_files: 'Save to my files', save_note: 'Save as a note', saved_file: 'Saved to your files as {name}', saved_note: 'Saved as a note', save_failed: 'Couldn’t save. Try again.', note_denied: 'You aren’t allowed to create notes.', show_in_chat: 'Show in chat', delete: 'Delete', delete_confirm: 'Delete this artifact?', delete_text: 'It only exists on this device, so it can’t be brought back.',
       dl_as: 'Download as {format}',
       desktop: 'Desktop', tablet: 'Tablet', phone: 'Phone', width: 'Width',
       ask: 'Ask about this', ask_edit: 'Change this', ask_placeholder: 'What should change?', ask_send: 'Send', ask_hint: 'Sends to the chat with the selected part.', ask_busy: 'Wait for the current answer to finish.', no_composer: 'There’s no message box here.',
       error: 'This artifact hit an error', try_fix: 'Try fixing', fix_sent: 'Asked the model to fix it.', lib_failed: 'Couldn’t load {what} from {host}. Your network or administrator may block it; the code is still here.',
       ai_title: 'Let this artifact use AI?', ai_text: '“{title}” wants to send prompts to {model} on your account. It can’t see this chat; it only gets the answers to what it asks.', ai_allow: 'Allow until I reload', ai_deny: 'Don’t allow', ai_limit: 'Too many AI requests; wait a minute.', ai_off: 'AI isn’t available to artifacts here.', ai_no_model: 'No model to answer.',
-      share_title: 'Share this artifact', share_text: 'Sharing makes a read-only copy of this chat, its artifacts included, and gives it a link. Only people you give access to can open it; they can view and download the artifact and make their own copy to continue it.', share_create: 'Create link', share_update: 'Update the link to now', share_copy: 'Copy link', share_link: 'Link', share_access: 'Choose who can open it', share_access_hint: 'Opens {app}’s own sharing settings: specific people, groups or everyone.', share_denied: 'Your administrator hasn’t allowed sharing chats.', share_failed: 'Couldn’t create the link.', share_draft: 'Your own edit isn’t shared; people see the version from the chat.', share_local: 'This artifact exists only on this device, so it can’t be shared. Send it to the chat first.', share_ready: 'Link copied', share_snapshot: 'The link shows the chat as it was when you shared it. Update it after new changes.', share_access_manual: 'Open the chat’s ⋯ menu, then Share, to choose who can open it.',
-      shared_view: 'Shared with you', remix: 'Make a copy to continue', remix_hint: 'Copies this chat into your chats, where you can keep working on it.', remix_failed: 'Couldn’t make a copy.', remix_denied: 'Sign in to make a copy.',
+     
+     
       lines: '{n} lines', words: '{n} words', rows_cols: '{rows} rows × {cols} columns', slides_n: '{n} slides', items_n: '{n} items', chars: '{n} characters', read_min: '{n} min read',
       outline: 'Outline', slide: 'Slide {n} of {total}', prev_slide: 'Previous slide', next_slide: 'Next slide', present: 'Present', notes: 'Speaker notes', no_notes: 'No notes for this slide.',
       filter_rows: 'Filter rows', sort_asc: 'Sort ascending', sort_desc: 'Sort descending', add_row: 'Add a row', add_col: 'Add a column', chart: 'Chart', table: 'Table', chart_bar: 'Bars', chart_line: 'Line', chart_of: 'Chart {col} by {by}', no_numbers: 'This table has no column of numbers to chart.', sum: 'Sum', avg: 'Average', min: 'Min', max: 'Max', count: 'Count', cell: 'Cell {ref}', formula_hint: 'Start with = for a formula: =SUM(B2:B9), =AVERAGE(C:C), =B2*1.2', rows_shown: 'Showing {n} of {total} rows',
@@ -688,16 +716,17 @@ LOADER_SCRIPT = r"""
       wrap: 'Wrap lines', diagram_failed: 'This diagram has an error', no_changes: 'No changes from the previous version.', compare_with: 'Compared with {what}', added: 'added', removed: 'removed', diff_sum: '{added} added, {removed} removed', diff_big: 'These versions are too different to compare line by line.', unchanged_n: '{n} unchanged lines', previous: 'the previous version',
       untitled: 'Untitled', in_message: 'In this answer', versions_n: '{n} versions', auto_opened: 'Opened {title}',
       p_fix: 'The artifact “{title}” shows this error:\n\n{error}\n\nPlease fix it and send the whole corrected artifact.', p_edit: 'I edited the artifact “{title}”. Here is my version; please continue from it.', p_part: 'In the artifact “{title}”, about this part:', p_whole: 'About the artifact “{title}”:', p_reply: 'Reply with the whole updated artifact in one code block.',
-      tp_document: 'Write a document about: \n\nPut the whole document in one ```markdown code block whose first line is a # title.',
-      tp_slides: 'Make a slide deck about: \n\nPut it in one ```slides code block. Separate slides with a line containing only ---. Start each slide with a # heading, keep bullet points short, and put speaker notes after a line starting with Note:.',
-      tp_sheet: 'Make a spreadsheet of: \n\nPut it in one ```csv code block with a header row. Use formulas such as =SUM(B2:B10) where totals help.',
+      tp_document: 'Write a document about: \n\nPut the whole document in one code block opened with ```markdown artifact and starting with a # title. Use headings, short paragraphs, tables, ==highlights== and callouts (> [!TIP]), and add a ```mermaid diagram or a ```chart where they help.',
+      tp_slides: 'Make a slide deck about: \n\nPut it in one code block opened with ```slides artifact. Separate slides with a line containing only ---. Start each slide with a # heading and keep bullets short. Make the first slide a title slide, ==highlights== for key words, a ```chart or a ```mermaid diagram where data or a process helps, ||| to split a slide into two columns, and speaker notes after a line starting with Note:.',
+      tp_sheet: 'Make a spreadsheet of: \n\nPut it in one code block opened with ```csv artifact, with a header row. Use formulas such as =SUM(B2:B10) where totals help.',
       tp_diagram: 'Draw a diagram of: \n\nPut it in one ```mermaid code block (flowchart, sequence, timeline, mind map or Gantt), starting with a line %% artifact: Title.',
-      tp_html: 'Build a web page that: \n\nPut the whole page in one ```html code block, with its CSS and JavaScript inside and a <title>.',
+      tp_html: 'Build a web page that: \n\nPut the whole page in one code block opened with ```html artifact, with its CSS and JavaScript inside and a <title>.',
       tp_react: 'Build an interactive app that: \n\nWrite one React component in one ```jsx code block with a default export. You can use Tailwind classes, lucide-react icons, recharts and shadcn/ui components from @/components/ui/*. Start with // artifact: Title.',
-      tp_svg: 'Draw an SVG of: \n\nPut it in one ```svg code block with a viewBox.',
-      tp_data: 'Create data for: \n\nPut it in one ```json code block.',
-      tp_design: 'Design a screen for: \n\nPut the whole design in one ```html code block, using a clean layout, real-looking content and a <title>.',
-      tp_code: 'Write a program that: \n\nPut the whole program in one code block, starting with a comment giving its file name.',
+      tp_svg: 'Draw an SVG of: \n\nPut it in one code block opened with ```svg artifact, with a viewBox and a <title>.',
+      tp_data: 'Create data for: \n\nPut it in one code block opened with ```json artifact.',
+      tp_design: 'Design a screen for: \n\nPut the whole design in one code block opened with ```html artifact, with a clean layout, realistic content and a <title>.',
+      tp_code: 'Write a program that: \n\nPut the whole program in one code block opened with ``` followed by the language and artifact, for example ```python artifact, and give its file name in a first-line comment.',
+      all_columns: 'All columns', chart_area: 'Area', chart_pie: 'Pie', callout_note: 'Note', callout_tip: 'Tip', callout_important: 'Important', callout_warning: 'Warning', drawing: 'Drawing the diagram…', preparing: 'Preparing the download…', show_code: 'Show the code in the chat', hide_code: 'Hide the code in the chat',
       blank_type: 'Kind', blank_name: 'Title', blank_create: 'Create', blank_default: 'My artifact'
     },
     fr: {
@@ -709,14 +738,14 @@ LOADER_SCRIPT = r"""
       d_document: 'Un rapport, une lettre, un guide ou un plan', d_slides: 'Une présentation, diapositive par diapositive', d_sheet: 'Un tableau à trier, filtrer, représenter et calculer', d_diagram: 'Un organigramme, une frise, une carte mentale ou une séquence', d_html: 'Une page ou un outil interactif', d_react: 'Une application interactive en React', d_svg: 'Une illustration, une icône ou un graphique', d_data: 'Des données structurées en JSON', d_design: 'Une maquette d’écran ou d’interface', d_code: 'Un programme ou un script',
       preview: 'Aperçu', code: 'Code', changes: 'Modifications', version: 'Version', version_n: 'Version {n} sur {total}', latest: 'la plus récente', v_draft: 'Votre modification', v_local: 'Seulement sur cet appareil', prev_version: 'Version précédente', next_version: 'Version suivante',
       from_answer: 'Réponse {n}', writing: 'En cours d’écriture…', unfinished: 'Cette version a été interrompue avant la fin.', edited_by_you: 'Votre modification, pas encore dans la conversation.', send_edit: 'Envoyer ma modification', discard_edit: 'Annuler ma modification', discard_confirm: 'Annuler votre modification ?', discard_text: 'Vos changements sur cette version sont supprimés de cet appareil.', discard: 'Supprimer', cancel: 'Annuler', edits_kept: 'Les modifications sont gardées sur cet appareil.', edits_session: 'Les modifications durent jusqu’à la fermeture de la page.', edit_too_big: 'Trop volumineux pour être gardé : cette modification dure jusqu’à la fermeture de la page.',
-      copy: 'Copier', copied: 'Copié', copy_failed: 'Impossible de copier. Sélectionnez le texte et copiez-le.', download: 'Télécharger', share: 'Partager', fullscreen: 'Plein écran', exit_fullscreen: 'Quitter le plein écran', more: 'Plus', reload: 'Recharger', print: 'Imprimer ou enregistrer en PDF', save_files: 'Enregistrer dans mes fichiers', save_note: 'Enregistrer comme note', saved_file: 'Enregistré dans vos fichiers sous {name}', saved_note: 'Enregistré comme note', save_failed: 'Échec de l’enregistrement. Réessayez.', note_denied: 'Vous n’êtes pas autorisé à créer des notes.', show_in_chat: 'Voir dans la conversation', delete: 'Supprimer', delete_confirm: 'Supprimer cet artefact ?', delete_text: 'Il n’existe que sur cet appareil : il ne pourra pas être récupéré.',
+      copy: 'Copier', copied: 'Copié', copy_failed: 'Impossible de copier. Sélectionnez le texte et copiez-le.', download: 'Télécharger', fullscreen: 'Plein écran', exit_fullscreen: 'Quitter le plein écran', more: 'Plus', reload: 'Recharger', print: 'Imprimer ou enregistrer en PDF', save_files: 'Enregistrer dans mes fichiers', save_note: 'Enregistrer comme note', saved_file: 'Enregistré dans vos fichiers sous {name}', saved_note: 'Enregistré comme note', save_failed: 'Échec de l’enregistrement. Réessayez.', note_denied: 'Vous n’êtes pas autorisé à créer des notes.', show_in_chat: 'Voir dans la conversation', delete: 'Supprimer', delete_confirm: 'Supprimer cet artefact ?', delete_text: 'Il n’existe que sur cet appareil : il ne pourra pas être récupéré.',
       dl_as: 'Télécharger en {format}',
       desktop: 'Ordinateur', tablet: 'Tablette', phone: 'Téléphone', width: 'Largeur',
       ask: 'Poser une question', ask_edit: 'Modifier ceci', ask_placeholder: 'Que faut-il changer ?', ask_send: 'Envoyer', ask_hint: 'Envoie à la conversation avec la partie sélectionnée.', ask_busy: 'Attendez la fin de la réponse en cours.', no_composer: 'Il n’y a pas de zone de message ici.',
       error: 'Cet artefact a rencontré une erreur', try_fix: 'Essayer de corriger', fix_sent: 'Correction demandée au modèle.', lib_failed: 'Impossible de charger {what} depuis {host}. Votre réseau ou votre administrateur le bloque peut-être ; le code reste disponible.',
       ai_title: 'Autoriser cet artefact à utiliser l’IA ?', ai_text: '« {title} » veut envoyer des requêtes à {model} avec votre compte. Il ne voit pas cette conversation ; il reçoit seulement les réponses à ses questions.', ai_allow: 'Autoriser jusqu’au rechargement', ai_deny: 'Refuser', ai_limit: 'Trop de requêtes IA ; patientez une minute.', ai_off: 'L’IA n’est pas disponible pour les artefacts ici.', ai_no_model: 'Aucun modèle pour répondre.',
-      share_title: 'Partager cet artefact', share_text: 'Le partage crée une copie en lecture seule de cette conversation, artefacts compris, avec un lien. Seules les personnes à qui vous donnez accès peuvent l’ouvrir ; elles peuvent voir et télécharger l’artefact et en faire leur propre copie pour le poursuivre.', share_create: 'Créer le lien', share_update: 'Mettre le lien à jour', share_copy: 'Copier le lien', share_link: 'Lien', share_access: 'Choisir qui peut l’ouvrir', share_access_hint: 'Ouvre les réglages de partage de {app} : des personnes, des groupes ou tout le monde.', share_denied: 'Votre administrateur n’a pas autorisé le partage des conversations.', share_failed: 'Impossible de créer le lien.', share_draft: 'Votre modification n’est pas partagée ; les autres voient la version de la conversation.', share_local: 'Cet artefact n’existe que sur cet appareil et ne peut pas être partagé. Envoyez-le d’abord à la conversation.', share_ready: 'Lien copié', share_snapshot: 'Le lien montre la conversation telle qu’elle était au moment du partage. Mettez-le à jour après de nouveaux changements.', share_access_manual: 'Ouvrez le menu ⋯ de la conversation, puis Partager, pour choisir qui peut l’ouvrir.',
-      shared_view: 'Partagé avec vous', remix: 'En faire une copie', remix_hint: 'Copie cette conversation dans les vôtres, pour continuer à y travailler.', remix_failed: 'Impossible de faire une copie.', remix_denied: 'Connectez-vous pour faire une copie.',
+     
+     
       lines: '{n} lignes', words: '{n} mots', rows_cols: '{rows} lignes × {cols} colonnes', slides_n: '{n} diapositives', items_n: '{n} éléments', chars: '{n} caractères', read_min: '{n} min de lecture',
       outline: 'Plan', slide: 'Diapositive {n} sur {total}', prev_slide: 'Diapositive précédente', next_slide: 'Diapositive suivante', present: 'Présenter', notes: 'Notes de l’orateur', no_notes: 'Pas de notes pour cette diapositive.',
       filter_rows: 'Filtrer les lignes', sort_asc: 'Trier par ordre croissant', sort_desc: 'Trier par ordre décroissant', add_row: 'Ajouter une ligne', add_col: 'Ajouter une colonne', chart: 'Graphique', table: 'Tableau', chart_bar: 'Barres', chart_line: 'Courbe', chart_of: '{col} selon {by}', no_numbers: 'Ce tableau n’a pas de colonne de nombres à représenter.', sum: 'Somme', avg: 'Moyenne', min: 'Min', max: 'Max', count: 'Nombre', cell: 'Cellule {ref}', formula_hint: 'Commencez par = pour une formule : =SUM(B2:B9), =AVERAGE(C:C), =B2*1,2', rows_shown: '{n} lignes affichées sur {total}',
@@ -724,16 +753,17 @@ LOADER_SCRIPT = r"""
       wrap: 'Retour à la ligne', diagram_failed: 'Ce diagramme contient une erreur', no_changes: 'Aucun changement par rapport à la version précédente.', compare_with: 'Comparé à {what}', added: 'ajoutée', removed: 'supprimée', diff_sum: '{added} ajoutées, {removed} supprimées', diff_big: 'Ces versions sont trop différentes pour être comparées ligne à ligne.', unchanged_n: '{n} lignes inchangées', previous: 'la version précédente',
       untitled: 'Sans titre', in_message: 'Dans cette réponse', versions_n: '{n} versions', auto_opened: '{title} ouvert',
       p_fix: 'L’artefact « {title} » affiche cette erreur :\n\n{error}\n\nCorrigez-la et renvoyez l’artefact complet corrigé.', p_edit: 'J’ai modifié l’artefact « {title} ». Voici ma version ; continuez à partir d’elle.', p_part: 'Dans l’artefact « {title} », à propos de cette partie :', p_whole: 'À propos de l’artefact « {title} » :', p_reply: 'Répondez avec l’artefact complet mis à jour, dans un seul bloc de code.',
-      tp_document: 'Rédige un document sur : \n\nMets tout le document dans un seul bloc ```markdown dont la première ligne est un titre #.',
-      tp_slides: 'Crée une présentation sur : \n\nMets-la dans un seul bloc ```slides. Sépare les diapositives par une ligne contenant seulement ---. Commence chaque diapositive par un titre #, garde des puces courtes, et mets les notes de l’orateur après une ligne commençant par Note:.',
-      tp_sheet: 'Crée un tableur de : \n\nMets-le dans un seul bloc ```csv avec une ligne d’en-tête. Utilise des formules comme =SUM(B2:B10) pour les totaux.',
+      tp_document: 'Rédige un document sur : \n\nMets tout le document dans un seul bloc ouvert par ```markdown artifact et commençant par un titre #. Utilise des titres, des paragraphes courts, des tableaux, des ==surlignages== et des encadrés (> [!TIP]), et ajoute un diagramme ```mermaid ou un ```chart quand c’est utile.',
+      tp_slides: 'Crée une présentation sur : \n\nMets-la dans un seul bloc ouvert par ```slides artifact. Sépare les diapositives par une ligne contenant seulement ---. Commence chaque diapositive par un titre # et garde des puces courtes. Fais de la première une diapositive de titre, des ==surlignages== pour les mots clés, un ```chart ou un diagramme ```mermaid quand des données ou un processus aident, ||| pour couper une diapositive en deux colonnes, et des notes de l’orateur après une ligne commençant par Note:.',
+      tp_sheet: 'Crée un tableur de : \n\nMets-le dans un seul bloc ouvert par ```csv artifact, avec une ligne d’en-tête. Utilise des formules comme =SUM(B2:B10) pour les totaux.',
       tp_diagram: 'Dessine un diagramme de : \n\nMets-le dans un seul bloc ```mermaid (organigramme, séquence, frise, carte mentale ou Gantt), commençant par une ligne %% artifact: Titre.',
-      tp_html: 'Construis une page web qui : \n\nMets toute la page dans un seul bloc ```html, avec son CSS et son JavaScript et un <title>.',
+      tp_html: 'Construis une page web qui : \n\nMets toute la page dans un seul bloc ouvert par ```html artifact, avec son CSS et son JavaScript et un <title>.',
       tp_react: 'Construis une application interactive qui : \n\nÉcris un composant React dans un seul bloc ```jsx avec un export par défaut. Tu peux utiliser les classes Tailwind, les icônes lucide-react, recharts et les composants shadcn/ui de @/components/ui/*. Commence par // artifact: Titre.',
-      tp_svg: 'Dessine en SVG : \n\nMets-le dans un seul bloc ```svg avec un viewBox.',
-      tp_data: 'Crée des données pour : \n\nMets-les dans un seul bloc ```json.',
-      tp_design: 'Conçois un écran pour : \n\nMets toute la maquette dans un seul bloc ```html, avec une mise en page soignée, un contenu réaliste et un <title>.',
-      tp_code: 'Écris un programme qui : \n\nMets tout le programme dans un seul bloc de code, en commençant par un commentaire donnant son nom de fichier.',
+      tp_svg: 'Dessine en SVG : \n\nMets-le dans un seul bloc ouvert par ```svg artifact, avec un viewBox et un <title>.',
+      tp_data: 'Crée des données pour : \n\nMets-les dans un seul bloc ouvert par ```json artifact.',
+      tp_design: 'Conçois un écran pour : \n\nMets toute la maquette dans un seul bloc ouvert par ```html artifact, avec une mise en page soignée, un contenu réaliste et un <title>.',
+      tp_code: 'Écris un programme qui : \n\nMets tout le programme dans un seul bloc ouvert par ``` suivi du langage et de artifact, par exemple ```python artifact, avec son nom de fichier dans un commentaire en première ligne.',
+      all_columns: 'Toutes les colonnes', chart_area: 'Aires', chart_pie: 'Secteurs', callout_note: 'Remarque', callout_tip: 'Astuce', callout_important: 'Important', callout_warning: 'Attention', drawing: 'Dessin du diagramme…', preparing: 'Préparation du téléchargement…', show_code: 'Afficher le code dans la conversation', hide_code: 'Masquer le code dans la conversation',
       blank_type: 'Type', blank_name: 'Titre', blank_create: 'Créer', blank_default: 'Mon artefact'
     }
   };
@@ -917,18 +947,38 @@ LOADER_SCRIPT = r"""
   const looksReact = text => /(^|\n)\s*(import\s+[^;]*from\s+['"]react['"]|export\s+default\s+(function|class|\(|[A-Z]))/.test(text) && /<[A-Za-z][\w.]*[\s/>]/.test(text);
   const slideBreaks = text => (text.match(/^\s*---\s*$/gm) || []).length;
   // What kind of artifact a block is, or null when it is too small to be one
-  function typeOf(lang, text, info) {
-    const body = text.trim();
+  function typeOf(lang, text, info, marked) {
+    const body = withoutMarker(text).trim();
     if (!body) return null;
+    if (marked) {
+      if (lang === 'markdown' || lang === 'md') return slideBreaks(body) >= 2 && /^\s*#/m.test(body) ? 'slides' : 'document';
+      if (lang === 'text' && /^\s*#\s/.test(body)) return 'document';
+    }
+    // A chart is a small table of data, shown as its chart first
+    if (lang === 'chart') return 'sheet';
     if (lang === 'slides') return 'slides';
     if (lang === 'mermaid') return 'diagram';
     if (lang === 'svg' || ((lang === 'xml' || lang === 'html' || lang === 'text') && /^\s*(?:<\?xml[^>]*\?>\s*)?(?:<!--[\s\S]*?-->\s*)?<svg[\s>]/i.test(body))) return 'svg';
-    if (lang === 'html' || (lang === 'text' && /^\s*(<!doctype html|<html[\s>])/i.test(body))) return countLines(body) >= Math.min(5, CONFIG.minCodeLines) ? 'html' : null;
+    if (lang === 'html' || (lang === 'text' && /^\s*(<!doctype html|<html[\s>])/i.test(body))) return marked || countLines(body) >= Math.min(5, CONFIG.minCodeLines) ? 'html' : null;
     if (lang === 'jsx' || lang === 'tsx' || lang === 'react' || ((lang === 'javascript' || lang === 'typescript') && looksReact(body))) return 'react';
     if (lang === 'csv' || lang === 'tsv') return countLines(body) >= 2 ? 'sheet' : null;
-    if (lang === 'json') return countLines(body) >= 3 || body.length >= 80 ? 'data' : null;
+    if (lang === 'json') return marked || countLines(body) >= 3 || body.length >= 80 ? 'data' : null;
     if (lang === 'markdown') return slideBreaks(body) >= 2 && /^\s*#/m.test(body) ? 'slides' : countLines(body) >= 5 ? 'document' : null;
-    return countLines(body) >= CONFIG.minCodeLines ? 'code' : null;
+    return marked || countLines(body) >= CONFIG.minCodeLines ? 'code' : null;
+  }
+  // A block is marked as an artifact by an "artifact:" first line, or "artifact" in its info string
+  const isMarked = block => !!markerOf(block.text) || /(^|\s)artifact(\s|=|$)/i.test(block.info || '');
+  // Which blocks are artifacts. 'marked': only those the model marked. 'rich' (the default): marked ones, and kinds that
+  // need a viewer to be useful at all (a whole web page, an app, a drawing, a diagram, slides, a table of data).
+  // 'all': also long answers, tables, JSON and any long code.
+  function wanted(type, block, marked) {
+    if (marked || CONFIG.detect === 'all') return true;
+    if (CONFIG.detect === 'marked') return false;
+    const body = block.text.trim();
+    if (type === 'html') return /<!doctype html|<html[\s>]|<body[\s>]/i.test(body);
+    if (type === 'react') return /export\s+default/.test(body);
+    if (type === 'sheet') return countLines(body) >= 3;
+    return type === 'svg' || type === 'diagram' || type === 'slides';
   }
   function titleOf(type, lang, text, info) {
     const marker = markerOf(text);
@@ -969,12 +1019,14 @@ LOADER_SCRIPT = r"""
     const out = [];
     blocks.forEach((block, index) => {
       const info = readInfo(block.info, block.text);
-      const type = typeOf(info.lang, block.text, info);
-      if (!type) return;
+      const marked = isMarked(block);
+      const type = typeOf(info.lang, block.text, info, marked);
+      if (!type || !wanted(type, block, marked)) return;
       const name = titleOf(type, info.lang, block.text, info);
       out.push({type, lang: info.lang === 'react' ? 'jsx' : info.lang, title: name.title, named: name.named, strong: name.strong, text: block.text, unfinished: block.unfinished, index, info: block.info, source: 'block'});
     });
     const proseLines = prose.filter(line => !line.startsWith('\u0000'));
+    if (CONFIG.detect !== 'all') return out;
     if (CONFIG.tablesAsSheets) tablesIn(proseLines).forEach((table, k) => out.push({type: 'sheet', lang: 'csv', title: table.title, named: !!table.title, text: table.text, unfinished: false, index: 1000 + k, info: '', source: 'table'}));
     // A long answer is offered as a document of its own, its code blocks kept in place
     const words = proseLines.join('\n');
@@ -1174,18 +1226,18 @@ C.createRoot(root).render(R.createElement(B,null,R.createElement(Comp)));send({t
   function mermaidDoc(text, nonce, dark) {
     const run = `(async function(){var U=${scriptJson(CONFIG.mermaidUrl)},SRC=${scriptJson(text)},send=window.__arSend,out=document.getElementById('out');
 try{await window.__arLoad(U)}catch(e){out.textContent='';send({type:'lib',what:'Mermaid',url:U});return}
-try{mermaid.initialize({startOnLoad:false,securityLevel:'strict',theme:${dark ? "'dark'" : "'default'"}});var r=await mermaid.render('ar'+Date.now(),SRC);out.innerHTML=r.svg;send({type:'svg',svg:r.svg});send({type:'rendered'})}catch(e){out.textContent='';var p=document.createElement('pre');p.className='__ar_err';p.textContent=String(e&&e.message||e);out.appendChild(p);send({type:'error',message:String(e&&e.message||e).slice(0,4000)})}})();`;
+try{mermaid.initialize({startOnLoad:false,securityLevel:'strict',htmlLabels:false,flowchart:{htmlLabels:false},theme:${dark ? "'dark'" : "'default'"}});var r=await mermaid.render('ar'+Date.now(),SRC);out.innerHTML=r.svg;send({type:'svg',svg:r.svg});send({type:'rendered'})}catch(e){out.textContent='';var p=document.createElement('pre');p.className='__ar_err';p.textContent=String(e&&e.message||e);out.appendChild(p);send({type:'error',message:String(e&&e.message||e).slice(0,4000)})}})();`;
     return `<!doctype html><html><head>${head(nonce)}<style>html,body{margin:0;background:${dark ? '#171717' : '#fff'};color:${dark ? '#eee' : '#111'}}#out{display:flex;justify-content:center;padding:24px}#out svg{max-width:100%;height:auto}.__ar_err{white-space:pre-wrap;color:${dark ? '#f87171' : '#b91c1c'};font:13px/1.5 ui-monospace,Menlo,monospace}</style></head><body><div id="out"></div><script>${run}<\/script></body></html>`;
   }
   const frames = new Map();
-  function makeFrame(kind, text, artifact, onEvent) {
+  function makeFrame(kind, text, artifact, onEvent, darkTheme) {
     const nonce = randomId();
     const frame = el('iframe', 'ar-frame');
     frame.setAttribute('sandbox', SANDBOX);
     frame.setAttribute('referrerpolicy', 'no-referrer');
     frame.setAttribute('allow', 'clipboard-write; fullscreen');
     frame.title = displayTitle(artifact);
-    const dark = document.documentElement.classList.contains('dark');
+    const dark = darkTheme ?? document.documentElement.classList.contains('dark');
     frame.srcdoc = kind === 'react' ? reactDoc(text, nonce) : kind === 'diagram' ? mermaidDoc(text, nonce, dark) : htmlDoc(text, nonce);
     const record = {nonce, artifact, onEvent, frame};
     // Registered by the frame's own window: a message counts only from that window, with that frame's nonce
@@ -1194,6 +1246,35 @@ try{mermaid.initialize({startOnLoad:false,securityLevel:'strict',theme:${dark ? 
     queueMicrotask(register);
     return frame;
   }
+  // Diagrams inside documents and slides: drawn by Mermaid in a hidden sandboxed frame, then shown as a picture.
+  // Each diagram is drawn once and kept, so slides, thumbnails and downloads share it.
+  const diagrams = new Map();
+  let diagramQueue = Promise.resolve();
+  function diagramPromise(code) {
+    if (diagrams.has(code)) return Promise.resolve(diagrams.get(code));
+    const promise = new Promise(resolve => {
+      diagramQueue = diagramQueue.then(() => new Promise(next => {
+        let settled = false, frame = null, timer = 0;
+        const finish = svg => { if (settled) return; settled = true; clearTimeout(timer); frame?.remove(); dropFrames(); diagrams.set(code, svg || null); resolve(svg || null); next(); };
+        frame = makeFrame('diagram', code, {key: 'figure', type: 'diagram', title: 'Diagram', versions: [{text: code}]}, event => { if (event.type === 'svg') finish(event.svg); else if (event.type === 'error' || event.type === 'lib') finish(null); }, false);
+        frame.className = 'ar-hiddenframe'; frame.setAttribute('aria-hidden', 'true'); frame.tabIndex = -1;
+        document.body.append(frame);
+        timer = setTimeout(() => finish(null), 20000);
+      }));
+    });
+    diagrams.set(code, promise);
+    return promise;
+  }
+  function diagramNode(code) {
+    const box = el('figure', 'ar-figure ar-diagram');
+    const show = svg => { box.dataset.state = svg ? 'ready' : 'failed'; box.replaceChildren(svg ? svgPicture(svg, t('t_diagram')) : Object.assign(el('pre', 'ar-pre'), {textContent: code})); };
+    const known = diagrams.get(code);
+    if (typeof known === 'string' || known === null) show(known);
+    else { box.dataset.state = 'loading'; box.append(el('span', 'ar-muted ar-small', t('drawing'))); diagramPromise(code).then(show); }
+    return box;
+  }
+  const mermaidIn = text => [...withoutMarker(text).matchAll(/^[ \t]*(`{3,}|~{3,})[ \t]*mermaid[^\n]*\n([\s\S]*?)\n[ \t]*\1[ \t]*$/gm)].map(m => m[2]);
+  const diagramsReady = text => Promise.all(mermaidIn(text).map(diagramPromise));
   const dropFrames = root => { for (const [win, record] of frames) if (!record.frame.isConnected || root?.contains(record.frame)) frames.delete(win); };
   addEventListener('message', event => {
     const record = frames.get(event.source);
@@ -1255,7 +1336,7 @@ try{mermaid.initialize({startOnLoad:false,securityLevel:'strict',theme:${dark ? 
   }
 
   /* ---- Markdown, read safely: only text and a fixed set of elements are ever made, so nothing in it can run ---- */
-  const INLINE_RE = /(`+)(?!`)([\s\S]*?[^`])\1(?!`)|\*\*([^\n]+?)\*\*|__([^\n]+?)__|~~([^\n]+?)~~|\*([^*\s](?:[^*\n]*?[^*\s])?)\*|(?<![\w])_([^_\s](?:[^_\n]*?[^_\s])?)_(?![\w])|(!?)\[([^\]\n]*)\]\(\s*<?((?:[^()\s<>]|\([^()\s]*\))+)>?(?:\s+"[^"]*")?\s*\)|(https?:\/\/[^\s<>]*[^\s<>().,;:!?'"*_])/g;
+  const INLINE_RE = /(`+)(?!`)([\s\S]*?[^`])\1(?!`)|\*\*([^\n]+?)\*\*|__([^\n]+?)__|~~([^\n]+?)~~|\*([^*\s](?:[^*\n]*?[^*\s])?)\*|(?<![\w])_([^_\s](?:[^_\n]*?[^_\s])?)_(?![\w])|(!?)\[([^\]\n]*)\]\(\s*<?((?:[^()\s<>]|\([^()\s]*\))+)>?(?:\s+"[^"]*")?\s*\)|(https?:\/\/[^\s<>]*[^\s<>().,;:!?'"*_])|==([^=\n]+?)==/g;
   function inline(target, text, depth = 0) {
     let last = 0;
     const link = (label, href) => {
@@ -1270,12 +1351,33 @@ try{mermaid.initialize({startOnLoad:false,securityLevel:'strict',theme:${dark ? 
       else if (match[3] != null || match[4] != null) nest('strong', match[3] ?? match[4]);
       else if (match[5] != null) nest('del', match[5]);
       else if (match[6] != null || match[7] != null) nest('em', match[6] ?? match[7]);
-      // A picture is named, not loaded: a preview doesn't fetch from other sites
-      else if (match[10] != null) { if (match[8]) target.append(el('span', 'ar-img', '🖼 ' + (match[9] || match[10]))); else link(match[9] || match[10], match[10]); }
+      else if (match[10] != null) { if (match[8]) target.append(picture(match[10], match[9])); else link(match[9] || match[10], match[10]); }
       else if (match[11]) link(match[11], match[11]);
+      else if (match[12] != null) nest('mark', match[12]);
     }
     if (last < text.length) target.append(text.slice(last));
   }
+  // Pictures load only from this site (generated and uploaded images) or as data, unless the network valve is 'open':
+  // a picture elsewhere could carry the chat's words out in its address
+  function picture(src, alt) {
+    let ok = /^data:image\/(png|jpe?g|gif|webp|svg\+xml);base64,/i.test(src);
+    try { const u = new URL(src, location.href); ok = ok || u.origin === location.origin || (CONFIG.network === 'open' && u.protocol === 'https:'); } catch {}
+    if (!ok) return el('span', 'ar-img', '🖼 ' + (alt || src));
+    const img = el('img', 'ar-pic'); img.src = src; img.alt = alt || ''; img.loading = 'lazy'; img.referrerPolicy = 'no-referrer'; img.decoding = 'async';
+    img.addEventListener('error', () => img.replaceWith(el('span', 'ar-img', '🖼 ' + (alt || src))), {once: true});
+    return img;
+  }
+  // Diagrams, charts and drawings inside documents and slides
+  function figure(lang, body) {
+    if (lang === 'mermaid') return diagramNode(body);
+    if (lang === 'chart') { const chart = chartFromText(body); if (chart) { const box = el('figure', 'ar-figure'); box.append(chart); return box; } }
+    if (lang === 'svg' || (lang === 'xml' && /<svg[\s>]/i.test(body))) { const box = el('figure', 'ar-figure'); box.append(svgPicture(body)); return box; }
+    return null;
+  }
+  // An SVG shown as a picture, where its scripts can't run
+  const svgData = text => 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(text)));
+  function svgPicture(text, alt = '') { const img = el('img', 'ar-pic ar-svgpic'); img.alt = alt; img.src = svgData(text); return img; }
+  const CALLOUTS = {note: 'note', info: 'note', tip: 'tip', important: 'important', warning: 'warning', caution: 'warning', danger: 'warning'};
   function renderMarkdown(text, depth = 0) {
     const out = document.createDocumentFragment();
     const lines = text.replace(/\r\n?/g, '\n').split('\n');
@@ -1288,6 +1390,8 @@ try{mermaid.initialize({startOnLoad:false,securityLevel:'strict',theme:${dark ? 
         endPara();
         const body = [];
         for (i++; i < lines.length; i++) { const rest = lines[i].trim(); if (rest.length >= fence[2].length && rest === fence[2][0].repeat(rest.length)) break; body.push(lines[i]); }
+        const special = depth < 3 ? figure(cleanLang((fence[3].split(/\s+/)[0] || '')), body.join('\n')) : null;
+        if (special) { out.append(special); continue; }
         const pre = el('pre', 'ar-pre'); pre.append(el('code', null, body.join('\n'))); pre.tabIndex = 0; out.append(pre);
         continue;
       }
@@ -1301,7 +1405,11 @@ try{mermaid.initialize({startOnLoad:false,securityLevel:'strict',theme:${dark ? 
         const body = [];
         for (; i < lines.length && /^ {0,3}>/.test(lines[i]); i++) body.push(lines[i].replace(/^ {0,3}> ?/, ''));
         i--;
-        const quote = el('blockquote'); depth < 4 ? quote.append(renderMarkdown(body.join('\n'), depth + 1)) : quote.append(body.join('\n')); out.append(quote);
+        // > [!NOTE], [!TIP], [!IMPORTANT], [!WARNING]: a callout
+        const kind = /^\s*\[!(\w+)\]\s*$/.exec(body[0] || ''), callout = kind && CALLOUTS[kind[1].toLowerCase()];
+        if (callout) body.shift();
+        const quote = el(callout ? 'div' : 'blockquote', callout ? 'ar-callout' : null); if (callout) { quote.dataset.kind = callout; quote.append(el('strong', 'ar-callout-title', t('callout_' + callout))); }
+        depth < 4 ? quote.append(renderMarkdown(body.join('\n'), depth + 1)) : quote.append(body.join('\n')); out.append(quote);
         continue;
       }
       if (line.includes('|') && i + 1 < lines.length && /^\s*\|?\s*:?-+:?\s*(?:\|\s*:?-+:?\s*)*\|?\s*$/.test(lines[i + 1]) && lines[i + 1].includes('-')) {
@@ -1374,9 +1482,23 @@ try{mermaid.initialize({startOnLoad:false,securityLevel:'strict',theme:${dark ? 
   }
   function slideNode(slide, small) {
     const node = el('div', 'ar-slide' + (small ? ' ar-slide-small' : ''));
-    const inner = el('div', 'ar-slide-inner'); inner.append(renderMarkdown(slide.body));
+    const inner = el('div', 'ar-slide-inner');
+    // <!-- layout: title | section | center --> picks a layout; a line of ||| splits a slide into columns
+    const layout = (/<!--\s*layout\s*:\s*(title|section|center)\s*-->/i.exec(slide.body) || [])[1]?.toLowerCase();
+    const parts = slide.body.split(/^\s*\|\|\|\s*$/m);
+    if (parts.length > 1) {
+      const first = parts[0].trim(), heading = /^(?:<!--.*-->\s*\n)*\s*#{1,3}\s.*$/m.exec(first);
+      const lead = heading && first.indexOf(heading[0]) <= first.search(/\S/) + 40 ? heading[0] : '';
+      if (lead) inner.append(renderMarkdown(lead));
+      const cols = el('div', 'ar-cols'); cols.style.setProperty('--ar-cols', String(Math.min(4, parts.length)));
+      parts.slice(0, 4).forEach((part, i) => { const col = el('div', 'ar-col'); col.append(renderMarkdown(i === 0 && lead ? part.replace(lead, '') : part)); cols.append(col); });
+      inner.append(cols);
+    } else inner.append(renderMarkdown(slide.body));
     const kids = [...inner.children];
-    if (kids.length && kids.every(k => /^H[1-6]$/.test(k.tagName) || k.tagName === 'P') && kids.length <= 3 && kids[0] && /^H[12]$/.test(kids[0].tagName)) node.classList.add('ar-slide-title');
+    if (layout === 'title' || (!layout && kids.length && kids.every(k => /^H[1-6]$/.test(k.tagName) || k.tagName === 'P') && kids.length <= 3 && kids[0] && /^H[12]$/.test(kids[0].tagName))) node.classList.add('ar-slide-title');
+    if (layout === 'section') node.classList.add('ar-slide-section');
+    if (layout === 'center') node.classList.add('ar-slide-center');
+    if (inner.querySelector('.ar-figure, .ar-diagram, .ar-pic, .ar-tablebox')) node.classList.add('ar-slide-visual');
     node.append(inner);
     return node;
   }
@@ -1435,8 +1557,15 @@ try{mermaid.initialize({startOnLoad:false,securityLevel:'strict',theme:${dark ? 
     return out;
   }
   const SHEET_ROWS = 2000, SHEET_COLS = 60;
+  // A ```chart block starts with lines such as "type: bar" and "title: Sales"; the rest is CSV
+  const CHART_KEYS = /^\s*(type|title|x|y|stacked)\s*:\s*(.*)$/i;
+  function chartSpec(text) {
+    const lines = withoutMarker(text).replace(/^\uFEFF/, '').split('\n'), spec = {};
+    while (lines.length && (CHART_KEYS.test(lines[0]) || !lines[0].trim())) { const m = CHART_KEYS.exec(lines.shift()); if (m) spec[m[1].toLowerCase()] = m[2].trim(); }
+    return {spec, body: lines.join('\n')};
+  }
   function gridOf(text, lang) {
-    const body = withoutMarker(text).replace(/^﻿/, '');
+    const body = chartSpec(text).body;
     const first = body.split('\n', 1)[0];
     const delimiter = lang === 'tsv' || (first.includes('\t') && !first.includes(',')) ? '\t' : first.split(';').length > first.split(',').length ? ';' : ',';
     const rows = parseDelimited(body.replace(/\n+$/, ''), delimiter, SHEET_ROWS + 1);
@@ -1558,13 +1687,13 @@ try{mermaid.initialize({startOnLoad:false,securityLevel:'strict',theme:${dark ? 
     return {value, reset: () => cache.clear()};
   }
   const shown = v => typeof v === 'number' ? (Number.isInteger(v) ? v.toLocaleString(lang) : v.toLocaleString(lang, {maximumFractionDigits: 6})) : typeof v === 'boolean' ? (v ? 'TRUE' : 'FALSE') : String(v ?? '');
-  function sheetView(text, lang0, ctx, editable, commit) {
+  function sheetView(text, lang0, ctx, editable, commit, displayTitleText = '') {
     const grid = gridOf(text, lang0);
     let rows = grid.rows;
     const wrap = el('div', 'ar-sheet');
     if (!rows.length) rows = [['']];
     let engine = sheetEngine(rows);
-    let sortCol = -1, sortDir = 1, filter = '', selected = {r: Math.min(1, rows.length - 1), c: 0}, mode = ctx.sheetMode || 'table', chartCol = -1, chartKind = 'bar';
+    let sortCol = -1, sortDir = 1, filter = '', selected = {r: Math.min(1, rows.length - 1), c: 0}, mode = ctx.sheetMode || (lang0 === 'chart' ? 'chart' : 'table'), chartCol = -1, chartKind = ['bar', 'line', 'area', 'pie'].includes(String(chartSpec(text).spec.type).toLowerCase()) ? String(chartSpec(text).spec.type).toLowerCase() : 'bar';
     const bar = el('div', 'ar-subbar');
     const refBox = el('span', 'ar-ref');
     const formula = el('input', 'ar-formula'); formula.type = 'text'; formula.setAttribute('aria-label', t('cell', {ref: 'A1'})); formula.placeholder = t('formula_hint'); formula.readOnly = !editable; formula.dir = 'auto';
@@ -1581,7 +1710,8 @@ try{mermaid.initialize({startOnLoad:false,securityLevel:'strict',theme:${dark ? 
     const body = el('div', 'ar-sheetbody');
     const foot = el('div', 'ar-sheetfoot'); foot.setAttribute('aria-live', 'polite');
     wrap.append(bar, body, foot);
-    function save() { engine = sheetEngine(rows); commit(toCsv(rows, grid.delimiter === '\t' ? '\t' : ',')); }
+    // A chart's own lines (type, title) are kept above its data
+    function save() { engine = sheetEngine(rows); const head = Object.entries(chartSpec(text).spec).map(([k, v]) => k + ': ' + v).join('\n'); commit((head ? head + '\n' : '') + toCsv(rows, grid.delimiter === '\t' ? '\t' : ',')); }
     function order() {
       let idx = rows.map((_, i) => i).slice(1);
       if (filter) { const f = filter.toLocaleLowerCase(); idx = idx.filter(r => rows[r].some((_, c) => shown(engine.value(r, c)).toLocaleLowerCase().includes(f))); }
@@ -1648,17 +1778,23 @@ try{mermaid.initialize({startOnLoad:false,securityLevel:'strict',theme:${dark ? 
       const numeric = rows[0].map((_, c) => c).filter(c => { const vals = rows.slice(1).map((_, r) => engine.value(r + 1, c)).filter(v => v !== ''); return vals.length && vals.filter(v => typeof v === 'number').length / vals.length >= 0.8; });
       body.replaceChildren();
       if (!numeric.length) { body.append(el('p', 'ar-muted', t('no_numbers'))); return; }
-      if (!numeric.includes(chartCol)) chartCol = numeric.find(c => c !== 0) ?? numeric[0];
       const labelCol = rows[0].map((_, c) => c).find(c => !numeric.includes(c)) ?? -1;
+      if (chartCol !== 'all' && !numeric.includes(chartCol)) chartCol = lang0 === 'chart' || numeric.length <= 4 ? 'all' : numeric.find(c => c !== 0) ?? numeric[0];
       const controls = el('div', 'ar-chartbar');
       const pick = el('select', 'ar-select'); setLabel(pick, t('chart'));
+      if (numeric.length > 1) { const o = el('option', null, t('all_columns')); o.value = 'all'; pick.append(o); }
       for (const c of numeric) { const o = el('option', null, shown(engine.value(0, c)) || colName(c)); o.value = c; pick.append(o); }
-      pick.value = chartCol; pick.addEventListener('change', () => { chartCol = +pick.value; paintChart(); });
-      const kind = el('select', 'ar-select'); for (const [v, label] of [['bar', t('chart_bar')], ['line', t('chart_line')]]) { const o = el('option', null, label); o.value = v; kind.append(o); }
+      if (numeric.length === 1) chartCol = numeric[0];
+      pick.value = String(chartCol); pick.addEventListener('change', () => { chartCol = pick.value === 'all' ? 'all' : +pick.value; paintChart(); });
+      const kind = el('select', 'ar-select'); setLabel(kind, t('chart'));
+      for (const [v, label] of [['bar', t('chart_bar')], ['line', t('chart_line')], ['area', t('chart_area')], ['pie', t('chart_pie')]]) { const o = el('option', null, label); o.value = v; kind.append(o); }
       kind.value = chartKind; kind.addEventListener('change', () => { chartKind = kind.value; paintChart(); });
       controls.append(pick, kind);
-      const data = order().slice(0, 60).map(r => ({label: labelCol >= 0 ? shown(engine.value(r, labelCol)) : String(r + 1), value: typeof engine.value(r, chartCol) === 'number' ? engine.value(r, chartCol) : 0}));
-      const svgNode = chartSvg(data, chartKind, t('chart_of', {col: shown(engine.value(0, chartCol)) || colName(chartCol), by: labelCol >= 0 ? shown(engine.value(0, labelCol)) : '#'}));
+      const cols = chartCol === 'all' ? numeric : [chartCol];
+      const list = order().slice(0, 80);
+      const data = {labels: list.map(r => labelCol >= 0 ? shown(engine.value(r, labelCol)) : String(r + 1)), series: cols.map(c => ({name: shown(engine.value(0, c)) || colName(c), values: list.map(r => typeof engine.value(r, c) === 'number' ? engine.value(r, c) : 0)}))};
+      const title = chartSpec(text).spec.title || (cols.length === 1 ? t('chart_of', {col: data.series[0].name, by: labelCol >= 0 ? shown(engine.value(0, labelCol)) : '#'}) : displayTitleText);
+      const svgNode = chartSvg(data, chartKind, title);
       body.append(controls, svgNode);
       ctx.chartSvg = svgNode;
     }
@@ -1676,26 +1812,61 @@ try{mermaid.initialize({startOnLoad:false,securityLevel:'strict',theme:${dark ? 
     ctx.rowsNow = () => rows; ctx.valueOf = (r, c) => engine.value(r, c);
     return wrap;
   }
-  // A bar or line chart, drawn as SVG elements: text goes in as text
+  // Bar, line, area and pie charts, drawn as SVG elements: labels go in as text, and colours are written on the
+  // elements themselves so a downloaded chart looks the same on its own
+  const PALETTE = ['#2563eb', '#16a34a', '#d97706', '#db2777', '#7c3aed', '#0891b2', '#dc2626', '#65a30d'];
   function chartSvg(data, kind, caption) {
-    const NS = 'http://www.w3.org/2000/svg', W = 720, H = 360, L = 64, R = 16, T = 28, B = 72;
+    const NS = 'http://www.w3.org/2000/svg', W = 720, H = 380, L = 64, R = 16, T = 34, legendH = data.series.length > 1 || kind === 'pie' ? 26 : 0, B = 70 + legendH;
     const mk = (tag, attrs, text) => { const node = document.createElementNS(NS, tag); for (const [k, v] of Object.entries(attrs)) node.setAttribute(k, v); if (text != null) node.textContent = text; return node; };
     const svgNode = mk('svg', {viewBox: `0 0 ${W} ${H}`, class: 'ar-chart', role: 'img', 'aria-label': caption, xmlns: NS});
-    svgNode.append(mk('title', {}, caption));
-    const max = Math.max(0, ...data.map(d => d.value)), min = Math.min(0, ...data.map(d => d.value));
+    svgNode.append(mk('title', {}, caption), mk('text', {x: L, y: 18, class: 'ar-caption'}, caption));
+    const labels = data.labels.map(x => String(x)), short = x => x.length > 14 ? x.slice(0, 13) + '…' : x;
+    const legend = names => { let x = L; names.forEach((name, i) => { svgNode.append(mk('rect', {x, y: H - 20, width: 10, height: 10, rx: 2, fill: PALETTE[i % PALETTE.length]}), mk('text', {x: x + 14, y: H - 11, class: 'ar-axis'}, short(name))); x += 26 + Math.min(14, name.length) * 7; }); };
+    if (kind === 'pie') {
+      const values = data.series[0]?.values || [], total = values.reduce((a, b) => a + Math.max(0, b), 0) || 1;
+      const cx = W / 2, cy = T + (H - T - legendH - 10) / 2, r = Math.min(cx - L, (H - T - legendH - 20) / 2);
+      let angle = -Math.PI / 2;
+      values.forEach((v, i) => {
+        const part = Math.max(0, v) / total, next = angle + part * Math.PI * 2, color = PALETTE[i % PALETTE.length];
+        if (part >= 0.9999) svgNode.append(mk('circle', {cx, cy, r, fill: color}));
+        else if (part > 0) svgNode.append(mk('path', {d: `M${cx},${cy} L${cx + r * Math.cos(angle)},${cy + r * Math.sin(angle)} A${r},${r} 0 ${part > 0.5 ? 1 : 0} 1 ${cx + r * Math.cos(next)},${cy + r * Math.sin(next)} Z`, fill: color, stroke: '#fff', 'stroke-width': 1.5}));
+        const mid = (angle + next) / 2;
+        if (part >= 0.04) svgNode.append(mk('text', {x: cx + r * 0.65 * Math.cos(mid), y: cy + r * 0.65 * Math.sin(mid) + 4, 'text-anchor': 'middle', fill: '#fff', 'font-size': 12, 'font-weight': 600}, Math.round(part * 100) + '%'));
+        angle = next;
+      });
+      legend(labels);
+      return svgNode;
+    }
+    const all = data.series.flatMap(s => s.values);
+    const max = Math.max(0, ...all), min = Math.min(0, ...all);
     const span = max - min || 1, y = v => T + (H - T - B) * (1 - (v - min) / span);
-    for (let k = 0; k <= 4; k++) { const v = min + span * k / 4, yy = y(v); svgNode.append(mk('line', {x1: L, x2: W - R, y1: yy, y2: yy, class: 'ar-gridline'}), mk('text', {x: L - 8, y: yy + 4, 'text-anchor': 'end', class: 'ar-axis'}, shown(Math.round(v * 100) / 100))); }
-    const step = (W - L - R) / Math.max(1, data.length);
-    data.forEach((d, i) => {
+    for (let k = 0; k <= 4; k++) { const v = min + span * k / 4, yy = y(v); svgNode.append(mk('line', {x1: L, x2: W - R, y1: yy, y2: yy, class: 'ar-gridline', stroke: '#e5e5e5'}), mk('text', {x: L - 8, y: yy + 4, 'text-anchor': 'end', class: 'ar-axis'}, shown(Math.round(v * 100) / 100))); }
+    const step = (W - L - R) / Math.max(1, labels.length), n = data.series.length;
+    labels.forEach((label, i) => {
       const x = L + step * i;
-      if (kind === 'bar') svgNode.append(mk('rect', {x: x + step * 0.15, width: Math.max(1, step * 0.7), y: Math.min(y(d.value), y(0)), height: Math.abs(y(d.value) - y(0)), rx: 2, class: 'ar-bar'}, null));
-      const label = d.label.length > 14 ? d.label.slice(0, 13) + '…' : d.label;
-      if (data.length <= 30 || i % Math.ceil(data.length / 30) === 0) svgNode.append(mk('text', {x: x + step / 2, y: H - B + 16, 'text-anchor': 'end', transform: `rotate(-35 ${x + step / 2} ${H - B + 16})`, class: 'ar-axis'}, label));
+      if (labels.length <= 30 || i % Math.ceil(labels.length / 30) === 0) svgNode.append(mk('text', {x: x + step / 2, y: H - B + 16, 'text-anchor': 'end', transform: `rotate(-35 ${x + step / 2} ${H - B + 16})`, class: 'ar-axis'}, short(label)));
     });
-    if (kind === 'line' && data.length) svgNode.append(mk('polyline', {points: data.map((d, i) => `${L + step * i + step / 2},${y(d.value)}`).join(' '), class: 'ar-line', fill: 'none'}));
-    if (kind === 'line') data.forEach((d, i) => svgNode.append(mk('circle', {cx: L + step * i + step / 2, cy: y(d.value), r: 3, class: 'ar-dot'})));
-    svgNode.append(mk('text', {x: L, y: 16, class: 'ar-caption'}, caption));
+    data.series.forEach((series, k) => {
+      const color = PALETTE[k % PALETTE.length];
+      if (kind === 'bar') series.values.forEach((v, i) => { const w = step * 0.7 / n; svgNode.append(mk('rect', {x: L + step * i + step * 0.15 + w * k, width: Math.max(1, w - 1), y: Math.min(y(v), y(0)), height: Math.max(0.5, Math.abs(y(v) - y(0))), rx: 2, fill: color, class: 'ar-bar'})); });
+      else {
+        const points = series.values.map((v, i) => `${L + step * i + step / 2},${y(v)}`);
+        if (kind === 'area' && points.length) svgNode.append(mk('polygon', {points: `${L + step / 2},${y(0)} ${points.join(' ')} ${L + step * (series.values.length - 1) + step / 2},${y(0)}`, fill: color, 'fill-opacity': n > 1 ? 0.25 : 0.35}));
+        svgNode.append(mk('polyline', {points: points.join(' '), fill: 'none', stroke: color, 'stroke-width': 2.5, class: 'ar-line'}));
+        series.values.forEach((v, i) => svgNode.append(mk('circle', {cx: L + step * i + step / 2, cy: y(v), r: 3, fill: color})));
+      }
+    });
+    if (n > 1) legend(data.series.map(s => s.name));
     return svgNode;
+  }
+  // A ```chart block inside a document or a slide
+  function chartFromText(text) {
+    const {spec} = chartSpec(text), rows = gridOf(text, 'chart').rows, engine = sheetEngine(rows);
+    const numeric = (rows[0] || []).map((_, c) => c).filter(c => c > 0 && rows.slice(1).some((_, r) => typeof engine.value(r + 1, c) === 'number'));
+    if (rows.length < 2 || !numeric.length) return null;
+    const data = {labels: rows.slice(1).map((_, r) => shown(engine.value(r + 1, 0))), series: numeric.map(c => ({name: shown(engine.value(0, c)), values: rows.slice(1).map((_, r) => typeof engine.value(r + 1, c) === 'number' ? engine.value(r + 1, c) : 0)}))};
+    const kind = ['bar', 'line', 'area', 'pie'].includes(String(spec.type).toLowerCase()) ? String(spec.type).toLowerCase() : 'bar';
+    return chartSvg(data, kind, spec.title || data.series.map(s => s.name).join(', '));
   }
 
   /* ---- data ---- */
@@ -1976,7 +2147,6 @@ try{mermaid.initialize({startOnLoad:false,securityLevel:'strict',theme:${dark ? 
     if (state.loading && !state.artifacts.length) { bodyEl.append(notice(t('loading'))); return; }
     if (state.failure && !state.artifacts.length) { bodyEl.append(notice(state.failure === 'denied' ? t('denied') : t('failed'), null, state.failure === 'failed' ? textButton(t('retry'), () => load()) : null)); return; }
     if (!state.artifacts.length) { bodyEl.append(notice(t('empty_title'), t('empty_hint'), newButton ? textButton(t('new'), () => openNew(newButton)) : null)); return; }
-    if (r.kind === 'shared') bodyEl.append(sharedBanner());
     const search = el('input', 'ar-search'); search.type = 'search'; search.placeholder = t('search'); search.setAttribute('aria-label', t('search')); search.value = state.query;
     const list = el('ul', 'ar-list'); list.setAttribute('aria-labelledby', 'ar-heading');
     const paintItems = () => {
@@ -2007,12 +2177,6 @@ try{mermaid.initialize({startOnLoad:false,securityLevel:'strict',theme:${dark ? 
     bodyEl.append(search, list);
   }
   const notice = (title, hint, action) => { const box = el('div', 'ar-notice'); box.append(el('strong', null, title)); if (hint) box.append(el('span', null, hint)); if (action) box.append(action); return box; };
-  function sharedBanner() {
-    const box = el('div', 'ar-shared');
-    box.append(el('span', null, t('shared_view')));
-    if (token()) { const b = textButton(t('remix'), remix); b.title = t('remix_hint'); box.append(b); }
-    return box;
-  }
   function versionText(a, index) {
     const v = a.versions[index];
     if (!v) return '';
@@ -2060,20 +2224,18 @@ try{mermaid.initialize({startOnLoad:false,securityLevel:'strict',theme:${dark ? 
     const copy = iconButton(t('copy'), 'copy', () => copyText(text));
     const download = iconButton(t('download'), 'download', null); download.setAttribute('aria-haspopup', 'menu');
     download.addEventListener('click', () => menu(download, downloadItems(a, text, ctx)));
-    const share = !readOnly() && CONFIG.allowShare ? iconButton(t('share'), 'share', () => shareDialog(a)) : null;
     const more = iconButton(t('more'), 'more', null); more.setAttribute('aria-haspopup', 'menu');
     more.addEventListener('click', () => menu(more, moreItems(a, index, text, edited)));
     const full = narrow() ? null : iconButton(panel.classList.contains('ar-full') ? t('exit_fullscreen') : t('fullscreen'), 'expand', toggleFull);
     // Two rows: what it is and what can be done with it, then its versions and views
     const top = el('div', 'ar-hrow'), tools = el('div', 'ar-hrow ar-headtools');
-    const actions = el('div', 'ar-actionsrow'); actions.append(copy, download, ...(share ? [share] : []), more, ...(full ? [full] : []), iconButton(t('close'), 'close', closePanel));
+    const actions = el('div', 'ar-actionsrow'); actions.append(copy, download, more, ...(full ? [full] : []), iconButton(t('close'), 'close', closePanel));
     top.append(back, titleBox, actions);
     tools.append(versions, el('span', 'ar-spacer'), modes);
     headEl.replaceChildren(top, tools);
     // Body
     dropFrames(bodyEl);
     bodyEl.replaceChildren();
-    if (state.route.kind === 'shared') bodyEl.append(sharedBanner());
     const view = el('div', 'ar-view'); view.dataset.mode = state.mode;
     const commit = value => saveEdit(a, index, value);
     if (state.mode === 'code') view.append(codeView(text, !readOnly(), ctx, commit));
@@ -2139,7 +2301,7 @@ try{mermaid.initialize({startOnLoad:false,securityLevel:'strict',theme:${dark ? 
     state.errors.delete(errorKey);
     if (a.type === 'document') return documentView(text);
     if (a.type === 'slides') return slidesView(text, ctx);
-    if (a.type === 'sheet') return sheetView(text, a.lang, ctx, !readOnly(), commit);
+    if (a.type === 'sheet') return sheetView(text, a.lang, ctx, !readOnly(), commit, displayTitle(a));
     if (a.type === 'data') return dataView(text, ctx);
     if (a.type === 'svg') {
       const box = el('div', 'ar-svgbox');
@@ -2205,12 +2367,15 @@ try{mermaid.initialize({startOnLoad:false,securityLevel:'strict',theme:${dark ? 
     setTimeout(() => URL.revokeObjectURL(url), 30000);
   }
   const escapeHtml = value => String(value).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-  const PRINT_CSS = 'body{font:15px/1.6 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;color:#111;max-width:46rem;margin:2rem auto;padding:0 1rem}h1,h2,h3{line-height:1.25}pre{background:#f5f5f5;padding:.75rem;border-radius:6px;overflow:auto;white-space:pre-wrap}code{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:.9em}table{border-collapse:collapse;width:100%}th,td{border:1px solid #ccc;padding:.35rem .5rem;text-align:start}blockquote{border-inline-start:3px solid #ccc;margin:0;padding-inline-start:1rem;color:#444}img{max-width:100%}';
+  const FIGURE_CSS = 'mark{background:#fde68a;color:inherit;padding:0 .15em;border-radius:.2em}.ar-callout{margin:.75em 0;padding:.6em .9em;border-radius:8px;border-inline-start:4px solid #2563eb;background:#eff6ff}.ar-callout[data-kind=tip]{border-color:#16a34a;background:#f0fdf4}.ar-callout[data-kind=important]{border-color:#7c3aed;background:#f5f3ff}.ar-callout[data-kind=warning]{border-color:#d97706;background:#fffbeb}.ar-callout-title{display:block;font-weight:700;margin-bottom:.2em}.ar-callout>p{margin:.2em 0}.ar-figure{margin:.75em 0;text-align:center}.ar-figure img,.ar-figure svg,.ar-pic{max-width:100%;height:auto}.ar-diagram{background:#fff;border-radius:8px;padding:.5em}.ar-cols{display:grid;grid-template-columns:repeat(var(--ar-cols,2),minmax(0,1fr));gap:1.5em;align-items:start}.ar-chart{width:100%;height:auto}.ar-chart text{fill:#444;font:12px system-ui,sans-serif}.ar-chart .ar-caption{fill:#111;font-weight:600;font-size:14px}';
+  const PRINT_CSS_BASE = 'body{font:15px/1.6 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;color:#111;max-width:46rem;margin:2rem auto;padding:0 1rem}h1,h2,h3{line-height:1.25}pre{background:#f5f5f5;padding:.75rem;border-radius:6px;overflow:auto;white-space:pre-wrap}code{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:.9em}table{border-collapse:collapse;width:100%}th,td{border:1px solid #ccc;padding:.35rem .5rem;text-align:start}blockquote{border-inline-start:3px solid #ccc;margin:0;padding-inline-start:1rem;color:#444}img{max-width:100%}';
+  const PRINT_CSS = PRINT_CSS_BASE + FIGURE_CSS;
   // Documents and slides are written from the same safe rendering the panel shows
   const rendered = text => { const box = el('div'); box.append(renderMarkdown(withoutMarker(text))); return box.innerHTML; };
   const standalone = (title, inner, css = PRINT_CSS) => `<!doctype html><html lang="${lang}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${escapeHtml(title)}</title><style>${css}</style></head><body>${inner}</body></html>`;
-  const SLIDE_CSS = 'html,body{margin:0;background:#111;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif}.s{box-sizing:border-box;width:100vw;height:56.25vw;max-height:100vh;max-width:177.78vh;margin:auto;background:#fff;color:#111;padding:6% 8%;display:none;flex-direction:column;justify-content:center;font-size:2.6vmin;overflow:hidden}.s.on{display:flex}.s h1{font-size:2.4em;margin:0 0 .4em}.s h2{font-size:1.8em;margin:0 0 .4em}.s li{margin:.3em 0}.s pre{background:#f3f3f3;padding:.6em;border-radius:6px;font-size:.8em}.n{position:fixed;bottom:8px;right:12px;color:#aaa;font-size:12px}@media print{@page{size:landscape;margin:0}body{background:#fff}.s{display:flex!important;width:100%;height:100vh;page-break-after:always}.n{display:none}}';
-  const slidesHtml = (a, text) => standalone(displayTitle(a), slidesOf(text).map((s, i) => `<section class="s${i ? '' : ' on'}">${rendered(s.body)}</section>`).join('') + '<div class="n"></div><script>var s=[].slice.call(document.querySelectorAll(".s")),i=0,n=document.querySelector(".n");function g(k){s[i].classList.remove("on");i=Math.max(0,Math.min(s.length-1,k));s[i].classList.add("on");n.textContent=(i+1)+" / "+s.length}g(0);addEventListener("keydown",function(e){if(["ArrowRight","PageDown"," "].indexOf(e.key)>=0)g(i+1);if(["ArrowLeft","PageUp"].indexOf(e.key)>=0)g(i-1)});addEventListener("click",function(){g(i+1)})<\/script>', SLIDE_CSS);
+  const SLIDE_CSS = 'html,body{margin:0;background:#111;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif}.s{width:100vw;height:56.25vw;max-height:100vh;max-width:177.78vh;margin:auto;display:none;overflow:hidden}.s.on{display:block}.ar-slide{width:100%;height:100%;container-type:inline-size;background:#fff;color:#111;overflow:hidden}.ar-slide-inner{box-sizing:border-box;height:100%;padding:6cqw 8cqw;font-size:2.4cqw;line-height:1.45;display:flex;flex-direction:column;justify-content:center;overflow:hidden}.ar-slide h1{font-size:2.4em;line-height:1.1;margin:0 0 .4em}.ar-slide h2{font-size:1.8em;margin:0 0 .4em}.ar-slide h3{font-size:1.3em;margin:.2em 0 .3em}.ar-slide p{margin:.3em 0}.ar-slide li{margin:.25em 0}.ar-slide pre{background:#f3f3f3;padding:.6em;border-radius:6px;font-size:.75em}.ar-slide table{border-collapse:collapse;font-size:.8em}.ar-slide th,.ar-slide td{border:1px solid #ccc;padding:.3em .5em}.ar-slide-title .ar-slide-inner,.ar-slide-center .ar-slide-inner{align-items:center;text-align:center}.ar-slide-title h1{font-size:3.2em}.ar-slide-section{background:#1e293b;color:#fff}.ar-slide-section .ar-slide-inner{justify-content:flex-end}.ar-slide-visual .ar-slide-inner{justify-content:flex-start}.ar-slide .ar-figure{flex:1;min-height:0;display:flex;align-items:center;justify-content:center}.ar-slide .ar-figure img,.ar-slide .ar-figure svg{max-height:100%}.n{position:fixed;bottom:8px;right:12px;color:#aaa;font-size:12px}@media print{@page{size:landscape;margin:0}body{background:#fff}.s{display:block!important;width:100%;height:100vh;page-break-after:always}.n{display:none}}' + FIGURE_CSS;
+  const slideHtml = slide => { const box = el('div'); box.append(slideNode(slide)); return box.innerHTML; };
+  const slidesHtml = (a, text) => standalone(displayTitle(a), slidesOf(text).map((s, i) => `<section class="s${i ? '' : ' on'}">${slideHtml(s)}</section>`).join('') + '<div class="n"></div><script>var s=[].slice.call(document.querySelectorAll(".s")),i=0,n=document.querySelector(".n");function g(k){s[i].classList.remove("on");i=Math.max(0,Math.min(s.length-1,k));s[i].classList.add("on");n.textContent=(i+1)+" / "+s.length}g(0);addEventListener("keydown",function(e){if(["ArrowRight","PageDown"," "].indexOf(e.key)>=0)g(i+1);if(["ArrowLeft","PageUp"].indexOf(e.key)>=0)g(i-1)});addEventListener("click",function(){g(i+1)})<\/script>', SLIDE_CSS);
   const wordHtml = (a, text) => `<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40"><head><meta charset="utf-8"><title>${escapeHtml(displayTitle(a))}</title><style>${PRINT_CSS}</style></head><body>${rendered(text)}</body></html>`;
   const xmlEscape = value => String(value).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f]/g, '');
   // A minimal Excel workbook: values, and formulas with their last result
@@ -2277,9 +2442,11 @@ try{mermaid.initialize({startOnLoad:false,securityLevel:'strict',theme:${dark ? 
     const name = baseName(a), file = (ext, body, type) => () => save(new Blob([body], {type}), name + '.' + ext);
     const item = (format, action) => ({label: t('dl_as', {format}), action});
     const plain = 'text/plain;charset=utf-8';
+    const later = action => () => { toast(t('preparing')); diagramsReady(text).then(action); };
     switch (a.type) {
-      case 'document': return [item('Markdown (.md)', file('md', text, 'text/markdown;charset=utf-8')), item('HTML (.html)', file('html', standalone(displayTitle(a), rendered(text)), 'text/html;charset=utf-8')), item('Word (.doc)', file('doc', wordHtml(a, text), 'application/msword')), {label: t('print'), action: () => printHtml(standalone(displayTitle(a), rendered(text)))}];
-      case 'slides': return [item('Markdown (.md)', file('md', text, 'text/markdown;charset=utf-8')), item(t('t_slides') + ' (.html)', file('html', slidesHtml(a, text), 'text/html;charset=utf-8')), {label: t('print'), action: () => printHtml(slidesHtml(a, text))}];
+      // Diagrams are drawn before a document or deck is written out, so they are in the file
+      case 'document': return [item('Markdown (.md)', file('md', text, 'text/markdown;charset=utf-8')), item('HTML (.html)', later(() => file('html', standalone(displayTitle(a), rendered(text)), 'text/html;charset=utf-8')())), item('Word (.doc)', later(() => file('doc', wordHtml(a, text), 'application/msword')())), {label: t('print'), action: later(() => printHtml(standalone(displayTitle(a), rendered(text))))}];
+      case 'slides': return [item('Markdown (.md)', file('md', text, 'text/markdown;charset=utf-8')), item(t('t_slides') + ' (.html)', later(() => file('html', slidesHtml(a, text), 'text/html;charset=utf-8')())), {label: t('print'), action: later(() => printHtml(slidesHtml(a, text)))}];
       case 'sheet': return [item('CSV (.csv)', file('csv', withoutMarker(text), 'text/csv;charset=utf-8')), item('Excel (.xlsx)', () => save(xlsxOf(text, a.lang), name + '.xlsx')), ctx.chartSvg && state.mode === 'preview' && ctx.sheetMode === 'chart' ? item(t('chart') + ' (.svg)', () => save(new Blob([chartText(ctx)], {type: 'image/svg+xml'}), name + '-chart.svg')) : null, ctx.chartSvg && ctx.sheetMode === 'chart' ? item(t('chart') + ' (.png)', () => pngOf(chartText(ctx), name + '-chart.png')) : null, {label: t('print'), action: () => { const g = gridOf(text, a.lang), e = sheetEngine(g.rows); printHtml(standalone(displayTitle(a), '<table>' + g.rows.map((row, r) => '<tr>' + row.map((_, c) => (r ? '<td>' : '<th>') + escapeHtml(shown(e.value(r, c))) + (r ? '</td>' : '</th>')).join('') + '</tr>').join('') + '</table>')); }}].filter(Boolean);
       case 'diagram': return [item('Mermaid (.mmd)', file('mmd', text, plain)), ctx.svg ? item('SVG (.svg)', file('svg', ctx.svg, 'image/svg+xml')) : null, ctx.svg ? item('PNG (.png)', () => pngOf(ctx.svg, name + '.png')) : null].filter(Boolean);
       case 'svg': return [item('SVG (.svg)', file('svg', text, 'image/svg+xml')), item('PNG (.png)', () => pngOf(text, name + '.png'))];
@@ -2405,9 +2572,14 @@ try{mermaid.initialize({startOnLoad:false,securityLevel:'strict',theme:${dark ? 
       askButton.style.top = clamp(rect.bottom - p.top + 6, 48, p.height - 48) + 'px';
       askButton.style.left = clamp(rect.left - p.left, 8, p.width - 180) + 'px';
     };
-    view.addEventListener('mouseup', () => setTimeout(check, 0));
+    view.addEventListener('mouseup', () => setTimeout(check, 250));
     view.addEventListener('keyup', event => { if (event.shiftKey || event.key === 'Shift') check(); });
+    view.addEventListener('scroll', hideAsk, true);
   }
+  // Copying a selection is the usual reason to make one: the offer to ask steps aside
+  const hideAsk = () => { askButton?.remove(); askButton = null; };
+  document.addEventListener('copy', hideAsk);
+  document.addEventListener('pointerdown', event => { if (askButton && event.target !== askButton && !askButton.contains(event.target)) hideAsk(); }, true);
   function askAbout(a, text, picked) {
     askButton?.remove(); askButton = null;
     const box = el('dialog', 'ar-dialog'); box.setAttribute('aria-labelledby', 'ar-ask-title');
@@ -2473,63 +2645,6 @@ try{mermaid.initialize({startOnLoad:false,securityLevel:'strict',theme:${dark ? 
     });
     box.addEventListener('close', () => box.remove(), {once: true});
     box.append(form); panel.append(box); box.showModal(); name.select();
-  }
-
-  /* ---- sharing ---- */
-  async function shareDialog(a) {
-    const box = el('dialog', 'ar-dialog'); box.setAttribute('aria-labelledby', 'ar-share-title');
-    const heading = el('h3', null, t('share_title')); heading.id = 'ar-share-title';
-    box.append(heading);
-    box.addEventListener('close', () => box.remove(), {once: true});
-    if (a.local) { box.append(el('p', null, t('share_local')), actionsOf(textButton(t('close'), () => box.close()))); panel.append(box); box.showModal(); return; }
-    box.append(el('p', null, t('share_text')));
-    if (isEdited(a, state.version)) box.append(el('p', 'ar-alert', t('share_draft')));
-    const linkRow = el('div', 'ar-linkrow');
-    const link = el('input', 'ar-input'); link.readOnly = true; setLabel(link, t('share_link'));
-    const copyLink = textButton(t('share_copy'), () => copyText(link.value).then(ok => ok && toast(t('share_ready'))));
-    linkRow.append(link, copyLink);
-    const status = el('p', 'ar-muted ar-small'); status.setAttribute('aria-live', 'polite');
-    const make = textButton(state.shareId ? t('share_update') : t('share_create'), async () => {
-      make.disabled = true;
-      try {
-        const chat = await api('/api/v1/chats/' + encodeURIComponent(state.route.id) + '/share', null, {method: 'POST', body: '{}'});
-        state.shareId = chat?.share_id || state.shareId;
-        if (!state.shareId) throw new Error('no share id');
-        showLink(); await copyText(link.value); toast(t('share_ready'));
-        make.textContent = t('share_update');
-      } catch (error) { status.textContent = error.status === 401 || error.status === 403 ? t('share_denied') : t('share_failed'); }
-      make.disabled = false;
-    }, 'ar-btn ar-primary');
-    const access = textButton(t('share_access'), () => { box.close(); openNativeShare(); });
-    access.title = t('share_access_hint');
-    const showLink = () => { link.value = location.origin + '/s/' + encodeURIComponent(state.shareId) + '?artifact=' + encodeURIComponent(a.key) + (state.version < a.versions.length - 1 ? '&v=' + (state.version + 1) : ''); linkRow.hidden = false; status.textContent = t('share_snapshot'); };
-    linkRow.hidden = true;
-    if (state.shareId) showLink();
-    box.append(linkRow, status, actionsOf(access, el('span', 'ar-spacer'), textButton(t('close'), () => box.close()), make));
-    panel.append(box); box.showModal(); make.focus();
-  }
-  const actionsOf = (...nodes) => { const row = el('div', 'ar-actions'); row.append(...nodes); return row; };
-  // Who can open a shared chat is Open WebUI's own setting, in its Share dialog
-  async function openNativeShare() {
-    const trigger = [...document.querySelectorAll('#chat-context-menu-button')].find(node => node.getClientRects().length);
-    if (!trigger) { toast(t('share_access_manual')); return; }
-    trigger.click();
-    for (let i = 0; i < 20; i++) {
-      await pause(80);
-      const item = document.getElementById('chat-share-button') || [...document.querySelectorAll('body > [role="menu"] .app-dropdown-menu > button')].find(b => /^\s*(share|partager|teilen|compartir|condividi)\b/i.test(b.textContent || ''));
-      if (item) { item.click(); return; }
-    }
-    document.dispatchEvent(new KeyboardEvent('keydown', {key: 'Escape', bubbles: true}));
-    toast(t('share_access_manual'));
-  }
-  async function remix() {
-    if (!token()) { toast(t('remix_denied')); return; }
-    try {
-      const id = state.chat?.id || state.route.id;
-      const chat = await api('/api/v1/chats/' + encodeURIComponent(id) + '/clone/shared', null, {method: 'POST', body: '{}'});
-      if (!chat?.id) throw new Error('no id');
-      navigate('/c/' + encodeURIComponent(chat.id) + (state.key ? '?artifact=' + encodeURIComponent(state.key) : ''));
-    } catch (error) { toast(error.status === 401 || error.status === 403 ? t('remix_denied') : t('remix_failed')); }
   }
 
   /* ---- the panel beside the chat ---- */
@@ -2695,25 +2810,38 @@ try{mermaid.initialize({startOnLoad:false,securityLevel:'strict',theme:${dark ? 
         native.dataset.ar = '1';
         native.addEventListener('click', event => { if (!CONFIG.replaceBuiltin) return; event.preventDefault(); event.stopImmediatePropagation(); button.click(); }, true);
       }
-      if (CONFIG.collapseCode && ['html', 'react', 'svg', 'diagram', 'slides', 'sheet'].includes(match.a.type)) frame.classList.add('ar-collapsed');
+      frame.dataset.arKey = match.a.key + '#' + match.i;
+      if (CONFIG.collapseCode) frame.classList.add('ar-collapsed');
+      frame.nextElementSibling?.classList.contains('ar-writing') && frame.nextElementSibling.remove();
     }
     for (const message of document.querySelectorAll('[id^="message-"]')) {
       const id = message.id.slice(8);
+      // Once the answer is finished, its "being written" cards give way to the real ones
+      if (!state.streaming) message.querySelectorAll('.ar-writing').forEach(node => node.remove());
       const found = versionsIn(id);
       const content = message.querySelector('#response-content-container') || message.querySelector('.chat-assistant');
       let cards = message.querySelector(':scope .ar-cards');
       if (!found.length || !content) { cards?.remove(); continue; }
-      const signature = found.map(x => x.a.key + ':' + x.i + ':' + displayTitle(x.a)).join('|') + '|' + lang;
+      const signature = found.map(x => x.a.key + ':' + x.i + ':' + displayTitle(x.a)).join('|') + '|' + lang + '|' + message.querySelectorAll('.ar-collapsed[data-ar-key]').length;
       if (cards?.dataset.sig === signature && cards.parentElement === content) continue;
       if (!cards) { cards = el('div', 'ar-cards'); cards.setAttribute('role', 'group'); setLabel(cards, t('in_message')); }
       cards.dataset.sig = signature;
       cards.replaceChildren(...found.map(({a, i}) => {
-        const card = el('button', 'ar-card'); card.type = 'button'; card.dataset.key = a.key;
+        const card = el('div', 'ar-card'); card.dataset.key = a.key;
+        const main = el('button', 'ar-cardmain'); main.type = 'button';
         const icon = el('span', 'ar-itemicon'); icon.dataset.type = a.type; icon.append(svgIcon(TYPE_ICON[a.type]));
         const words = el('span', 'ar-itemtext');
         words.append(nameSpan('ar-itemtitle', displayTitle(a)), el('span', 'ar-itemmeta', t('t_' + a.type) + (a.versions.length > 1 ? ' · v' + (i + 1) : '')));
-        card.append(icon, words, el('span', 'ar-cardopen', t('open')));
-        card.addEventListener('click', () => openArtifact(a.key, i));
+        main.append(icon, words, el('span', 'ar-cardopen', t('open')));
+        main.addEventListener('click', () => openArtifact(a.key, i));
+        card.append(main);
+        // The folded code can be shown in the chat again
+        const block = [...message.querySelectorAll('[data-ar-key]')].find(node => node.dataset.arKey === a.key + '#' + i);
+        if (block?.classList.contains('ar-collapsed')) {
+          const toggle = iconButton(t('show_code'), 'code', () => { const shown = block.classList.toggle('ar-shown'); setLabel(toggle, t(shown ? 'hide_code' : 'show_code')); toggle.setAttribute('aria-pressed', String(shown)); }, 'ar-icon ar-cardcode');
+          toggle.setAttribute('aria-pressed', String(block.classList.contains('ar-shown')));
+          card.append(toggle);
+        }
         return card;
       }));
       if (cards.parentElement !== content) content.append(cards);
@@ -2722,21 +2850,46 @@ try{mermaid.initialize({startOnLoad:false,securityLevel:'strict',theme:${dark ? 
 
   /* ---- keeping up with the chat ---- */
   // Watches the page, not the server: once the newest answer has stopped changing, the chat is read once
-  let lastPath = null, watchSig = '', stable = 0, liveKey = null, chatWatch = 0, settleUntil = 0;
-  function liveBlock() {
+  let lastPath = null, watchSig = '', stable = 0, chatWatch = 0, settleUntil = 0;
+  const seenVersions = new Set();
+  let seenFor = null;
+  // While an answer is being written, each code block that will be an artifact is folded away behind a small card
+  // saying it is being written; the panel opens once it is finished
+  function markWriting() {
     const messages = document.querySelectorAll('#messages-container [id^="message-"]');
     const last = messages[messages.length - 1];
-    if (!last || last.classList.contains('user-message')) return null;
-    const blocks = last.querySelectorAll('[id^="code-textarea-"]');
-    const block = blocks[blocks.length - 1];
-    if (!block) return null;
-    const frame = block.closest('.relative.flex.flex-col');
-    const label = (frame?.querySelector('.truncate span, span.truncate')?.textContent || '').trim();
-    const info = readInfo(label, '');
-    const text = [...block.querySelectorAll('.cm-line')].map(x => x.textContent).join('\n');
-    const type = typeOf(info.lang, text, info);
-    return type ? {type, lang: info.lang, text, label, messageId: last.id.slice(8)} : null;
+    if (!last || last.classList.contains('user-message')) return;
+    for (const block of last.querySelectorAll('[id^="code-textarea-"]')) {
+      const frame = block.closest('.relative.flex.flex-col');
+      if (!frame || frame.dataset.arKey) continue;
+      const label = (frame.querySelector('.truncate span, span.truncate')?.textContent || '').trim();
+      const text = [...block.querySelectorAll('.cm-line')].map(x => x.textContent).join('\n');
+      const info = readInfo(label, text), probe = {text, info: label}, marked = isMarked(probe);
+      const type = typeOf(info.lang, text, info, marked);
+      if (!type || !wanted(type, probe, marked)) continue;
+      if (CONFIG.collapseCode) frame.classList.add('ar-collapsed');
+      let card = frame.nextElementSibling?.classList.contains('ar-writing') ? frame.nextElementSibling : null;
+      if (!card) {
+        card = el('div', 'ar-cards ar-writing'); card.setAttribute('role', 'status');
+        const row = el('div', 'ar-card ar-card-writing');
+        const icon = el('span', 'ar-itemicon'); icon.dataset.type = type; icon.append(svgIcon(TYPE_ICON[type]));
+        const words = el('span', 'ar-itemtext'); words.append(nameSpan('ar-itemtitle', ''), el('span', 'ar-itemmeta', ''));
+        row.append(icon, words, el('span', 'ar-spinner'));
+        card.append(row); frame.after(card);
+      }
+      const title = markerOf(text) || info.title || titleOf(type, info.lang, text, info).title || t('t_' + type);
+      card.querySelector('.ar-itemtitle').textContent = title;
+      card.querySelector('.ar-itemmeta').textContent = t('writing') + ' · ' + t('lines', {n: n(countLines(text))});
+    }
   }
+  // When an answer is done: open what it made, as Claude does
+  function openMade() {
+    const fresh = [];
+    for (const a of state.artifacts) a.versions.forEach((v, i) => { const id = a.key + '#' + i; if (!seenVersions.has(id)) { seenVersions.add(id); if (v.messageId && !v.unfinished) fresh.push({a, i}); } });
+    const made = fresh.pop();
+    if (made && CONFIG.autoOpen && !narrow()) openArtifact(made.a.key, made.i, hasPreview(made.a) ? 'preview' : 'code');
+  }
+  const rememberAll = () => { seenVersions.clear(); for (const a of state.artifacts) a.versions.forEach((_, i) => seenVersions.add(a.key + '#' + i)); seenFor = state.loadedFor; };
   setInterval(() => {
     const r = route();
     const path = location.pathname;
@@ -2744,7 +2897,7 @@ try{mermaid.initialize({startOnLoad:false,securityLevel:'strict',theme:${dark ? 
       const moved = lastPath !== null;
       lastPath = path; watchSig = ''; settleUntil = Date.now() + 2500;
       if (moved) { state.key = null; state.errors.clear(); if (panel && !panel.hidden && r.kind !== 'chat' && r.kind !== 'shared') closePanel(); }
-      if (r.kind === 'chat' || r.kind === 'shared') load(true).then(() => { deepLink(); }); else { state.artifacts = []; state.loadedFor = null; syncHeaderButton(); }
+      if (r.kind === 'chat' || r.kind === 'shared') load(true).then(() => { rememberAll(); deepLink(); }); else { state.artifacts = []; state.loadedFor = null; syncHeaderButton(); }
       return;
     }
     syncMenu();
@@ -2764,50 +2917,17 @@ try{mermaid.initialize({startOnLoad:false,securityLevel:'strict',theme:${dark ? 
       // A chat being drawn after it opens isn't an answer being written: an answer the chat already has, finished, can't be
       const known = last && state.chat?.chat?.history?.messages?.[last.id.slice(8)];
       const writing = !first && Date.now() > settleUntil && !(known && known.done !== false && state.loadedFor === r.kind + ':' + r.id);
-      if (writing && r.kind === 'chat') {
-        state.streaming = true;
-        const live = liveBlock();
-        // A model starting a page, an app, a drawing, slides or a sheet opens the panel, as Claude does
-        if (live && CONFIG.autoOpen && !narrow() && ['html', 'react', 'svg', 'diagram', 'slides', 'sheet'].includes(live.type) && countLines(live.text) >= 3 && (!panel || panel.hidden) && liveKey !== live.messageId) { liveKey = live.messageId; state.key = null; openPanel(); }
-        if (panel && !panel.hidden) paintLive(live);
-      }
+      if (writing && r.kind === 'chat') { state.streaming = true; markWriting(); }
       return;
     }
     if (stable >= 0 && ++stable === 2) {
       stable = -1;
       if (state.streaming && r.kind === 'chat') {
-        const wasLive = panel && !panel.hidden && panel.dataset.view === 'live';
         state.streaming = false;
-        load(true).then(() => {
-          // The finished artifact replaces the live view: the newest one from the last answer
-          if (wasLive) { const lastId = branchOf(state.chat).filter(m => m.role === 'assistant').pop()?.id; const made = versionsIn(lastId).pop(); if (made) openArtifact(made.a.key, made.i, hasPreview(made.a) ? 'preview' : 'code'); }
-        });
+        load(true).then(() => { if (seenFor !== state.loadedFor) rememberAll(); else openMade(); syncChat(); });
       }
     }
   }, 700);
-  // While an answer is being written, the code so far is shown as it arrives
-  function paintLive(live) {
-    if (!live) return;
-    const a = current();
-    if (a && a.versions[a.versions.length - 1].messageId !== live.messageId && panel.dataset.view !== 'live') {
-      // Another artifact is open: only say that one is being written
-      if (!footEl.querySelector('.ar-livebadge')) footEl.append(el('span', 'ar-badge ar-livebadge', t('writing')));
-      return;
-    }
-    panel.dataset.view = 'live';
-    let area = bodyEl.querySelector('.ar-livearea');
-    if (!area) {
-      dropFrames(bodyEl);
-      headEl.replaceChildren(svgIcon('artifacts'), nameSpan('ar-title', live.label ? readInfo(live.label, live.text).title || t('t_' + live.type) : t('t_' + live.type)), el('span', 'ar-badge', t('writing')), el('span', 'ar-spacer'), iconButton(t('close'), 'close', closePanel));
-      headEl.firstChild.classList.add('ar-headicon');
-      bodyEl.replaceChildren();
-      area = el('pre', 'ar-pre ar-livearea'); area.setAttribute('aria-busy', 'true');
-      bodyEl.append(area); footEl.hidden = true;
-    }
-    area.textContent = live.text;
-    area.scrollTop = area.scrollHeight;
-  }
-
   /* ---- start ---- */
   async function start() {
     if (!document.getElementById('owui-chat-artifacts-css')) { const style = el('style'); style.id = 'owui-chat-artifacts-css'; style.textContent = CSS; document.head.append(style); }
@@ -2843,33 +2963,37 @@ def _url(value: str) -> str:
 
 class Event:
     class Valves(BaseModel):
+        detect: Literal["rich", "marked", "all"] = Field(
+            default="rich",
+            description="Which code blocks become artifacts. 'rich': blocks the model marked as artifacts (as Artifacts mode asks it to), and whole web pages, React apps, drawings, diagrams, slides and CSV data. 'marked': only marked blocks. 'all': also long answers, Markdown tables, JSON and any long code. Greetings and ordinary answers never make artifacts in 'rich' or 'marked'.",
+        )
         auto_open: bool = Field(
             default=True,
-            description="Open the Artifacts panel when a model starts writing a web page, an app, a drawing, a diagram, slides or a spreadsheet, as Claude does. Never on a phone.",
+            description="Open the Artifacts panel when an answer finishes making a new artifact or version. Never on a phone. The panel never shows an artifact before it is complete.",
         )
         cards_in_chat: bool = Field(
             default=True,
             description="Show a card under each answer that made an artifact, and an Open button on each code block that is one.",
         )
         collapse_code: bool = Field(
-            default=False,
-            description="Hide the code of web pages, apps, drawings, diagrams, slides and spreadsheets in the chat, leaving their header with the Open button, as Claude does.",
+            default=True,
+            description="Fold an artifact's code away in the chat, leaving a card to open it (and to show the code), as Claude does. While it is being written, the card says so.",
         )
         min_code_lines: int = Field(
             default=12,
             ge=1,
             le=500,
-            description="The shortest code block, in lines, that becomes a code artifact. Web pages, apps, drawings, diagrams, slides, spreadsheets and data are artifacts at any length.",
+            description="With detect = 'all': the shortest code block, in lines, that becomes a code artifact.",
         )
         min_document_chars: int = Field(
             default=1500,
             ge=0,
             le=100000,
-            description="An answer with at least this much text, and headings or several paragraphs, is also offered as a document artifact. 0 turns this off.",
+            description="With detect = 'all': an answer with at least this much text, and headings or several paragraphs, is also offered as a document. 0 turns this off.",
         )
         tables_as_sheets: bool = Field(
             default=True,
-            description="Offer Markdown tables of three rows or more in answers as spreadsheets.",
+            description="With detect = 'all': Markdown tables of three rows or more in answers become spreadsheets.",
         )
         network: Literal["libraries", "open", "off"] = Field(
             default="libraries",
@@ -2909,10 +3033,6 @@ class Event:
             description="Keep each person's edits and blank artifacts in their browser. Turn off on shared computers: edits then last until the page is closed.",
         )
         allow_save: bool = Field(default=True, description="Offer Save to my files and Save as a note.")
-        allow_share: bool = Field(
-            default=True,
-            description="Offer Share, which creates or updates Open WebUI's own share link of the chat and points it at the artifact. Who may share follows the chat.share permission.",
-        )
         replace_builtin: bool = Field(
             default=True,
             description="Stand in for Open WebUI's own Artifacts, which only shows HTML and SVG: its ⋯ menu entry is hidden, its Preview button opens this panel, and its tab is closed when it opens by itself. Off keeps both.",
@@ -2938,6 +3058,7 @@ class Event:
         v = self.valves
         hosts = [h for h in (_url(x) for x in str(v.extra_hosts).split(",")) if h][:30]
         return {
+            "detect": v.detect,
             "autoOpen": bool(v.auto_open),
             "cardsInChat": bool(v.cards_in_chat),
             "collapseCode": bool(v.collapse_code),
@@ -2955,7 +3076,6 @@ class Event:
             "allowStorage": bool(v.allow_storage),
             "keepDrafts": bool(v.keep_drafts),
             "allowSave": bool(v.allow_save),
-            "allowShare": bool(v.allow_share),
             "templates": bool(v.templates),
             "replaceBuiltin": bool(v.replace_builtin),
             "headerButton": bool(v.header_button),

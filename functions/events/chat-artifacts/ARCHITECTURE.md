@@ -9,7 +9,7 @@ Artifacts is built like its companions: one Python file whose server half only s
 1. strips `<details>` blocks (reasoning, tool calls);
 2. parses fenced blocks as CommonMark does (`parseBlocks`): a longer fence holds a shorter one, and an unclosed block runs to the end and is marked unfinished;
 3. gives each block a kind (`typeOf`) from its language and content, and a name (`titleOf`): a strong one when it is said outright (a first-line `artifact:` marker, a file name in the info, a `<title>`), a weak one when it is guessed (an `<h1>`, a component's name, a document's heading);
-4. adds Markdown tables of three rows or more as spreadsheets, and a long, structured answer as a document.
+4. keeps it only if `wanted` says so: marked blocks (an `artifact:` first line or `artifact` in the info string) always; with `detect = rich`, also whole pages, default-exported components, SVG, Mermaid, slides and CSV; with `all`, everything, plus Markdown tables as spreadsheets and long, structured answers as documents.
 
 Grouping into versions: a candidate with the same kind and name as an earlier artifact is its next version. Otherwise, if it is the only one of its kind in the answer, and the previous answer with artifacts had exactly one of that kind, and the two aren't both strongly named, it continues that one. Identical text isn't added twice. An artifact's key is its first version's message id and position (`a<message>-<n>`), so it survives sharing and copying.
 
@@ -40,17 +40,27 @@ Everything shown outside frames is built from elements and text: `renderMarkdown
 
 - The panel is `position: fixed` on the right; room is made by padding `#chat-container`, so Open WebUI's own layout (absolutely positioned tab panes on 0.13.3, flex on 0.13.0) shrinks with it.
 - A rAF-throttled MutationObserver keeps the button beside ⋯ and the ⋯ menu entry in place; a 700 ms timer draws cards and Open buttons, closes the built-in Artifacts tab when `replace_builtin` is on, and watches the newest message.
-- Streaming is detected from the page: a change in the last message that isn't one the loaded chat already has as finished (and isn't Artifacts' own cards). Once it has been still for two ticks, the chat is read once. While it changes, the live view shows the code from the last code block on the page.
+- Streaming is detected from the page: a change in the last message that isn't one the loaded chat already has as finished (and isn't Artifacts' own cards). While it changes, `markWriting` folds away each code block that will be an artifact and puts a *being written* card after it. Once it has been still for two ticks, the chat is read once; `openMade` opens the newest version no one has seen yet.
 - Code blocks are matched to artifacts by their `code-textarea-<chat>-<message>-…` id, info string and first line.
 - Messages to the chat use Open WebUI's `input:prompt` and `input:prompt:submit` page messages.
 
-## 7. Where to change things
+## 7. Inside documents and slides
+
+`renderMarkdown` turns ```` ```mermaid ````, ```` ```chart ```` and ```` ```svg ```` fences into figures. Mermaid diagrams are drawn once each by `diagramPromise`, in a hidden sandboxed frame, and shown as `data:` SVG images, so they are safe in the page and travel into downloads; downloads wait for them (`diagramsReady`). `chartFromText` reads a chart's `type:` and `title:` lines and its CSV through the spreadsheet engine. `picture` loads only same-site and `data:` images unless `network` is `open`. `slideNode` splits columns on `|||` and reads `<!-- layout: … -->`.
+
+## 8. Artifacts mode
+
+`artifacts_mode.py` is a separate toggle Filter (one file can hold one function type). When it is switched on, or on by default for a model, its `inlet` adds the instructions once to the system message, marked with `<!-- artifacts-mode -->`. The instructions describe exactly the formats the panel reads.
+
+## 9. Where to change things
 
 | To change | Look at |
 | --- | --- |
 | A valve | `Event.Valves` and `_config()`, then `CONFIG.…` |
 | A word or a language | `STRINGS`; the test fails if a key is missing in a language |
-| What counts as which kind, and names | `typeOf`, `titleOf`, `readInfo`, `MARKER_RE` |
+| What counts as which kind, and names | `typeOf`, `wanted`, `isMarked`, `titleOf`, `readInfo`, `MARKER_RE` |
+| What the model is told | `INSTRUCTIONS` in `artifacts_mode.py` |
+| Figures in documents and slides | `figure`, `diagramPromise`, `chartFromText`, `picture`, `slideNode` |
 | Versions | `artifactsOf` |
 | The sandbox and its policy | `SANDBOX`, `policy()`, `BOOT`, `reactDoc`, `mermaidDoc` |
 | Formulas | `sheetEngine`, `toNumber` |

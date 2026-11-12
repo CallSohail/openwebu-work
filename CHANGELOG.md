@@ -4,6 +4,10 @@ This repository contains independently versioned Open WebUI extensions. Plugin-s
 
 ## 2026-11-12
 
+### Artifacts 1.1.0
+
+Artifacts now stays out of ordinary conversation: a companion toggle Filter, Artifacts mode, tells the model when and how to make artifacts, and by default only marked blocks and kinds that need a viewer (whole pages, apps, drawings, diagrams, slides, CSV) become artifacts. While one is written, its code is folded behind a card that says so, and the panel opens only on the finished artifact. Documents and slides can hold Mermaid diagrams, multi-series bar, line, area and pie charts, drawings, pictures, highlights and callouts, and slides columns and title or section layouts, all kept in downloads. Sharing was removed from the panel; the copy note and the ask-about-a-selection chip are smaller. The browser suite passed 125 of 125 checks on Open WebUI 0.13.0 and 0.13.3, alone and with the other event functions.
+
 ### Artifacts 1.0.0
 
 Replaced Chat Canvas with Artifacts, modelled on Claude's: documents, slides, spreadsheets, Mermaid diagrams, web pages, React apps, SVG drawings, JSON data and code open in a resizable panel beside the chat, with versions across answers and a Changes view, a live view that opens while a model writes, Try fixing, asking about a selected part, private edits that can be sent back to the chat, downloads in the usual formats (Excel keeps formulas), and sharing through Open WebUI's own share links pointed at the artifact, with a copy to continue for the people it is shared with. Generated code runs in a sandbox without the site's origin, held by a content policy to the configured libraries, and may use the chat's model or browser storage only with the person's consent. It stands in for Open WebUI's built-in HTML/SVG Artifacts. The browser suite passed 109 of 109 checks on Open WebUI 0.13.0 and 0.13.3, alone and with the other event functions; Chat Inspector's suite was updated to run beside it.

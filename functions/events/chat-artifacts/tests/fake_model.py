@@ -2,7 +2,7 @@
 
     python tests/fake_model.py 9999
 
-A message containing MAKEPAGE gets a streamed HTML page in a code block, over
+WHATMODE says whether the Artifacts mode instructions reached it. A message containing MAKEPAGE gets a streamed HTML page in a code block, over
 about three seconds, so the live view and auto-open can be seen. FIXIT gets a
 corrected page with the same title, as a new version. Anything else gets a
 short streamed reply. Every reply reports usage.
@@ -56,7 +56,10 @@ class Handler(BaseHTTPRequestHandler):
         last = next((m for m in reversed(messages) if m.get("role") == "user"), {})
         text = last.get("content") if isinstance(last.get("content"), str) else json.dumps(last.get("content"))
         text = text or ""
-        if "MAKEPAGE" in text:
+        system = " ".join(m.get("content") if isinstance(m.get("content"), str) else json.dumps(m.get("content")) for m in messages if m.get("role") == "system")
+        if "WHATMODE" in text:
+            reply, seconds = ("Artifacts mode is on." if "<!-- artifacts-mode -->" in system else "Artifacts mode is off."), 0.2
+        elif "MAKEPAGE" in text:
             reply, seconds = PAGE, 3.0
         elif "FIXIT" in text or "error" in text.lower() and "artifact" in text.lower():
             reply, seconds = FIXED, 1.0

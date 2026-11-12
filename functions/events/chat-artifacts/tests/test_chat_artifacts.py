@@ -42,11 +42,11 @@ PROTOCOL_BLOCKS = {
     ),
 }
 DEFAULT_CONFIG = {
-    "autoOpen": True, "cardsInChat": True, "collapseCode": False, "minCodeLines": 12, "minDocumentChars": 1500, "tablesAsSheets": True,
+    "detect": "rich", "autoOpen": True, "cardsInChat": True, "collapseCode": True, "minCodeLines": 12, "minDocumentChars": 1500, "tablesAsSheets": True,
     "network": "libraries", "esmCdn": "https://esm.sh", "babelUrl": "https://cdn.jsdelivr.net/npm/@babel/standalone@7.29.10/babel.min.js",
     "tailwindUrl": "https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4.3.3/dist/index.global.js", "mermaidUrl": "https://cdn.jsdelivr.net/npm/mermaid@11.17.2/dist/mermaid.min.js",
     "extraHosts": "https://cdn.jsdelivr.net, https://cdnjs.cloudflare.com, https://unpkg.com, https://fonts.googleapis.com, https://fonts.gstatic.com",
-    "allowAi": True, "aiPerMinute": 10, "allowStorage": True, "keepDrafts": True, "allowSave": True, "allowShare": True, "templates": True, "replaceBuiltin": True,
+    "allowAi": True, "aiPerMinute": 10, "allowStorage": True, "keepDrafts": True, "allowSave": True, "templates": True, "replaceBuiltin": True,
     "headerButton": True, "chatMenu": True, "platformName": "", "language": "auto",
 }
 
@@ -257,7 +257,7 @@ def test_ai_requests_need_consent_and_are_limited(plugin):
 
 NODE_HARNESS = r"""
 const assert = require('assert');
-const CONFIG = {minCodeLines: 12, minDocumentChars: 600, tablesAsSheets: true};
+const CONFIG = {detect: 'all', minCodeLines: 12, minDocumentChars: 600, tablesAsSheets: true};
 let lang = 'en';
 const t = (k, v) => k;
 const FENCE = '```';
@@ -338,7 +338,78 @@ assert.strictEqual(sheetEngine([['=constructor.constructor("return 1")()']]).val
 const csv = gridOf('a;b\n"x;y";2\n', 'csv');
 assert.deepStrictEqual(csv.rows, [['a', 'b'], ['x;y', '2']]);
 const Q = '"'; assert.strictEqual(toCsv([['a', 'b,c'], [Q + 'q' + Q, ' s']]), 'a,' + Q + 'b,c' + Q + '\n' + Q + Q + Q + 'q' + Q + Q + Q + ',' + Q + ' s' + Q + '\n');
+// The default, 'rich': ordinary answers make nothing; marked blocks and kinds that need a viewer do
+CONFIG.detect = 'rich';
+const general = 'A long answer. '.repeat(200) + '\n\n## Tips\n\n| a | b |\n| - | - |\n| 1 | 2 |\n| 3 | 4 |\n| 5 | 6 |\n\n' + FENCE + 'python\n' + 'x = 1\n'.repeat(30) + FENCE + '\n\n' + FENCE + 'json\n{"a": 1, "b": 2, "c": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]}\n' + FENCE + '\n\n' + FENCE + 'html\n<div>\n<p>a snippet</p>\n<p>b</p>\n<p>c</p>\n</div>\n' + FENCE;
+assert.deepStrictEqual(kinds(general), [], 'a long answer with a table, a script, JSON and an HTML snippet is just an answer');
+assert.deepStrictEqual(kinds('Hi! How can I help?'), []);
+assert.deepStrictEqual(kinds(FENCE + 'python\n# artifact: tool.py\nprint(1)\n' + FENCE), ['code'], 'a marked block is an artifact at any length');
+assert.deepStrictEqual(kinds(FENCE + 'json\n// artifact: Data\n{"a": 1}\n' + FENCE), ['data']);
+assert.deepStrictEqual(kinds(FENCE + 'markdown\n<!-- artifact: Plan -->\n# Plan\nShort.\n' + FENCE), ['document']);
+assert.deepStrictEqual(kinds(FENCE + 'html artifact\n<p>x</p>\n' + FENCE), ['html'], 'or with "artifact" in its info string');
+assert.deepStrictEqual(kinds(page('T', 'x')), ['html'], 'a whole page needs a viewer');
+assert.deepStrictEqual(kinds(FENCE + 'chart\ntype: pie\nA,B\nx,1\ny,2\n' + FENCE), ['sheet']);
+CONFIG.detect = 'marked';
+assert.deepStrictEqual(kinds(page('T', 'x')), [], 'only marked blocks');
+assert.deepStrictEqual(kinds(FENCE + 'html\n<!-- artifact: T -->\n<!doctype html>\n<html></html>\n' + FENCE), ['html']);
+// Charts
+const spec = chartSpec('# artifact: C\ntype: line\ntitle: Sales\nMonth,A,B\nJan,1,2\n');
+assert.deepStrictEqual(spec.spec, {type: 'line', title: 'Sales'}); assert.strictEqual(spec.body.split('\n')[0], 'Month,A,B');
 console.log('ok');
 """, encoding="utf-8")
     result = subprocess.run(["node", str(runner)], capture_output=True, text=True)
     assert result.returncode == 0 and result.stdout.strip() == "ok", (result.stdout + result.stderr)[-3000:]
+
+
+MODE_PATH = HERE.parent / "artifacts_mode.py"
+
+
+def load_mode():
+    spec = importlib.util.spec_from_file_location(f"function_artifacts_mode_{uuid.uuid4().hex}", MODE_PATH)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+def test_mode_is_a_switch_with_its_own_metadata():
+    text = MODE_PATH.read_text(encoding="utf-8")
+    assert text.startswith('"""\ntitle: Artifacts mode\n') and "required_open_webui_version: 0.13.0" in text
+    module = load_mode()
+    f = module.Filter()
+    assert f.toggle is True and f.icon.startswith("data:image/svg+xml")
+    assert not hasattr(module, "Event"), "one function type per file"
+
+
+def test_mode_adds_its_instructions_once():
+    import asyncio
+    f = load_mode().Filter()
+    body = {"messages": [{"role": "user", "content": "hi"}]}
+    asyncio.run(f.inlet(body))
+    asyncio.run(f.inlet(body))
+    systems = [m for m in body["messages"] if m["role"] == "system"]
+    assert len(systems) == 1 and systems[0]["content"].count("<!-- artifacts-mode -->") == 1
+    assert "Never for greetings" in systems[0]["content"] and "```slides" in systems[0]["content"] and "```chart" in systems[0]["content"]
+    # An existing system prompt is kept, and the instructions go after it
+    body = {"messages": [{"role": "system", "content": "Be brief."}, {"role": "user", "content": "x"}]}
+    asyncio.run(f.inlet(body))
+    assert body["messages"][0]["content"].startswith("Be brief.\n\n<!-- artifacts-mode -->") and len(body["messages"]) == 2
+    # Content given as parts, and odd bodies
+    body = {"messages": [{"role": "system", "content": [{"type": "text", "text": "Rules"}]}]}
+    asyncio.run(f.inlet(body)); asyncio.run(f.inlet(body))
+    assert sum("<!-- artifacts-mode -->" in part["text"] for part in body["messages"][0]["content"]) == 1
+    assert asyncio.run(f.inlet({"model": "x"})) == {"model": "x"}
+    f.valves = f.Valves(instructions="Only slides.")
+    body = {"messages": []}
+    asyncio.run(f.inlet(body))
+    assert body["messages"][0]["content"] == "<!-- artifacts-mode -->\nOnly slides."
+
+
+def test_mode_formats_match_what_the_panel_reads(plugin):
+    # Every kind the instructions offer is one the panel recognises
+    instructions = load_mode().INSTRUCTIONS
+    script = plugin.LOADER_SCRIPT
+    for fence in ("```markdown", "```slides", "```chart", "```csv", "```mermaid", "```html", "```jsx", "```svg", "```json"):
+        assert fence in instructions, fence
+    for marker in ("<!-- artifact:", "// artifact:", "%% artifact:", "# artifact:"):
+        assert marker in instructions
+    assert "MARKER_RE" in script and "layout\\s*:\\s*(title|section|center)" in script and "\\|\\|\\|" in script
