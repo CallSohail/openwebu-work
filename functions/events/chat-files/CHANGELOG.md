@@ -5,6 +5,37 @@ This project follows [Semantic Versioning](https://semver.org/).
 
 Released as `chat-files-v<version>`. See [RELEASING.md](../../../RELEASING.md) for the release process.
 
+## [2.0.0] - 2026-11-12
+
+A redesign, in Open WebUI's own greys, with the Files tab chosen from the Tabs panel's **+** menu.
+
+### Added
+
+- **List and grid.** A list with Name, Kind, Size and Date columns, whose titles order it; or a grid of cards. Each person's choice is kept in their browser; `default_view` sets the first one.
+- **Pictures of images** in both, when images are listed (`thumbnails`, PNG, JPEG, GIF, WebP and similar up to 8 MB).
+- **Kind chips** with how many files each kind has, in place of the kind drop-down.
+- **A menu on every file** (⋯, a right click, Shift+F10 or the menu key): open, download, attach to the message, show in chat, copy name, rename, delete.
+- **More details:** media type, extension, exact size in bytes, when it last changed, who sent it in the chat, the file ID with a copy button, and what the preview found inside: lines, words and characters of a text, rows and columns of a table, the size of a picture, the length of a recording.
+- **Keyboard:** Space picks a file, Shift-click or Shift+Space picks a range, Ctrl+A (⌘A) picks everything, Delete deletes, `/` goes to the search, arrows move in two directions in the grid.
+- *My files* is grouped by date: Today, Yesterday, the previous 7 and 30 days, then by month.
+- The footer adds up what is picked: how many and how large.
+- The delete box names the files about to be deleted.
+- `button_beside_menu`, `default_view` and `thumbnails` valves.
+
+### Changed
+
+- Where the tab row has a **+** menu, Files is chosen from it and no longer adds a button of its own beside it. The button stays where there is no such menu: Open WebUI's classic top bar, phones, and accounts without the Tabs panel (`header_button`; `button_beside_menu` brings it back beside the menu).
+- Files follows the language chosen in Open WebUI and redraws in it the moment it changes, keeping its place.
+- The tab, the chat's list, *My files*, Select mode, long jobs (zip, delete), the layout and the preview are explicit state machines, each shown on `<html>` as `data-cf-…`. A late answer, a second click or a page from an older list can no longer leave the tab, a zip or a preview half in one state and half in another.
+- Escape in the search box clears it, then goes to the list, instead of setting Files aside.
+- Dialogs are centred over a darker backdrop, as Open WebUI's are; focus rings follow the theme's text colour instead of blue.
+
+### Security
+
+- Direction-control characters (U+202A–U+202E, U+2066–U+2069, U+200E, U+200F, U+061C) are removed from every name, so a file called `invoice\u202Efdp.exe` is shown, searched, renamed, downloaded and zipped as `invoicefdp.exe`, not disguised as `invoiceexe.pdf`.
+- Rename also refuses names made only of dots and the DEL character.
+- A zip is refused above 65,535 files, the most a zip without its 64-bit form can hold.
+
 ## [1.0.0] - 2026-11-10
 
 ### Added

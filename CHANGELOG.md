@@ -2,7 +2,37 @@
 
 This repository contains independently versioned Open WebUI extensions. Plugin-specific release notes live next to each implementation when they need more detail.
 
+## 2026-11-12
+
+### Chat Files 2.0.0
+
+Redesigned in Open WebUI's greys. Files is chosen from the tab row's + menu and no longer adds its own button beside it; the button stays where there is no such menu. Files show as a list with Name, Kind, Size and Date columns or as a grid of cards, with pictures of images, kind chips with counts, a menu on every file (⋯, right click, Shift+F10), date groups in My files, range picking, keyboard shortcuts and fuller details: media type, exact size, the file ID, and lines, rows, picture size or length found by the preview. The tab, lists, selection, jobs, layout and preview are explicit state machines; Files follows Open WebUI's language live; names lose direction-control characters that could disguise an extension; zips stay within their 32-bit limits. The browser suite passed 133 of 133 checks on Open WebUI 0.13.3 with Chat Gallery, 126 of 126 without it, and 129 of 129 on 0.13.0.
+
+### Artifacts 1.2.0
+
+Spreadsheets can be corrected as in Excel: click a cell and type, move with Enter, Tab and the arrows, select ranges and see their sum, copy and paste with Excel, undo and redo, insert and delete rows and columns; new formulas (IFERROR, COUNTIF, SUMIF, AVERAGEIF, ROUNDUP, ROUNDDOWN) recalculate as you type, and the Excel download keeps them. Slides can be edited, added and deleted one at a time and download as PowerPoint, with diagrams and charts as pictures. The panel now uses Open WebUI's greys and centred dialogs, follows the platform's language (French included) the moment it changes, and runs its panel, loading, streaming and editing states as explicit state machines. Artifacts mode tells the model to write presentations as artifacts rather than scripts that make files. The browser suite passed 153 of 153 checks on Open WebUI 0.13.0 and 0.13.3, alone and with the other event functions.
+
+### Artifacts 1.1.0
+
+Artifacts now stays out of ordinary conversation: a companion toggle Filter, Artifacts mode, tells the model when and how to make artifacts, and by default only marked blocks and kinds that need a viewer (whole pages, apps, drawings, diagrams, slides, CSV) become artifacts. While one is written, its code is folded behind a card that says so, and the panel opens only on the finished artifact. Documents and slides can hold Mermaid diagrams, multi-series bar, line, area and pie charts, drawings, pictures, highlights and callouts, and slides columns and title or section layouts, all kept in downloads. Sharing was removed from the panel; the copy note and the ask-about-a-selection chip are smaller. The browser suite passed 125 of 125 checks on Open WebUI 0.13.0 and 0.13.3, alone and with the other event functions.
+
+### Artifacts 1.0.0
+
+Replaced Chat Canvas with Artifacts, modelled on Claude's: documents, slides, spreadsheets, Mermaid diagrams, web pages, React apps, SVG drawings, JSON data and code open in a resizable panel beside the chat, with versions across answers and a Changes view, a live view that opens while a model writes, Try fixing, asking about a selected part, private edits that can be sent back to the chat, downloads in the usual formats (Excel keeps formulas), and sharing through Open WebUI's own share links pointed at the artifact, with a copy to continue for the people it is shared with. Generated code runs in a sandbox without the site's origin, held by a content policy to the configured libraries, and may use the chat's model or browser storage only with the person's consent. It stands in for Open WebUI's built-in HTML/SVG Artifacts. The browser suite passed 109 of 109 checks on Open WebUI 0.13.0 and 0.13.3, alone and with the other event functions; Chat Inspector's suite was updated to run beside it.
+
+### Chat Inspector 1.2.0
+
+Context now lists every tool a conversation called, counted and told apart as MCP (by server), workspace tool, tool server, each group of built-in tools, provider-run or automatic, with web searches, pages, sources, code runs, images, failed and declined calls, timings and token cost; the last answer's calls open to show their input and result. Tool results are their own part of the context, answers with tool calls are fitted to the last round's prompt count rather than the total over all rounds, and the model's filters, actions and pipe are shown. The extra explanatory text is gone. The browser suite, now with a real native tool call, passed 103 of 103 checks on Open WebUI 0.13.0 and 0.13.3.
+
+### Chat Inspector 1.1.0
+
+Context moved to the chat's ⋯ menu, under Overview, which every account has, and opens as a pop-up beside the chat instead of a full tab: clear of the message box, so people can keep chatting while it updates, and a sheet from the bottom on phones. Its wording now uses the platform's own name from `WEBUI_NAME`, such as EveGPT. New valves choose the name, the pop-up or the full view, and each way in. The browser suite passed 76 of 76 checks on Open WebUI 0.13.0 and 0.13.3.
+
 ## 2026-11-10
+
+### Chat Inspector 1.0.0
+
+Rewrote Chat Inspector as a Context tab in the Tabs panel's + menu, beside Canvas, Files and Gallery, in place of its floating pop-up. It shows a Claude-style grid of the context window and a breakdown of what fills it, fitted to the token count the model reported where there is one, with estimates tuned against the GPT-4o, GPT-4, Llama 3.1, Qwen 2.5 and Mistral tokenizers elsewhere (7 to 12 % average error on held-out text, against 19 to 42 % for characters ÷ 4). It finds the context window from an administrator's rule, model settings or the provider, warns as the chat fills, stops polling, and adds French. Its CI no longer needs a browser install, which had stopped working on current GitHub runners. Includes server tests, a fake streaming model and a browser suite that passed on Open WebUI 0.13.0 and 0.13.3.
 
 ### Chat Canvas 1.0.0
 

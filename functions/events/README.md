@@ -18,11 +18,12 @@ Event Functions were introduced in Open WebUI 0.10.0 and are auto-detected from 
 ```text
 events/
 ├── README.md
-├── chat-canvas/
+├── chat-artifacts/
 │   ├── README.md
 │   ├── ARCHITECTURE.md
 │   ├── CHANGELOG.md
-│   ├── chat_canvas.py
+│   ├── artifacts_mode.py
+│   ├── chat_artifacts.py
 │   ├── screenshots/
 │   └── tests/
 ├── chat-files/
@@ -34,9 +35,10 @@ events/
 │   └── tests/
 ├── chat-inspector/
 │   ├── README.md
+│   ├── ARCHITECTURE.md
 │   ├── CHANGELOG.md
 │   ├── chat_inspector.py
-│   ├── inspector.js
+│   ├── screenshots/
 │   └── tests/
 ├── chat-gallery/
 │   ├── README.md
@@ -68,9 +70,11 @@ Creates one persistent, multilingual onboarding chat per eligible user. The Rich
 
 See [secure-onboarding/README.md](secure-onboarding/README.md) for installation, rollout, privacy, security, Valves, testing, and troubleshooting, and [secure-onboarding/CHANGELOG.md](secure-onboarding/CHANGELOG.md) for the release history.
 
-### Chat Inspector 0.2.0
+### Chat Inspector 1.2.0
 
-Shows a context estimate, reported token usage for the current branch's last assistant response, saved tool inventory and explicit model capability settings. The nonmodal panel updates every 30 seconds while visible and distinguishes configuration from effective availability. See [chat-inspector/README.md](chat-inspector/README.md) for installation, security, limitations and testing.
+Adds Context to the chat's ⋯ menu, opening a pop-up that shows how much of the model's context window a chat uses, the way Claude does: a grid of 100 squares coloured by what fills them, and a breakdown into system prompt, the tools and documents Open WebUI added, messages, tool results and free space. It lists every tool the chat called, told apart as MCP, workspace tool, tool server, built-in (by group), provider-run or automatic, with web searches, pages, sources, code runs and images, failures and timings, each call's input and result, and the filters, actions and pipe that apply to the model. Where the model reported its own prompt size, every part is fitted to that count; elsewhere, estimates are tuned against the real tokenizers of five model families. It also shows the last answer's token counts and warns before the chat overflows. It reads only, doesn't poll, and is in English and French. It requires Open WebUI 0.13.0 or newer.
+
+See [chat-inspector/README.md](chat-inspector/README.md) for installation, Valves, how the numbers are made and limits, and [chat-inspector/ARCHITECTURE.md](chat-inspector/ARCHITECTURE.md) for how it works.
 
 ### Chat Gallery 1.1.0
 
@@ -78,14 +82,14 @@ Adds a Gallery tab to the chat: every image in the current chat as a grid, and a
 
 See [chat-gallery/README.md](chat-gallery/README.md) for installation, Valves, security and limits, [chat-gallery/ARCHITECTURE.md](chat-gallery/ARCHITECTURE.md) for how it works, and [chat-gallery/CHANGELOG.md](chat-gallery/CHANGELOG.md) for the release history.
 
-### Chat Files 1.0.0
+### Chat Files 2.0.0
 
-Adds a Files tab to the chat: every document, spreadsheet and other file in the current chat, including references to knowledge bases, notes and web pages, and a second view with every file the person owns. It previews PDFs, tables, JSON, text, code and audio, shows the text Open WebUI extracted from office files, and offers search, filters, rename, delete, zip, attach and a jump back to the message, in English and French. It is a companion to Chat Gallery and takes turns with it. It requires Open WebUI 0.13.0 or newer.
+Adds a Files tab to the chat, chosen from the Tabs panel's + menu, as a list with sortable columns or a grid of cards: every document, spreadsheet and other file in the current chat, including references to knowledge bases, notes and web pages, and a second view with every file the person owns. It previews PDFs, tables, JSON, text, code and audio, shows the text Open WebUI extracted from office files, and offers search, kind chips, a menu on every file, details down to a table's rows or a recording's length, rename, delete, zip, attach and a jump back to the message, in English and French, switching with Open WebUI's language. It is a companion to Chat Gallery and takes turns with it. It requires Open WebUI 0.13.0 or newer.
 
 See [chat-files/README.md](chat-files/README.md) for installation, Valves, security and limits, [chat-files/ARCHITECTURE.md](chat-files/ARCHITECTURE.md) for how it works, and [chat-files/CHANGELOG.md](chat-files/CHANGELOG.md) for the release history.
 
-### Chat Canvas 1.0.0
+### Artifacts 1.2.0
 
-Adds a Canvas tab to the chat: each code block and longer answer becomes a page to edit, preview, compare with the original and hand back to the model with a request. HTML previews run in a sandbox, edits are kept in the person's browser and never change the chat, and nothing is sent to the model without the person pressing send. It runs beside Open WebUI's own Artifacts, Chat Gallery and Chat Files, in English and French. It requires Open WebUI 0.13.0 or newer.
+Claude-style Artifacts in a panel beside the chat: documents, slides, spreadsheets with formulas and charts, Mermaid diagrams, web pages, React apps, drawings, data and code, found in ordinary answers. Each artifact keeps its versions across answers, opens by itself while a model writes it, and offers Try fixing, asking about a selected part, spreadsheets corrected cell by cell as in Excel, slides edited one at a time, private edits, downloads (Markdown, HTML, Word, PDF, CSV, Excel, PowerPoint, SVG, PNG) with diagrams, charts, highlights and callouts inside documents and slides. A companion toggle Filter, Artifacts mode, tells the model when and how to make them, so greetings and ordinary answers stay plain; while one is written, a card says so instead of half-made code. Pages and apps run in a sandbox without the site's origin, limited by a content policy to the configured libraries; they can ask the chat's model through `window.claude.complete()` after the person allows it. It replaces Chat Canvas and stands in for Open WebUI's built-in HTML/SVG Artifacts, in English and French. It requires Open WebUI 0.13.0 or newer.
 
-See [chat-canvas/README.md](chat-canvas/README.md) for installation, Valves, security and limits, [chat-canvas/ARCHITECTURE.md](chat-canvas/ARCHITECTURE.md) for how it works, and [chat-canvas/CHANGELOG.md](chat-canvas/CHANGELOG.md) for the release history.
+See [chat-artifacts/README.md](chat-artifacts/README.md) for installation, Valves, security and limits, [chat-artifacts/ARCHITECTURE.md](chat-artifacts/ARCHITECTURE.md) for how it works, and [chat-artifacts/CHANGELOG.md](chat-artifacts/CHANGELOG.md) for the release history.

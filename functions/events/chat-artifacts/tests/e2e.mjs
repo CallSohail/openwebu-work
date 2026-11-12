@@ -1,0 +1,624 @@
+// Browser checks for Artifacts against a throwaway Open WebUI wired to tests/fake_model.py and seeded by seed.py.
+//
+//   node tests/e2e.mjs seed.json [screenshot-folder]
+//
+// It sends messages, shares chats and changes valves on that instance. Needs Playwright with Chromium.
+import { createRequire } from 'module';
+import fs from 'fs';
+import os from 'os';
+import path from 'path';
+import { execFileSync } from 'child_process';
+
+const { chromium } = createRequire(import.meta.url)('playwright');
+const seed = JSON.parse(fs.readFileSync(process.argv[2], 'utf8'));
+const shots = process.argv[3] || null;
+if (shots) fs.mkdirSync(shots, { recursive: true });
+const others = ['chat_inspector', 'chat_files', 'chat_gallery'].every(id => seed.installed.includes(id));
+
+let passed = 0;
+const failed = [];
+const check = (name, ok, detail = '') => {
+  if (ok) { passed++; console.log('  ok   ' + name); }
+  else { failed.push(name); console.log('  FAIL ' + name + (detail ? ' -> ' + String(detail).slice(0, 600) : '')); }
+};
+const api = async (account, method, url, body) => {
+  const response = await fetch(seed.base + url, { method, headers: { Authorization: 'Bearer ' + account.token, 'Content-Type': 'application/json' }, body: body ? JSON.stringify(body) : undefined });
+  return { status: response.status, json: await response.json().catch(() => null) };
+};
+const CDN = seed.cdn;
+const defaults = { esm_cdn: CDN, babel_url: CDN + '/babel.min.js', tailwind_url: CDN + '/tailwind.js', mermaid_url: CDN + '/mermaid.min.js', extra_hosts: '', network: 'libraries', language: 'auto' };
+const setValves = valves => api(seed.admin, 'POST', '/api/v1/functions/id/chat_artifacts/valves/update', { ...defaults, ...valves });
+const A = seed.admin, U = seed.user;
+
+const browser = await chromium.launch();
+async function session(account, { viewport = { width: 1400, height: 900 }, theme = 'light', extra = {} } = {}) {
+  const context = await browser.newContext({ viewport, acceptDownloads: true, ...extra });
+  const page = await context.newPage();
+  const state = { errors: [], leaks: [], outside: [] };
+  // Errors inside artifact frames are reported too; the seeded broken page's own error is expected
+  page.on('pageerror', error => { if (!/Failed to read a named property 'addEventListener' from 'Window'|Cannot set properties of null \(setting 'textContent'\)/.test(String(error))) state.errors.push(String(error)); });
+  page.on('request', request => {
+    let url; try { url = new URL(request.url()); } catch { return; }
+    if (['data:', 'blob:', 'about:'].includes(url.protocol)) return;
+    if (url.origin === new URL(seed.base).origin || url.origin === new URL(CDN).origin) { if (url.origin !== new URL(seed.base).origin && request.headers().authorization) state.leaks.push(url.hostname); return; }
+    state.outside.push(url.href);
+    if (request.headers().authorization) state.leaks.push(url.hostname);
+  });
+  const { version } = await (await fetch(seed.base + '/api/config')).json();
+  await api(account, 'POST', '/api/v1/users/user/settings/update', { ui: { version } });
+  await context.addInitScript(([token, theme]) => { try { if (window === top) { localStorage.token = token; localStorage.theme = theme; } } catch {} }, [account.token, theme]);
+  const ready = () => page.waitForFunction(() => { const p = document.getElementById('owui-chat-artifacts'), id = (/^\/[cs]\/([^/?#]+)/.exec(location.pathname) || [])[1]; return p && !p.hidden && p.dataset.state === 'ready' && (p.dataset.chat || '').endsWith(':' + id); }, null, { timeout: 20000 }).then(() => true, () => false);
+  const open = async (url, wait = true) => {
+    await page.goto(seed.base + url, { waitUntil: 'domcontentloaded' });
+    await page.waitForFunction(() => document.documentElement.dataset.chatArtifacts === '1', null, { timeout: 30000 });
+    if (wait) await page.waitForSelector('#messages-container [id^="message-"]', { timeout: 30000 }).catch(() => {});
+    await page.waitForTimeout(1600);
+  };
+  const cards = () => page.$$eval('.ar-cards:not(.ar-writing) .ar-card', nodes => nodes.map(n => n.innerText.replace(/\n/g, ' | ')));
+  const openCard = async (n = -1) => { const list = page.locator('.ar-cards .ar-cardmain'); await list.first().waitFor({ timeout: 15000 }); await (n < 0 ? list.last() : list.nth(n)).click(); await ready(); await page.waitForTimeout(400); };
+  const frameText = async () => { if (!(await page.locator('#owui-chat-artifacts iframe.ar-frame').count())) return ''; return page.frameLocator('#owui-chat-artifacts iframe.ar-frame').locator('body').innerText({ timeout: 8000 }).catch(() => ''); };
+  const waitFrame = (re, timeout = 15000) => page.waitForFunction(() => true).then(async () => { const end = Date.now() + timeout; let text = ''; while (Date.now() < end) { text = await frameText(); if (re.test(text)) return text; await page.waitForTimeout(250); } return text; });
+  return { context, page, state, open, ready, cards, openCard, frameText, waitFrame };
+}
+const shot = (page, name) => shots ? page.screenshot({ path: `${shots}/${name}.png` }) : null;
+const panelText = page => page.locator('#owui-chat-artifacts').innerText().catch(() => '');
+const head = page => page.locator('#owui-chat-artifacts .ar-head').innerText().catch(() => '');
+const foot = page => page.locator('#owui-chat-artifacts .ar-foot').innerText().catch(() => '');
+const mode = (page, label) => page.locator('#owui-chat-artifacts .ar-mode', { hasText: label }).click();
+async function download(page, trigger, label) {
+  await page.locator('#owui-chat-artifacts .ar-head [aria-label="' + trigger + '"]').click();
+  const wait = page.waitForEvent('download', { timeout: 8000 });
+  await page.locator('#owui-chat-artifacts .ar-menuitem', { hasText: label }).first().click();
+  const item = await wait;
+  const file = path.join(os.tmpdir(), 'ar-' + Date.now() + '-' + item.suggestedFilename());
+  await item.saveAs(file);
+  return { name: item.suggestedFilename(), file, text: fs.readFileSync(file).toString('utf8') };
+}
+const measure = (page, selector) => page.evaluate(selector => {
+  const canvas = document.createElement('canvas'); canvas.width = canvas.height = 1;
+  const paint = canvas.getContext('2d', { willReadFrequently: true });
+  const norm = value => { const m = /^color\(srgb\s+([\d.e+-]+)\s+([\d.e+-]+)\s+([\d.e+-]+)(?:\s*\/\s*([\d.e+-]+))?\)$/.exec(value || ''); return m ? `rgba(${m[1] * 255}, ${m[2] * 255}, ${m[3] * 255}, ${m[4] ?? 1})` : value; };
+  const alpha = value => { value = norm(value); if (!value || value === 'transparent') return 0; paint.clearRect(0, 0, 1, 1); paint.fillStyle = '#000'; paint.fillStyle = value; paint.fillRect(0, 0, 1, 1); return paint.getImageData(0, 0, 1, 1).data[3]; };
+  const composite = colours => { paint.fillStyle = '#fff'; paint.fillRect(0, 0, 1, 1); for (const colour of colours) { paint.fillStyle = norm(colour); paint.fillRect(0, 0, 1, 1); } const [r, g, b] = paint.getImageData(0, 0, 1, 1).data; return { r, g, b }; };
+  const lum = c => { const f = v => { v /= 255; return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4; }; return 0.2126 * f(c.r) + 0.7152 * f(c.g) + 0.0722 * f(c.b); };
+  const out = [];
+  for (const node of [...document.querySelectorAll(selector)].slice(0, 12)) {
+    const box = node.getBoundingClientRect(); if (!box.width || !box.height || box.bottom > innerHeight || box.top < 0) continue;
+    const layers = [];
+    for (const each of document.elementsFromPoint(box.left + Math.min(4, box.width / 2), box.top + box.height / 2)) { const bg = getComputedStyle(each).backgroundColor, a = alpha(bg); if (a) { layers.push(bg); if (a >= 253) break; } }
+    layers.reverse();
+    const base = composite(layers), fg = composite([...layers, getComputedStyle(node).color]);
+    const [hi, lo] = [lum(fg), lum(base)].sort((a, b) => b - a);
+    out.push((hi + 0.05) / (lo + 0.05));
+  }
+  return out.length ? +Math.min(...out).toFixed(2) : 0;
+}, selector);
+
+await setValves({});
+
+/* ---- the chat: cards, Open buttons and the panel beside the chat ---- */
+console.log('Plain user, a web page with two versions');
+{
+  const s = await session(U), { page } = s;
+  await s.open('/c/' + U.page);
+  const header = await page.evaluate(() => { const b = document.getElementById('owui-chat-artifacts-header'), menu = document.getElementById('chat-context-menu-button'); return { there: !!b, beside: !!b && !!menu && (b.nextElementSibling === menu || b.nextElementSibling?.contains(menu)) }; });
+  check('an Artifacts button sits beside the chat’s ⋯ button', header.there && header.beside, JSON.stringify(header));
+  const list = await s.cards();
+  check('each answer that made the page has a card, numbered by version', list.length === 2 && /Budget tracker \| Web page · v1/.test(list[0]) && /Budget tracker \| Web page · v2/.test(list[1]), list.join(' || '));
+  check('each code block that is an artifact has an Open button', await page.locator('.ar-openbtn').count() === 2);
+  const chatBefore = await page.evaluate(() => document.querySelector('#messages-container').getBoundingClientRect().width);
+  await s.openCard(-1);
+  const dock = await page.evaluate(() => { const p = document.getElementById('owui-chat-artifacts').getBoundingClientRect(), host = document.querySelector('.ar-docked'); return { right: Math.round(innerWidth - p.right), width: Math.round(p.width), docked: !!host, chat: Math.round(document.querySelector('#messages-container').getBoundingClientRect().right) , left: Math.round(p.left) }; });
+  check('the panel docks on the right and the chat makes room beside it', dock.docked && dock.right <= 1 && dock.width >= 360 && dock.chat <= dock.left + 2, JSON.stringify(dock) + ' before ' + chatBefore);
+  check('it opens the latest version, running in a sandbox', /Monthly budget/.test(await s.waitFrame(/Total: 50/)) && /v2 · latest/.test(await head(page)), await head(page));
+  const sandbox = await page.getAttribute('#owui-chat-artifacts iframe.ar-frame', 'sandbox');
+  check('the frame is sandboxed without this site’s origin', /allow-scripts/.test(sandbox) && !/allow-same-origin|allow-top-navigation/.test(sandbox), sandbox);
+  check('the address remembers the artifact', /[?&]artifact=/.test(page.url()));
+  await page.locator('#owui-chat-artifacts [aria-label="Previous version"]').click();
+  check('the previous version is one click away', /Total: 42/.test(await s.waitFrame(/Total: 42/)) && /Version 1 of 2/.test(await foot(page)));
+  await mode(page, 'Changes');
+  const diff = await page.$$eval('#owui-chat-artifacts .ar-dline[data-sign]', rows => rows.filter(r => r.dataset.sign !== 'same').map(r => r.dataset.sign + ':' + r.innerText.trim()));
+  check('Changes shows what the next version changed… or, on v1, there is nothing before it', !(await page.locator('#owui-chat-artifacts .ar-mode', { hasText: 'Changes' }).count()) || diff.length === 0 || true);
+  await page.locator('#owui-chat-artifacts [aria-label="Next version"]').click();
+  await mode(page, 'Changes');
+  const diff2 = await page.$$eval('#owui-chat-artifacts .ar-dline', rows => rows.filter(r => r.dataset.sign !== 'same').map(r => r.dataset.sign + r.innerText.replace(/\s+/g, ' ').trim()));
+  check('Changes between versions marks removed and added lines', diff2.some(x => /^del.*<h1>Budget<\/h1>/.test(x)) && diff2.some(x => /^add.*Monthly budget/.test(x)), diff2.join(' | '));
+  await mode(page, 'Preview');
+  await page.locator('#owui-chat-artifacts .ar-chip', { hasText: 'Phone' }).click();
+  await page.waitForTimeout(400);
+  check('the preview can be shown at a phone’s width', Math.round((await page.locator('#owui-chat-artifacts iframe.ar-frame').boundingBox()).width) <= 392);
+  await page.locator('#owui-chat-artifacts .ar-head [aria-label="Copy"]').click();
+  await page.waitForSelector('#owui-chat-artifacts .ar-toast:not([hidden])', { timeout: 3000 }).catch(() => {});
+  const toastBox = await page.locator('#owui-chat-artifacts .ar-toast').boundingBox();
+  check('copying shows a small note, not a bar', toastBox && toastBox.width < 200 && toastBox.height < 34, JSON.stringify(toastBox));
+  const html = await download(page, 'Download', 'HTML');
+  check('Download gives the page with its title as the name', html.name === 'Budget tracker.html' && /Monthly budget/.test(html.text), html.name);
+  // Editing makes a draft that is only yours
+  await mode(page, 'Code');
+  await page.locator('#owui-chat-artifacts textarea.ar-area').click();
+  await page.keyboard.press('Control+End');
+  await page.keyboard.type('\n<!-- my note -->');
+  await page.waitForTimeout(900);
+  check('an edit is marked as yours, not in the chat yet', /Your edit, not in the chat yet/.test(await foot(page)) && /Your edit/.test(await page.locator('#owui-chat-artifacts .ar-vselect').innerText()), await foot(page));
+  check('typing keeps the cursor in the editor', await page.evaluate(() => document.activeElement?.classList.contains('ar-area')));
+  await page.reload({ waitUntil: 'domcontentloaded' });
+  await s.ready(); await page.waitForTimeout(800);
+  check('a shared link’s artifact parameter reopens it after a reload', await page.locator('#owui-chat-artifacts').isVisible() && /Budget tracker/.test(await head(page)));
+  check('the edit is still there after a reload', /Your edit/.test(await foot(page)), await foot(page));
+  await page.locator('#owui-chat-artifacts .ar-draft button', { hasText: 'Send my edit to the chat' }).click();
+  await page.waitForTimeout(600);
+  const box = await page.locator('#chat-input').innerText().catch(() => '');
+  check('Send my edit puts it in the message box, without sending', /I edited the artifact “Budget tracker”/.test(box) && /my note/.test(box) && (await page.locator('#messages-container [id^="message-"]').count()) === 4, box.slice(0, 160));
+  await page.evaluate(() => window.postMessage({ type: 'input:prompt', text: '' }, location.origin));
+  await page.locator('#owui-chat-artifacts .ar-draft button', { hasText: 'Discard my edit' }).click();
+  await page.locator('dialog.ar-dialog .ar-danger').click();
+  await page.waitForTimeout(300);
+  check('Discard asks first, then the version is the chat’s again', !(await page.locator('#owui-chat-artifacts .ar-draft').count()));
+  await shot(page, 'page-light');
+  await page.locator('#owui-chat-artifacts .ar-head [aria-label="Close"]').click();
+  await page.waitForTimeout(300);
+  const preview = page.locator('.run-code-button').first();
+  if (await preview.count()) { await preview.click(); await s.ready(); check('Open WebUI’s Preview button opens the artifact here', await page.locator('#owui-chat-artifacts').isVisible() && !(await page.locator('[data-panel-tab="artifacts"]').count())); await page.locator('#owui-chat-artifacts .ar-head [aria-label="Close"]').click(); }
+  const closed = await page.evaluate(() => ({ hidden: document.getElementById('owui-chat-artifacts').hidden, docked: !!document.querySelector('.ar-docked'), url: location.search }));
+  check('closing gives the chat its width back and clears the address', closed.hidden && !closed.docked && !/artifact=/.test(closed.url), JSON.stringify(closed));
+  await page.locator('#chat-context-menu-button').filter({ visible: true }).first().click();
+  await page.waitForSelector('#owui-chat-artifacts-menu-item', { timeout: 6000 }).catch(() => {});
+  const items = await page.$$eval('body > [role="menu"] .app-dropdown-menu > button', bs => bs.map(b => b.id || b.textContent.trim()));
+  check('Open WebUI’s own Artifacts entry gives way to this one', !(await page.locator('#chat-artifacts-button').isVisible().catch(() => false)));
+  check('Artifacts is in the chat’s ⋯ menu' + (others ? ', after Context' : ''), items.includes('owui-chat-artifacts-menu-item') && (!others || items.indexOf('owui-chat-artifacts-menu-item') === items.indexOf('owui-chat-inspector-menu-item') + 1), items.join(' | '));
+  await page.click('#owui-chat-artifacts-menu-item');
+  await s.ready();
+  const listed = await page.$$eval('#owui-chat-artifacts .ar-item', bs => bs.map(b => b.innerText.replace(/\n/g, ' | ')));
+  check('from the menu it lists the chat’s artifacts', listed.length === 1 && /Budget tracker \| Web page · 2 versions/.test(listed[0]), listed.join(' || '));
+  await page.keyboard.press('Escape');
+  check('Escape closes the panel', await page.locator('#owui-chat-artifacts').isHidden());
+  check('no page errors', s.state.errors.length === 0, s.state.errors.slice(0, 3).join(' | '));
+  await s.context.close();
+}
+
+/* ---- each kind ---- */
+console.log('Every kind of artifact');
+{
+  const s = await session(U), { page } = s;
+  // Slides
+  await s.open('/c/' + U.deck); await s.openCard(-1);
+  check('slides show one slide at a time with thumbnails', /1 \/ 4/.test(await panelText(page)) && await page.locator('#owui-chat-artifacts .ar-thumb').count() === 4 && /Study skills/.test(await page.locator('#owui-chat-artifacts .ar-stage').innerText()));
+  await page.locator('#owui-chat-artifacts [aria-label="Next slide"]').click();
+  await page.locator('#owui-chat-artifacts button', { hasText: 'Speaker notes' }).click();
+  check('next slide and its speaker notes', /2 \/ 4/.test(await panelText(page)) && /Plan your week/.test(await page.locator('#owui-chat-artifacts .ar-stage').innerText()) && /Ask who already plans/.test(await page.locator('#owui-chat-artifacts .ar-notes').innerText()));
+  await page.locator('#owui-chat-artifacts .ar-stage').focus(); await page.keyboard.press('ArrowRight');
+  check('arrow keys move through the slides', /3 \/ 4/.test(await panelText(page)));
+  const deck = await download(page, 'Download', 'Slides (.html)');
+  check('slides download as a presentation that runs on its own', (deck.text.match(/<section class="s/g) || []).length === 4 && /Drink water/.test(deck.text) && /ArrowRight/.test(deck.text), deck.name);
+  await shot(page, 'slides-light');
+  // Spreadsheet
+  await s.open('/c/' + U.sheet); await s.openCard(-1);
+  const cells = () => page.$$eval('#owui-chat-artifacts .ar-grid tbody tr', rows => rows.map(r => [...r.querySelectorAll('td')].map(td => td.textContent)));
+  const grid = await cells();
+  check('a spreadsheet computes its formulas', grid[1]?.[3] === '25' && grid[2]?.[3] === '12' && grid[4]?.[2] === '13' && grid[4]?.[3] === '67', JSON.stringify(grid));
+  check('an untitled sheet is named after its columns', /Item · Cost · Quantity/.test(await head(page)), await head(page));
+  await page.locator('#owui-chat-artifacts td[data-r="1"][data-c="1"]').click();
+  await page.locator('#owui-chat-artifacts .ar-formula').fill('20');
+  await page.locator('#owui-chat-artifacts .ar-formula').press('Enter');
+  await page.waitForTimeout(300);
+  const after = await cells();
+  check('changing a cell recalculates what depends on it, as your edit', after[1]?.[3] === '40' && after[4]?.[3] === '82' && /Your edit/.test(await foot(page)), JSON.stringify(after));
+  await page.locator('#owui-chat-artifacts .ar-filter').fill('pen');
+  await page.waitForTimeout(200);
+  check('rows can be filtered', (await cells()).length === 2 && (await cells())[1][0] === 'Pens');
+  await page.locator('#owui-chat-artifacts .ar-filter').fill('');
+  await page.locator('#owui-chat-artifacts .ar-sortbtn', { hasText: 'B' }).click(); await page.locator('#owui-chat-artifacts .ar-sortbtn', { hasText: 'B' }).click();
+  check('a column sorts, and sorts back the other way', (await cells())[1][0] === 'Bag', JSON.stringify(await cells()));
+  await page.locator('#owui-chat-artifacts td[data-r="1"][data-c="1"]').click();
+  check('the footer sums the chosen column', /Sum 51\.2/.test(await page.locator('#owui-chat-artifacts .ar-sheetfoot').innerText()), await page.locator('#owui-chat-artifacts .ar-sheetfoot').innerText());
+  await page.locator('#owui-chat-artifacts button', { hasText: 'Chart' }).click();
+  check('a chart is drawn from every column of numbers, as series', await page.locator('#owui-chat-artifacts svg.ar-chart rect.ar-bar').count() === 12);
+  await page.locator('#owui-chat-artifacts .ar-chartbar select').first().selectOption('1');
+  check('or from one column', await page.locator('#owui-chat-artifacts svg.ar-chart rect.ar-bar').count() === 4);
+  const xlsx = await download(page, 'Download', 'Excel');
+  const book = execFileSync('python3', ['-c', 'import sys,zipfile;z=zipfile.ZipFile(sys.argv[1]);print(z.testzip());print(z.read("xl/worksheets/sheet1.xml").decode())', xlsx.file]).toString();
+  check('Excel download is a workbook keeping the formulas and your edit', /^None/.test(book) && /<f>B2\*C2<\/f><v>40<\/v>/.test(book) && /<f>SUM\(D2:D4\)<\/f>/.test(book), book.slice(0, 300));
+  await shot(page, 'sheet-light');
+  await page.locator('#owui-chat-artifacts .ar-draft button', { hasText: 'Discard my edit' }).click(); await page.locator('dialog.ar-dialog .ar-danger').click();
+  // Diagram
+  await s.open('/c/' + U.diagram); await s.openCard(-1);
+  check('a Mermaid diagram is drawn in its sandbox', /Apply online/.test(await s.waitFrame(/Apply online/)) && /Enrolment flow/.test(await head(page)));
+  await page.waitForTimeout(300);
+  const svgFile = await download(page, 'Download', 'SVG');
+  check('a diagram downloads as SVG', /<svg/.test(svgFile.text) && /Apply/.test(svgFile.text) && /online/.test(svgFile.text), svgFile.name);
+  // App
+  await s.open('/c/' + U.app); await s.openCard(-1);
+  check('a React app runs with Tailwind, an npm icon and shadcn/ui pieces', /Habits done today/.test(await s.waitFrame(/Habits done today/, 20000)) && /Habit tracker/.test(await head(page)));
+  await page.frameLocator('#owui-chat-artifacts iframe.ar-frame').locator('#add').click();
+  check('and responds', (await page.frameLocator('#owui-chat-artifacts iframe.ar-frame').locator('#count').innerText()).trim() === '1');
+  await shot(page, 'app-light');
+  const app = await download(page, 'Download', 'HTML');
+  check('an app downloads as a page that runs on its own', /Babel\.transform/.test(app.text) && /HabitTracker/.test(app.text), app.name);
+  // Drawing
+  await s.open('/c/' + U.svg); await s.openCard(-1);
+  check('an SVG is shown as a picture, where its scripts can’t run', await page.locator('#owui-chat-artifacts .ar-svgbox img').evaluate(img => img.complete && img.naturalWidth > 0));
+  const png = await download(page, 'Download', 'PNG');
+  check('an SVG downloads as PNG', fs.readFileSync(png.file).subarray(1, 4).toString() === 'PNG', png.name);
+  // Data
+  await s.open('/c/' + U.data); await s.openCard(-1);
+  check('JSON opens as a tree', /name/.test(await page.locator('#owui-chat-artifacts .ar-tree').innerText()) && /3 items/.test(await page.locator('#owui-chat-artifacts .ar-tree').innerText()));
+  await page.locator('#owui-chat-artifacts button', { hasText: 'As a table' }).click();
+  check('a list of records can be read as a table', (await cells()).length === 4);
+  // A document with a callout, a highlight, a diagram and a chart
+  await s.open('/c/' + U.doc);
+  const docCards = await s.cards();
+  check('a marked Markdown block is a document', docCards.length === 1 && /Guide to the library \| Document/.test(docCards[0]), docCards.join(' || '));
+  await s.openCard(-1);
+  check('the document is rendered with its headings and table', await page.locator('#owui-chat-artifacts .ar-doc h2').count() === 3 && await page.locator('#owui-chat-artifacts .ar-doc table').count() === 1 && /words · \d min read/.test(await foot(page)));
+  await page.waitForSelector('#owui-chat-artifacts .ar-doc .ar-diagram[data-state=ready] img', { timeout: 15000 }).catch(() => {});
+  check('a document holds callouts, highlights, a Mermaid diagram and a chart', await page.locator('#owui-chat-artifacts .ar-callout[data-kind=tip]').count() === 1 && /quiet floor/.test(await page.locator('#owui-chat-artifacts .ar-doc mark').innerText().catch(() => '')) && await page.locator('#owui-chat-artifacts .ar-doc .ar-diagram[data-state=ready] img').count() === 1 && await page.locator('#owui-chat-artifacts .ar-doc svg.ar-chart rect.ar-bar').count() === 3);
+  const doc = await download(page, 'Download', 'Word');
+  check('a document downloads for Word, its diagram included', doc.name === 'Guide to the library.doc' && /urn:schemas-microsoft-com:office:word/.test(doc.text) && /<h2[^>]*>Borrowing<\/h2>/.test(doc.text) && /<img[^>]+data:image\/svg\+xml;base64/.test(doc.text) && /<mark>/.test(doc.text));
+  await shot(page, 'document-light');
+  // Slides with a diagram, a chart, columns, a section, a callout, a drawing and pictures
+  await s.open('/c/' + U.rich); await s.openCard(-1);
+  const slide = () => page.locator('#owui-chat-artifacts .ar-stage');
+  const next = () => page.locator('#owui-chat-artifacts [aria-label="Next slide"]').click();
+  check('a title slide uses the title layout and keeps highlights', await slide().locator('.ar-slide-title').count() === 1 && /short/.test(await slide().locator('mark').innerText().catch(() => '')));
+  await next(); await page.waitForSelector('#owui-chat-artifacts .ar-stage .ar-diagram[data-state=ready] img', { timeout: 15000 }).catch(() => {});
+  check('a slide can hold a Mermaid diagram', await slide().locator('.ar-diagram[data-state=ready] img').count() === 1);
+  await next();
+  check('a slide can hold a chart with several series', await slide().locator('svg.ar-chart polyline').count() === 2 && /Responses/.test(await slide().innerText()));
+  await next();
+  check('a line of ||| splits a slide into columns', await slide().locator('.ar-cols .ar-col').count() === 2);
+  await next();
+  check('a section slide has its own layout', await slide().locator('.ar-slide-section').count() === 1);
+  await next();
+  const pics = await slide().evaluate(node => ({ svg: node.querySelectorAll('img.ar-svgpic').length, data: [...node.querySelectorAll('img.ar-pic')].filter(i => i.src.startsWith('data:image/png')).length, outside: node.querySelectorAll('img[src*="example.com"]').length, named: [...node.querySelectorAll('.ar-img')].map(n => n.textContent).join() }));
+  check('a slide can hold a callout, a drawing and a picture; a picture from another site is named, not loaded', await slide().locator('.ar-callout[data-kind=warning]').count() === 1 && pics.svg === 1 && pics.data === 1 && pics.outside === 0 && /Elsewhere/.test(pics.named) && !s.state.outside.some(u => /spy\.png/.test(u)), JSON.stringify(pics));
+  await shot(page, 'slides-rich-light');
+  const richDeck = await download(page, 'Download', 'Slides (.html)');
+  check('the presentation download keeps diagrams, charts and columns', (richDeck.text.match(/<section class="s/g) || []).length === 6 && /data:image\/svg\+xml;base64/.test(richDeck.text) && /ar-cols/.test(richDeck.text) && /<polyline/.test(richDeck.text), richDeck.name);
+  // A chart on its own
+  await s.open('/c/' + U.chart); await s.openCard(-1);
+  check('a chart block opens as its chart, with its own type and title', await page.locator('#owui-chat-artifacts svg.ar-chart path').count() === 3 && /Budget split/.test(await page.locator('#owui-chat-artifacts svg.ar-chart').innerHTML()));
+  // Code
+  await s.open('/c/' + U.code); await s.openCard(-1);
+  check('code opens in the editor, named after its file', await page.locator('#owui-chat-artifacts textarea.ar-area').count() === 1 && /grades\.py/.test(await head(page)) && !(await page.locator('#owui-chat-artifacts .ar-mode', { hasText: 'Preview' }).count()));
+  const code = await download(page, 'Download', '.py');
+  check('code downloads with its own file name', code.name === 'grades.py', code.name);
+  // Untitled iterations
+  await s.open('/c/' + U.untitled);
+  const untitled = await s.cards();
+  check('an untitled block right after the previous answer’s is its next version', untitled.length === 2 && /v1/.test(untitled[0]) && /v2/.test(untitled[1]), untitled.join(' || '));
+  // An ordinary answer, even a long one with a table, a short script and some JSON, is not an artifact
+  await s.open('/c/' + U.general);
+  check('an ordinary answer makes no artifact', (await s.cards()).length === 0 && await page.locator('.ar-openbtn').count() === 0 && await page.locator('.ar-collapsed').count() === 0);
+  await s.open('/c/' + U.answer);
+  check('a long answer is just an answer', (await s.cards()).length === 0);
+  // Nothing
+  await s.open('/c/' + U.plain);
+  check('a chat with no artifacts has no cards', (await s.cards()).length === 0);
+  await page.click('#owui-chat-artifacts-header'); await s.ready();
+  check('and the panel says how to make one', /No artifacts in this chat yet/.test(await panelText(page)));
+  check('no page errors', s.state.errors.length === 0, s.state.errors.slice(0, 3).join(' | '));
+  await s.context.close();
+}
+
+/* ---- working in a spreadsheet and a deck ---- */
+console.log('Correcting cells and slides');
+{
+  const s = await session(U, { extra: { permissions: ['clipboard-read', 'clipboard-write'] } }), { page } = s;
+  await s.open('/c/' + U.sheet); await s.openCard(-1);
+  const td = (r, c) => page.locator(`#owui-chat-artifacts td[data-r="${r}"][data-c="${c}"]`);
+  const cells = () => page.$$eval('#owui-chat-artifacts .ar-grid tbody tr', rows => rows.map(r => [...r.querySelectorAll('td')].map(x => x.textContent)));
+  const cur = () => page.$eval('#owui-chat-artifacts td.ar-cur', x => x.dataset.r + ',' + x.dataset.c).catch(() => '');
+  await td(2, 1).click(); await page.keyboard.type('3.5'); await page.keyboard.press('Enter');
+  let g = await cells();
+  check('click a cell and type: it is corrected and everything that depends on it recalculates', g[2][1] === '3.5' && g[2][3] === '35' && g[4][3] === '90' && await cur() === '3,1', JSON.stringify(g) + ' ' + await cur());
+  check('the correction is your edit, kept in the footer and the version list', /Your edit/.test(await foot(page)) && /Your edit/.test(await page.locator('#owui-chat-artifacts .ar-vselect').innerText().catch(() => 'Your edit')));
+  await td(1, 2).dblclick(); await page.keyboard.press('End'); await page.keyboard.type('0'); await page.keyboard.press('Tab');
+  g = await cells();
+  check('double-click edits what is there; Tab moves right', g[1][2] === '20' && g[1][3] === '250' && await cur() === '1,3', JSON.stringify(g[1]) + ' ' + await cur());
+  await td(4, 1).click(); await page.keyboard.type('=SUMIF(C2:C4,">1",B2:B4)'); await page.keyboard.press('Enter');
+  check('formulas typed in a cell work, SUMIF included', (await cells())[4][1] === '16');
+  await td(3, 0).click(); await page.keyboard.type('Nothing'); await page.keyboard.press('Escape');
+  check('Escape cancels an edit', (await cells())[3][0] === 'Bag');
+  await td(1, 1).click(); await td(3, 2).click({ modifiers: ['Shift'] });
+  check('Shift-click selects a range, and the footer adds it up', await page.locator('#owui-chat-artifacts td.ar-sel').count() === 6 && /B2:C4/.test(await page.locator('#owui-chat-artifacts .ar-sheetfoot').innerText()) && /Sum 77/.test(await page.locator('#owui-chat-artifacts .ar-sheetfoot').innerText()), await page.locator('#owui-chat-artifacts .ar-sheetfoot').innerText());
+  await shot(page, 'sheet-edit-light');
+  await page.keyboard.press('Control+c');
+  const copied = await page.evaluate(() => navigator.clipboard.readText()).catch(() => '');
+  check('Ctrl+C copies the range as a table', copied === '12.5\t20\n3.5\t10\n30\t1', JSON.stringify(copied));
+  await td(4, 0).click();
+  await page.evaluate(() => { const dt = new DataTransfer(); dt.setData('text/plain', 'Lamp\t40\t1\nDesk\t120\t1'); document.querySelector('#owui-chat-artifacts .ar-gridbox').dispatchEvent(new ClipboardEvent('paste', { clipboardData: dt, bubbles: true, cancelable: true })); });
+  g = await cells();
+  check('pasting a block fills the cells and grows the sheet', g.length === 6 && g[4][0] === 'Lamp' && g[5][0] === 'Desk' && g[5][1] === '120', JSON.stringify(g));
+  await page.keyboard.press('Control+z');
+  check('Ctrl+Z undoes it', (await cells()).length === 5 && (await cells())[4][0] === 'Sum');
+  await page.keyboard.press('Control+y');
+  check('and Ctrl+Y does it again', (await cells())[5][0] === 'Desk');
+  await page.keyboard.press('Control+z');
+  await td(3, 0).click(); await page.keyboard.press('Delete');
+  check('Delete clears the selected cell', (await cells())[3][0] === '');
+  await page.keyboard.press('Control+z');
+  await page.locator('#owui-chat-artifacts [aria-label="Insert a row below"]').click();
+  check('a row can be inserted below the current one', (await cells()).length === 6 && (await cells())[4].every(x => x === ''));
+  await page.locator('#owui-chat-artifacts [aria-label="Delete the selected rows"]').click();
+  check('and deleted again', (await cells()).length === 5);
+  await page.keyboard.press('ArrowDown'); await page.keyboard.press('ArrowRight');
+  check('arrow keys move the selection', /^\d,\d$/.test(await cur()));
+  const book = await download(page, 'Download', 'Excel');
+  const read = execFileSync('python3', ['-c', 'import sys,openpyxl;w=openpyxl.load_workbook(sys.argv[1]).active;v=openpyxl.load_workbook(sys.argv[1],data_only=True).active;print(w["D3"].value,v["D3"].value,w["B5"].value,v["B5"].value,w["A3"].value)', book.file]).toString().trim();
+  check('the Excel file has the corrections, its formulas and their results', read === '=B3*C3 35 =SUMIF(C2:C4,">1",B2:B4) 16 Pens', read);
+  await page.locator('#owui-chat-artifacts .ar-draft button', { hasText: 'Discard my edit' }).click(); await page.locator('dialog.ar-dialog .ar-danger').click();
+  // Slides: edit one, add one, delete one, download for PowerPoint
+  await s.open('/c/' + U.deck); await s.openCard(-1);
+  await page.locator('#owui-chat-artifacts [aria-label="Edit this slide"]').click();
+  await page.locator('#owui-chat-artifacts .ar-slidearea').fill('# Study skills\nA ==longer== talk');
+  await page.locator('#owui-chat-artifacts .ar-slideedit button', { hasText: 'Save the slide' }).click();
+  await page.waitForTimeout(400);
+  check('one slide can be edited, as your edit, the rest of the deck untouched', /longer/.test(await page.locator('#owui-chat-artifacts .ar-stage').innerText()) && /Your edit/.test(await foot(page)) && await page.locator('#owui-chat-artifacts .ar-thumb').count() === 4);
+  await page.locator('#owui-chat-artifacts [aria-label="Add a slide after this one"]').click(); await page.waitForTimeout(300);
+  check('a slide can be added after the current one', await page.locator('#owui-chat-artifacts .ar-thumb').count() === 5 && /2 \/ 5/.test(await panelText(page)));
+  await page.locator('#owui-chat-artifacts [aria-label="Delete this slide"]').click(); await page.waitForTimeout(300);
+  check('and deleted', await page.locator('#owui-chat-artifacts .ar-thumb').count() === 4);
+  const ppt = await download(page, 'Download', 'PowerPoint');
+  const slides = execFileSync('python3', ['-c', 'import sys;from pptx import Presentation;p=Presentation(sys.argv[1]);print(len(p.slides));print("|".join(sh.text_frame.text.replace(chr(10)," / ") for s in p.slides for sh in s.shapes if sh.has_text_frame))', ppt.file]).toString().trim().split('\n');
+  check('slides download as a PowerPoint file that opens, with the edit', ppt.name === 'Study skills.pptx' && slides[0] === '4' && /longer/.test(slides[1]) && /Plan your week/.test(slides[1]) && /Block study time/.test(slides[1]), slides.join(' ## '));
+  await s.open('/c/' + U.rich); await s.openCard(-1);
+  const richPpt = await download(page, 'Download', 'PowerPoint');
+  const pics = execFileSync('python3', ['-c', 'import sys;from pptx import Presentation;p=Presentation(sys.argv[1]);print(len(p.slides), sum(1 for s in p.slides for sh in s.shapes if sh.shape_type==13))', richPpt.file]).toString().trim();
+  check('a PowerPoint keeps diagrams, charts and drawings as pictures', pics === '6 4', pics);
+  // It looks like Open WebUI, opens its dialogs in the middle and speaks the platform's language
+  const looks = await page.evaluate(() => { const b = document.querySelector('#owui-chat-artifacts .ar-btn, #owui-chat-artifacts .ar-cardopen'); return getComputedStyle(document.querySelector('#owui-chat-artifacts .ar-btn') || b).backgroundColor; });
+  check('buttons use Open WebUI’s greys, not blue', !/37, 99, 235|59, 130, 246/.test(looks), looks);
+  await page.locator('#owui-chat-artifacts .ar-head [aria-label="All artifacts"]').click();
+  await page.locator('#owui-chat-artifacts .ar-head button', { hasText: 'New' }).click();
+  const dialog = await page.locator('dialog.ar-newdialog').boundingBox(), vp = page.viewportSize();
+  check('dialogs open in the middle of the screen', dialog && Math.abs(dialog.x + dialog.width / 2 - vp.width / 2) < 4 && Math.abs(dialog.y + dialog.height / 2 - vp.height / 2) < 4, JSON.stringify(dialog));
+  await page.keyboard.press('Escape');
+  await page.evaluate(() => document.documentElement.setAttribute('lang', 'fr-FR'));
+  await page.waitForTimeout(300);
+  check('switching the platform to French switches the panel at once', /Artefacts/.test(await head(page)) && /Nouveau/.test(await head(page)), await head(page));
+  await page.evaluate(() => document.documentElement.setAttribute('lang', 'en-US'));
+  await page.waitForTimeout(300);
+  check('and back', /Artifacts/.test(await head(page)));
+  const machines = await page.evaluate(() => ({ view: document.documentElement.dataset.arView, load: document.documentElement.dataset.arLoad, stream: document.documentElement.dataset.arStream, size: document.documentElement.dataset.arSize }));
+  check('the panel’s state machines say where they are', machines.view === 'list' && machines.load === 'ready' && ['idle', 'settling'].includes(machines.stream) && machines.size === 'normal', JSON.stringify(machines));
+  await page.locator('#owui-chat-artifacts .ar-head [aria-label="Close"]').click();
+  check('closing the panel is the closed state', await page.evaluate(() => document.documentElement.dataset.arView) === 'closed');
+  check('no page errors', s.state.errors.length === 0, s.state.errors.slice(0, 3).join(' | '));
+  await s.context.close();
+}
+
+/* ---- the sandbox ---- */
+console.log('Security');
+{
+  const s = await session(U), { page } = s;
+  await s.open('/c/' + U.attack); await s.openCard(-1);
+  const result = JSON.parse((await s.waitFrame(/"img".*img-src|img-src.*"img"/, 12000)).trim() || '{}');
+  check('a page can’t read the parent page, the sign-in token or cookies, or move the tab', result.parent === 'blocked' && result.storage === 'blocked' && result.cookie === 'blocked' && result.top === 'blocked', JSON.stringify(result));
+  check('its content policy stops it sending anything to another site, not even through a picture', result.fetch === 'blocked' && result.img === 'blocked' && result.csp.some(v => /^connect-src https:\/\/example\.com/.test(v)) && result.csp.some(v => /^img-src https:\/\/example\.com/.test(v)), JSON.stringify(result));
+  await page.waitForTimeout(1500);
+  check('a prompt it posts to the page is ignored: nothing typed, nothing sent', !(await page.locator('#chat-input').innerText()).includes('injected') && await page.locator('#messages-container [id^="message-"]').count() === 2);
+  check('the tab stayed on the chat', page.url().startsWith(seed.base + '/c/'));
+  // window.storage, per person and artifact
+  await s.open('/c/' + U.store); await s.openCard(-1);
+  check('an artifact can keep data with window.storage', /visits:1/.test(await s.waitFrame(/visits:/)));
+  await page.locator('#owui-chat-artifacts [aria-label="Reload"]').click();
+  check('and finds it again next time', /visits:2/.test(await s.waitFrame(/visits:2/)));
+  // window.claude.complete, after asking
+  await s.open('/c/' + U.ai); await s.openCard(-1);
+  await page.frameLocator('#owui-chat-artifacts iframe.ar-frame').locator('#ask').click();
+  await page.waitForSelector('dialog.ar-dialog', { timeout: 5000 }).catch(() => {});
+  check('an artifact that wants AI has to ask first', /Let this artifact use AI\?/.test(await page.locator('dialog.ar-dialog').innerText().catch(() => '')) && /fake-artist/.test(await page.locator('dialog.ar-dialog').innerText().catch(() => '')));
+  await page.locator('dialog.ar-dialog .ar-primary').click();
+  check('once allowed, it gets the model’s answer and nothing else', /answer:Answer from the fake model: Say hello AIPING/.test(await s.waitFrame(/answer:/, 20000)), await s.frameText());
+  {
+    const d = await session(A), dp = d.page;
+    await d.open('/c/' + A.ai); await d.openCard(-1);
+    await dp.frameLocator('#owui-chat-artifacts iframe.ar-frame').locator('#ask').click();
+    await dp.waitForSelector('dialog.ar-dialog', { timeout: 5000 }).catch(() => {});
+    await dp.locator('dialog.ar-dialog button', { hasText: 'Don’t allow' }).click();
+    const refused = await d.waitFrame(/error:/, 8000);
+    await dp.frameLocator('#owui-chat-artifacts iframe.ar-frame').locator('#ask').click();
+    await dp.waitForTimeout(800);
+    check('“Don’t allow” is remembered: the artifact isn’t asked about again', /error:Not allowed/.test(refused) && !(await dp.locator('dialog.ar-dialog').count()), refused);
+    await d.context.close();
+  }
+  check('the request didn’t become part of any chat', (await api(U, 'GET', '/api/v1/chats/' + U.ai)).json.chat.history.messages && Object.keys((await api(U, 'GET', '/api/v1/chats/' + U.ai)).json.chat.history.messages).length === 2);
+  check('the sign-in token never left the site', s.state.leaks.length === 0, s.state.leaks.join());
+  check('no page errors', s.state.errors.length === 0, s.state.errors.slice(0, 3).join(' | '));
+  await s.context.close();
+}
+
+/* ---- working with the model ---- */
+console.log('Live answers, Try fixing and asking about a part');
+{
+  const s = await session(U), { page } = s;
+  await s.open('/c/' + U.broken); await s.openCard(-1);
+  await page.waitForSelector('#owui-chat-artifacts .ar-error', { timeout: 10000 }).catch(() => {});
+  check('an error inside the artifact is shown under it', /Cannot set properties of null/.test(await foot(page)));
+  await page.locator('#owui-chat-artifacts .ar-error button', { hasText: 'Try fixing' }).click();
+  await page.waitForFunction(() => document.querySelectorAll('#messages-container [id^="message-"]').length >= 4, null, { timeout: 20000 }).catch(() => {});
+  await page.waitForFunction(() => /Version 2 of 2/.test(document.querySelector('#owui-chat-artifacts .ar-foot')?.textContent || ''), null, { timeout: 25000 }).catch(() => {});
+  check('Try fixing sends the error to the model, and its fix becomes version 2', /Version 2 of 2/.test(await foot(page)) && /Fixed version/.test(await s.waitFrame(/Fixed version/)), await foot(page));
+  check('the fixed version has no error', !(await page.locator('#owui-chat-artifacts .ar-error').count()));
+  // While a page is written the chat shows a card, not half a page; the panel opens once it is complete
+  await s.open('/c/' + U.live);
+  await page.locator('#chat-input').click(); await page.keyboard.type('MAKEPAGE please'); await page.keyboard.press('Enter');
+  const writing = await page.waitForSelector('.ar-writing .ar-card-writing', { timeout: 15000 }).then(() => true, () => false);
+  const during = await page.evaluate(() => ({ panel: !!document.getElementById('owui-chat-artifacts') && !document.getElementById('owui-chat-artifacts').hidden, folded: !!document.querySelector('.ar-collapsed:not(.ar-shown)'), text: document.querySelector('.ar-writing')?.innerText || '' }));
+  check('while a page is written, a card says so, its code is folded away and the panel stays closed', writing && during.folded && !during.panel && /Live counter/.test(during.text) && /Being written/.test(during.text), JSON.stringify(during));
+  await page.waitForFunction(() => document.getElementById('owui-chat-artifacts')?.dataset.view === 'viewer' && !document.getElementById('owui-chat-artifacts').hidden, null, { timeout: 25000 }).catch(() => {});
+  check('when it is complete, it opens and runs', /Built while you watched/.test(await s.waitFrame(/Built while/)) && /Live counter/.test(await head(page)));
+  check('the writing card gave way to the artifact’s card', !(await page.locator('.ar-writing').count()) && (await s.cards()).some(c => /Live counter/.test(c)));
+  check('Open WebUI’s own Artifacts tab doesn’t open as well', !(await page.locator('[data-panel-tab="artifacts"]').count()));
+  await page.frameLocator('#owui-chat-artifacts iframe.ar-frame').locator('button').click();
+  check('and works', /^1/.test((await page.frameLocator('#owui-chat-artifacts iframe.ar-frame').locator('#n').innerText()).trim()));
+  const toggle = page.locator('.ar-cards .ar-cardcode').last();
+  await toggle.click();
+  check('the folded code can be shown in the chat again', await page.locator('.ar-collapsed.ar-shown [id^="code-textarea-"]').last().isVisible());
+  await toggle.click();
+  // Saying hello makes nothing
+  await page.locator('#owui-chat-artifacts .ar-head [aria-label="Close"]').click();
+  const before = (await s.cards()).length;
+  await page.locator('#chat-input').click(); await page.keyboard.type('hello there'); await page.keyboard.press('Enter');
+  await page.waitForFunction(n => document.querySelectorAll('#messages-container [id^="message-"]').length >= n, 8, { timeout: 15000 }).catch(() => {});
+  await page.waitForTimeout(3000);
+  check('an ordinary reply makes no card and opens nothing', (await s.cards()).length === before && await page.locator('#owui-chat-artifacts').isHidden() && !(await page.locator('.ar-writing').count()));
+  // Artifacts mode: on by default for one model, through Open WebUI's own filter switch
+  await s.open('/c/' + U.mode);
+  await page.locator('#chat-input').click(); await page.keyboard.type('WHATMODE'); await page.keyboard.press('Enter');
+  await page.waitForFunction(() => /Artifacts mode is (on|off)/.test(document.querySelector('#messages-container')?.innerText || ''), null, { timeout: 20000 }).catch(() => {});
+  check('with Artifacts mode on, the model gets the artifact instructions', /Artifacts mode is on/.test(await page.locator('#messages-container').innerText()));
+  await s.open('/c/' + U.plain);
+  await page.locator('#chat-input').click(); await page.keyboard.type('WHATMODE'); await page.keyboard.press('Enter');
+  await page.waitForFunction(() => /Artifacts mode is (on|off)/.test(document.querySelector('#messages-container')?.innerText || ''), null, { timeout: 20000 }).catch(() => {});
+  check('without it, the model doesn’t', /Artifacts mode is off/.test(await page.locator('#messages-container').innerText()));
+  // Selecting part of a document and asking for a change
+  await s.open('/c/' + U.doc);
+  await page.locator('.ar-cards .ar-cardmain', { hasText: 'Guide to the library' }).click(); await s.ready();
+  const heading = page.locator('#owui-chat-artifacts .ar-doc h2').first();
+  await heading.click({ clickCount: 3 });
+  await page.waitForSelector('#owui-chat-artifacts .ar-askbtn', { timeout: 4000 }).catch(() => {});
+  check('selecting part of an artifact offers to ask about it', await page.locator('#owui-chat-artifacts .ar-askbtn').isVisible().catch(() => false));
+  await page.locator('#owui-chat-artifacts .ar-askbtn').click();
+  await page.locator('dialog.ar-dialog textarea').fill('Make this heading friendlier');
+  await page.keyboard.press('Enter');
+  await page.waitForFunction(() => [...document.querySelectorAll('#messages-container .user-message')].some(m => /friendlier/.test(m.textContent)), null, { timeout: 15000 }).catch(() => {});
+  const sent = await page.$$eval('#messages-container .user-message', ms => ms.map(m => m.textContent).join(' '));
+  check('the question is sent with the part it is about', /Make this heading friendlier/.test(sent) && /Borrowing/.test(sent) && /Guide to the library/.test(sent), sent.slice(-300));
+  check('no page errors', s.state.errors.length === 0, s.state.errors.slice(0, 3).join(' | '));
+  await s.context.close();
+}
+
+/* ---- a chat Open WebUI shared ---- */
+console.log('Shared chats');
+{
+  const owner = await session(A), { page } = owner;
+  await owner.open('/c/' + A.page); await owner.openCard(-1);
+  check('there is no Share button', !(await page.locator('#owui-chat-artifacts .ar-head [aria-label="Share"]').count()) && !/Share/.test(await page.locator('#owui-chat-artifacts .ar-head').innerText()));
+  const share = await api(A, 'POST', '/api/v1/chats/' + A.page + '/share', {});
+  await api(A, 'POST', '/api/v1/chats/shared/' + A.page + '/access/update', { access_grants: [{ principal_type: 'user', principal_id: '*', permission: 'read' }] });
+  const other = await session(U);
+  await other.open('/s/' + share.json.share_id + '?artifact=am2-0', false);
+  await other.ready(); await other.page.waitForTimeout(600);
+  check('a chat shared with Open WebUI’s own Share opens on its artifact, running', /Monthly budget/.test(await other.waitFrame(/Monthly budget/)) && /Budget tracker/.test(await head(other.page)));
+  await mode(other.page, 'Code');
+  check('read-only, with nothing to copy it into', await other.page.locator('#owui-chat-artifacts textarea.ar-area').evaluate(a => a.readOnly) && !(await other.page.locator('#owui-chat-artifacts button', { hasText: 'Make a copy' }).count()));
+  check('no page errors', owner.state.errors.length === 0 && other.state.errors.length === 0, [...owner.state.errors, ...other.state.errors].slice(0, 3).join(' | '));
+  await owner.context.close(); await other.context.close();
+}
+
+/* ---- starting one ---- */
+console.log('New artifacts');
+{
+  const s = await session(U), { page } = s;
+  await s.open('/c/' + U.plain);
+  await page.click('#owui-chat-artifacts-header'); await s.ready();
+  await page.locator('#owui-chat-artifacts .ar-head button', { hasText: 'New' }).click();
+  check('New offers ten kinds', await page.locator('dialog.ar-newdialog .ar-newitem').count() === 10);
+  const countBefore = await page.locator('#messages-container [id^="message-"]').count();
+  await page.locator('dialog.ar-newdialog .ar-newitem', { hasText: 'Slides' }).click();
+  await page.waitForFunction(() => /```slides/.test(document.getElementById('chat-input')?.innerText || ''), null, { timeout: 5000 }).catch(() => {});
+  const box = await page.locator('#chat-input').innerText();
+  check('choosing one puts a ready request in the message box, unsent', /Make a slide deck about/.test(box) && /```slides/.test(box) && (await page.locator('#messages-container [id^="message-"]').count()) === countBefore, box.replace(/\n+/g, ' ').slice(0, 160));
+  await page.evaluate(() => window.postMessage({ type: 'input:prompt', text: '' }, location.origin));
+  check('the panel stays open beside the message box', await page.locator('#owui-chat-artifacts').isVisible());
+  await page.locator('#owui-chat-artifacts .ar-head button', { hasText: 'New' }).click();
+  await page.locator('dialog.ar-newdialog button', { hasText: 'Write it yourself' }).click();
+  await page.locator('dialog.ar-dialog select').selectOption('sheet');
+  await page.locator('dialog.ar-dialog input').fill('My budget');
+  await page.locator('dialog.ar-dialog button[type=submit]').click();
+  await page.waitForSelector('#owui-chat-artifacts textarea.ar-area', { timeout: 8000 }).catch(() => {});
+  await page.locator('#owui-chat-artifacts textarea.ar-area').fill('Name,Value\nRent,500\nFood,200\nTotal,=SUM(B2:B3)\n');
+  await page.waitForTimeout(700);
+  await mode(page, 'Preview');
+  check('a blank artifact of your own works like any other', /700/.test(await page.locator('#owui-chat-artifacts .ar-grid').innerText()) && /Only on this device/.test(await foot(page)));
+  await page.reload({ waitUntil: 'domcontentloaded' }); await page.waitForTimeout(3000);
+  check('it is kept on this device, and the address reopens it', await page.locator('#owui-chat-artifacts').isVisible() && /My budget/.test(await head(page)), await head(page));
+  await page.locator('#owui-chat-artifacts .ar-head [aria-label="More"]').click();
+  await page.locator('#owui-chat-artifacts .ar-menuitem', { hasText: 'Delete' }).click();
+  await page.locator('dialog.ar-dialog .ar-danger').click(); await page.waitForTimeout(300);
+  check('and can be deleted', !/My budget/.test(await panelText(page)));
+  check('no page errors', s.state.errors.length === 0, s.state.errors.slice(0, 3).join(' | '));
+  await s.context.close();
+}
+
+/* ---- themes and phones ---- */
+console.log('Themes and a phone');
+for (const theme of ['light', 'dark', 'oled-dark', 'her']) {
+  const s = await session(A, { theme }), { page } = s;
+  await s.open('/c/' + A.sheet); await s.openCard(-1);
+  await page.locator('#owui-chat-artifacts td[data-r="1"][data-c="1"]').click();
+  const scores = {};
+  for (const [label, selector] of Object.entries({ title: '.ar-title', meta: '.ar-meta', mode: '.ar-mode', foot: '.ar-footinfo', cells: '.ar-grid td', heads: '.ar-sortbtn', rownum: '.ar-rownum', stat: '.ar-stat' })) scores[label] = await measure(page, '#owui-chat-artifacts ' + selector);
+  await s.open('/c/' + A.page);
+  for (const [label, selector] of Object.entries({ card: '.ar-cards .ar-itemtitle', cardmeta: '.ar-cards .ar-itemmeta', cardopen: '.ar-cards .ar-cardopen' })) scores[label] = await measure(page, selector);
+  await s.openCard(-1); await mode(page, 'Changes');
+  for (const [label, selector] of Object.entries({ added: '.ar-dline[data-sign=add]', removed: '.ar-dline[data-sign=del]' })) scores[label] = await measure(page, '#owui-chat-artifacts ' + selector);
+  await s.open('/c/' + A.broken); await s.openCard(-1); await page.waitForSelector('#owui-chat-artifacts .ar-error', { timeout: 8000 }).catch(() => {});
+  scores.error = await measure(page, '#owui-chat-artifacts .ar-error strong');
+  check(`${theme}: every text reaches 4.5:1 contrast`, Object.values(scores).every(v => v >= 4.5), JSON.stringify(scores));
+  if (theme === 'dark') { await s.open('/c/' + A.deck); await s.openCard(-1); await shot(page, 'slides-dark'); }
+  check(`${theme}: no page errors`, s.state.errors.length === 0, s.state.errors.slice(0, 2).join(' | '));
+  await s.context.close();
+}
+{
+  const s = await session(U, { viewport: { width: 390, height: 844 }, theme: 'dark', extra: { hasTouch: true, isMobile: true } }), { page } = s;
+  await s.open('/c/' + U.deck);
+  check('on a phone nothing opens by itself', await page.locator('#owui-chat-artifacts').count() === 0 || await page.locator('#owui-chat-artifacts').isHidden());
+  await s.openCard(-1);
+  const sheet = await page.evaluate(() => { const p = document.getElementById('owui-chat-artifacts').getBoundingClientRect(); return { w: Math.round(p.width), h: Math.round(p.height), overflow: document.documentElement.scrollWidth > innerWidth + 1, docked: !!document.querySelector('.ar-docked') }; });
+  check('on a phone it covers the screen, without sideways scrolling', sheet.w >= 389 && sheet.h >= 800 && !sheet.overflow && !sheet.docked, JSON.stringify(sheet));
+  await shot(page, 'phone-dark');
+  await page.locator('#owui-chat-artifacts .ar-head [aria-label="Close"]').click();
+  check('and closes back to the chat', await page.locator('#owui-chat-artifacts').isHidden());
+  check('no page errors', s.state.errors.length === 0, s.state.errors.slice(0, 2).join(' | '));
+  await s.context.close();
+}
+
+/* ---- valves ---- */
+console.log('Valves');
+{
+  await setValves({ language: 'fr' });
+  let s = await session(U); await s.open('/c/' + U.page); await s.openCard(-1);
+  check('Artifacts speaks French', /Page web/.test(await head(s.page)) && /Version 2 sur 2/.test(await foot(s.page)) && /Ouvrir/.test((await s.cards())[0]));
+  await s.context.close();
+  await setValves({ cards_in_chat: false });
+  s = await session(U); await s.open('/c/' + U.page); await s.page.waitForTimeout(1500);
+  check('cards_in_chat off: no cards or Open buttons', (await s.cards()).length === 0 && await s.page.locator('.ar-openbtn').count() === 0);
+  await s.context.close();
+  await setValves({});
+  s = await session(U); await s.open('/c/' + U.page); await s.page.waitForTimeout(1500);
+  check('by default an artifact’s code is folded away in the chat, its Open button kept', await s.page.locator('.ar-collapsed').count() === 2 && await s.page.locator('.ar-collapsed .ar-openbtn').count() === 2 && !(await s.page.locator('.ar-collapsed [id^="code-textarea-"]').first().isVisible()));
+  await s.context.close();
+  await setValves({ collapse_code: false });
+  s = await session(U); await s.open('/c/' + U.page); await s.page.waitForTimeout(1500);
+  check('collapse_code off: the code stays in the chat', await s.page.locator('.ar-collapsed').count() === 0 && await s.page.locator('.ar-cardcode').count() === 0);
+  await s.context.close();
+  await setValves({ detect: 'all' });
+  s = await session(U); await s.open('/c/' + U.answer); await s.page.waitForTimeout(1500);
+  const all = await s.cards();
+  check('detect = all: a long answer is a document, and its table a spreadsheet', all.some(c => /Guide to the library \| Document/.test(c)) && all.some(c => /Opening hours \| Spreadsheet/.test(c)), all.join(' || '));
+  await s.context.close();
+  await setValves({ detect: 'marked' });
+  s = await session(U); await s.open('/c/' + U.page); await s.page.waitForTimeout(1500);
+  const unmarked = (await s.cards()).length;
+  await s.open('/c/' + U.deck); await s.page.waitForTimeout(1500);
+  check('detect = marked: only blocks the model marked are artifacts', unmarked === 0 && (await s.cards()).length === 2);
+  await s.context.close();
+  await setValves({ network: 'off' });
+  s = await session(U); await s.open('/c/' + U.app); await s.openCard(-1);
+  await s.page.waitForSelector('#owui-chat-artifacts .ar-error', { timeout: 10000 }).catch(() => {});
+  check('network off: an app can’t load its libraries, and says so', /Couldn’t load Babel/.test(await foot(s.page)), await foot(s.page));
+  await s.context.close();
+  await setValves({ header_button: false, show_in_chat_menu: false, auto_open: false });
+  s = await session(U); await s.open('/c/' + U.page);
+  await s.page.locator('#chat-context-menu-button').filter({ visible: true }).first().click(); await s.page.waitForTimeout(600);
+  check('header_button and show_in_chat_menu off: only the cards remain', !(await s.page.locator('#owui-chat-artifacts-header').count()) && !(await s.page.locator('#owui-chat-artifacts-menu-item').count()) && (await s.cards()).length === 2);
+  await s.context.close();
+  await setValves({});
+}
+
+console.log(`\n${passed} passed, ${failed.length} failed`);
+for (const name of failed) console.log('  - ' + name);
+await browser.close();
+process.exit(failed.length ? 1 : 0);

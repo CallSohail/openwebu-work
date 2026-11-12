@@ -14,10 +14,10 @@ The goal is simple: keep each extension portable, documented, and safe to review
 | [Study Mode](functions/filters/study-mode/) | Filter | 1.1.0 | Stable | Guided learning, Socratic tutoring, adaptive pacing, native `ask_user`, multilingual interactive quizzes, LaTeX/keyboard/fullscreen/export options, and local-model compatibility hardening |
 | [Quick Actions](functions/actions/quick-actions/) | Action | 3.0.1 | Stable | Compact context-aware response transformations, Humanize actions, verification, creation workflows, English/French UI, and user/team custom actions |
 | [Secure Dynamic Onboarding](functions/events/secure-onboarding/) | Event | 9.3.0 | Stable | English, French, Spanish and Catalan permission-aware onboarding with a language dropdown, immediate Valve synchronization, UTF-8-safe Rich UI delivery, guided tutorials, and safe rollout |
-| [Chat Inspector](functions/events/chat-inspector/) | Event | 0.2.0 | Stable | Live context estimate, response usage, saved tool inventory and model settings during a chat |
-| [Chat Gallery](functions/events/chat-gallery/) | Event | 1.1.0 | Stable | A Gallery tab with every image in the current chat and every image the person uploaded or generated: filters, zoom, generation details, copy, download, zip, delete and a jump back to the message. Maintained fork of @G30's Chat Gallery, in English and French |
-| [Chat Files](functions/events/chat-files/) | Event | 1.0.0 | Stable | A Files tab with every document, spreadsheet and other file in the chat and in the person's account: previews (PDF, tables, JSON, text, audio, extracted text), search, filters, rename, delete, zip and a jump back to the message. Companion to Chat Gallery, in English and French, checked for contrast in light, dark, OLED and Her themes |
-| [Chat Canvas](functions/events/chat-canvas/) | Event | 1.0.0 | Stable | A Canvas tab that turns the code and documents in a chat into editable pages: edit with line numbers, preview HTML, SVG, Markdown, JSON and CSV, compare changes, ask the model for a change to a selection, and save to files or notes. Companion to Chat Gallery and Chat Files, in English and French |
+| [Chat Inspector](functions/events/chat-inspector/) | Event | 1.2.0 | Stable | Context, in the chat's ⋯ menu: a pop-up showing how full the model's context window is, Claude-style, worded with the platform's own name: a grid of what fills it, fitted to the model's own token count, every tool call by kind (MCP, workspace, tool server, built-in), web searches and sources, and a warning before the chat overflows. Token estimates tuned against five real tokenizers |
+| [Chat Gallery](functions/events/chat-gallery/) | Event | 1.2.0 | Stable | A Gallery tab with every image in the current chat and every image the person uploaded or generated: filters, zoom, generation details, copy, download, zip, delete and a jump back to the message. Maintained fork of @G30's Chat Gallery, in English and French |
+| [Chat Files](functions/events/chat-files/) | Event | 2.0.0 | Stable | A Files tab, chosen from the Tabs panel's + menu, with every document, spreadsheet and other file in the chat and in the person's account, as a list or a grid: previews (PDF, tables, JSON, text, audio, extracted text) with detailed facts, search, kind chips, a menu on every file, rename, delete, zip and a jump back to the message. Companion to Chat Gallery, in English and French, checked for contrast in light, dark, OLED and Her themes |
+| [Artifacts](functions/events/chat-artifacts/) | Event | 1.2.0 | Stable | Claude-style Artifacts, with an Artifacts mode switch so ordinary answers stay plain: documents, slides, spreadsheets with formulas, Mermaid diagrams, web pages, React apps, drawings and data open in a panel beside the chat, with versions, live preview, Try fixing, spreadsheets corrected cell by cell as in Excel, slides edited one at a time, exports (PowerPoint, PDF, Word, Excel, PNG), diagrams and charts inside slides and documents, and a sandbox that keeps generated code away from the page and the network. Replaces Chat Canvas |
 | [RAGFlow Advanced Connector](tools/ragflow/) | Tool | 3.0.0 | Stable | RAGFlow retrieval, dataset discovery, document search, and configurable retrieval controls |
 
 ## Repository structure
@@ -81,16 +81,18 @@ The goal is simple: keep each extension portable, documented, and safe to review
     │       └── quick_actions.py
     └── events/
         ├── README.md
-        ├── chat-canvas/
+        ├── chat-artifacts/
         │   ├── README.md
         │   ├── ARCHITECTURE.md
         │   ├── CHANGELOG.md
-        │   ├── chat_canvas.py
+        │   ├── artifacts_mode.py
+        │   ├── chat_artifacts.py
         │   ├── screenshots/
         │   └── tests/
         │       ├── e2e.mjs
+        │       ├── fake_model.py
         │       ├── seed.py
-        │       └── test_chat_canvas.py
+        │       └── test_chat_artifacts.py
         ├── chat-files/
         │   ├── README.md
         │   ├── ARCHITECTURE.md
@@ -103,10 +105,17 @@ The goal is simple: keep each extension portable, documented, and safe to review
         │       └── test_chat_files.py
         ├── chat-inspector/
         │   ├── README.md
+        │   ├── ARCHITECTURE.md
         │   ├── CHANGELOG.md
         │   ├── chat_inspector.py
-        │   ├── inspector.js
+        │   ├── screenshots/
         │   └── tests/
+        │       ├── e2e.mjs
+        │       ├── fake_model.py
+        │       ├── fit_tokens.py
+        │       ├── seed.py
+        │       ├── test_chat_inspector.py
+        │       └── token_samples.json
         ├── chat-gallery/
         │   ├── README.md
         │   ├── ARCHITECTURE.md
@@ -161,7 +170,7 @@ Study Mode and Quick Actions currently declare **Open WebUI 0.11.1 or newer** be
 
 Generative UI declares **Open WebUI 0.12.0 or newer** because it relies on Tool embeds returned as `(HTMLResponse, context)` and the embed prompt messages checked against the 0.12.5 source.
 
-Chat Canvas and Chat Files declare **Open WebUI 0.13.0 or newer** for the same reason. Canvas was tested on the same versions, with and without the other two.
+Artifacts and Chat Files declare **Open WebUI 0.13.0 or newer** for the same reason. Artifacts was tested in a browser on 0.13.0 and 0.13.3, alone and with Chat Inspector, Files and Gallery.
 
 Chat Files: It was tested in a browser on 0.13.0 and 0.13.3, with and without Chat Gallery.
 
@@ -203,8 +212,8 @@ quick-actions-v3.0.1
 ragflow-v3.0.0
 secure-onboarding-v9.3.0
 chat-gallery-v1.1.0
-chat-files-v1.0.0
-chat-canvas-v1.0.0
+chat-files-v2.0.0
+chat-artifacts-v1.2.0
 ```
 
 See [RELEASING.md](RELEASING.md) for the release checklist, tag convention, and suggested GitHub repository topics.
@@ -229,8 +238,8 @@ Every extension also keeps its own changelog beside the implementation:
 | Quick Actions | [functions/actions/quick-actions/CHANGELOG.md](functions/actions/quick-actions/CHANGELOG.md) | `quick-actions-v3.0.1` |
 | Secure Dynamic Onboarding | [functions/events/secure-onboarding/CHANGELOG.md](functions/events/secure-onboarding/CHANGELOG.md) | `secure-onboarding-v9.3.0` |
 | Chat Gallery | [functions/events/chat-gallery/CHANGELOG.md](functions/events/chat-gallery/CHANGELOG.md) | `chat-gallery-v1.1.0` |
-| Chat Files | [functions/events/chat-files/CHANGELOG.md](functions/events/chat-files/CHANGELOG.md) | `chat-files-v1.0.0` |
-| Chat Canvas | [functions/events/chat-canvas/CHANGELOG.md](functions/events/chat-canvas/CHANGELOG.md) | `chat-canvas-v1.0.0` |
+| Chat Files | [functions/events/chat-files/CHANGELOG.md](functions/events/chat-files/CHANGELOG.md) | `chat-files-v2.0.0` |
+| Artifacts | [functions/events/chat-artifacts/CHANGELOG.md](functions/events/chat-artifacts/CHANGELOG.md) | `chat-artifacts-v1.2.0` |
 
 ## License
 

@@ -1,14 +1,14 @@
-name: Validate Chat Canvas
+name: Validate Artifacts
 
 on:
   push:
     paths:
-      - "functions/events/chat-canvas/**"
-      - ".github/workflows/validate-chat-canvas.yml"
+      - "functions/events/chat-artifacts/**"
+      - ".github/workflows/validate-chat-artifacts.yml"
   pull_request:
     paths:
-      - "functions/events/chat-canvas/**"
-      - ".github/workflows/validate-chat-canvas.yml"
+      - "functions/events/chat-artifacts/**"
+      - ".github/workflows/validate-chat-artifacts.yml"
 
 permissions:
   contents: read
@@ -19,7 +19,7 @@ jobs:
     timeout-minutes: 5
     defaults:
       run:
-        working-directory: functions/events/chat-canvas
+        working-directory: functions/events/chat-artifacts
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -29,6 +29,6 @@ jobs:
         with:
           node-version: "22"
       - run: python -m pip install "pydantic>=2,<3" starlette httpx pytest
-      - run: python -m py_compile chat_canvas.py tests/seed.py
+      - run: python -m py_compile chat_artifacts.py artifacts_mode.py tests/seed.py tests/fake_model.py
       - run: node --check tests/e2e.mjs
-      - run: python -m pytest -q tests/test_chat_canvas.py
+      - run: python -m pytest -q tests/test_chat_artifacts.py

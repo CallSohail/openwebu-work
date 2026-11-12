@@ -1,8 +1,8 @@
 """
 title: Chat Files
-description: A Files tab for every document, spreadsheet and other file in a chat and in your account, with previews, search, filters, rename, delete, zip and a jump back to the message.
+description: A Files tab, chosen from the Tabs panel's + menu, for every document, spreadsheet and other file in a chat and in your account, as a list or a grid, with previews, details, search, filters, rename, delete, zip and a jump back to the message.
 author: Muhammad Sohail
-version: 1.0.0
+version: 2.0.0
 license: MIT
 required_open_webui_version: 0.13.0
 """
@@ -428,90 +428,155 @@ FILES_CSS = r"""
 #owui-chat-files-header.w-7 svg{width:.875rem;height:.875rem}
 #owui-chat-files-header[aria-pressed=true]{color:var(--color-gray-700,#4e4e4e)}
 .dark #owui-chat-files-header[aria-pressed=true]{color:var(--color-gray-200,#e3e3e3)}
-.cf-dialog{--cf-surface:#fff;--cf-text:var(--color-gray-800,#262626);--cf-muted:var(--color-gray-600,#5d5d5d);--cf-soft:var(--color-gray-50,#f9f9f9);--cf-hover:var(--color-gray-100,#ececec);--cf-line:var(--color-gray-100,#ececec);--cf-primary:#000;--cf-on-primary:#fff;--cf-accent:var(--color-blue-600,#2563eb);--cf-danger:#dc2626;--cf-danger-text:#b91c1c;--cf-warn:#92400e;
+.cf-dialog{--cf-surface:#fff;--cf-text:var(--color-gray-800,#262626);--cf-muted:var(--color-gray-600,#5d5d5d);--cf-soft:var(--color-gray-50,#f9f9f9);--cf-hover:var(--color-gray-100,#ececec);--cf-line:var(--color-gray-100,#ececec);--cf-strong-line:var(--color-gray-200,#e3e3e3);--cf-picked:var(--color-gray-100,#ececec);--cf-primary:var(--color-gray-900,#171717);--cf-on-primary:#fff;--cf-modal:#fff;--cf-danger:#dc2626;--cf-danger-text:#b91c1c;--cf-warn:#92400e;--cf-shadow:0 10px 30px -10px rgb(0 0 0/.25);
 --cf-k-pdf:#b91c1c;--cf-k-doc:#1d4ed8;--cf-k-sheet:#166534;--cf-k-slide:#9a3412;--cf-k-code:#6d28d9;--cf-k-audio:#9d174d;--cf-k-video:#115e59;--cf-k-image:#854d0e;--cf-k-archive:#92400e;--cf-k-ref:#075985;--cf-k-other:#4b5563}
-.dark .cf-dialog{--cf-surface:var(--color-gray-900,#171717);--cf-text:var(--color-gray-100,#ececec);--cf-muted:var(--color-gray-400,#b4b4b4);--cf-soft:var(--color-gray-850,#262626);--cf-hover:var(--color-gray-800,#333);--cf-line:var(--color-gray-800,#333);--cf-primary:#fff;--cf-on-primary:#000;--cf-accent:var(--color-blue-400,#60a5fa);--cf-danger:#dc2626;--cf-danger-text:#f87171;--cf-warn:#fbbf24;color-scheme:dark;
+.dark .cf-dialog{--cf-surface:var(--color-gray-900,#171717);--cf-text:var(--color-gray-100,#ececec);--cf-muted:var(--color-gray-400,#b4b4b4);--cf-soft:var(--color-gray-850,#262626);--cf-hover:var(--color-gray-800,#333);--cf-line:var(--color-gray-800,#333);--cf-strong-line:var(--color-gray-700,#4e4e4e);--cf-picked:var(--color-gray-800,#333);--cf-primary:var(--color-gray-100,#ececec);--cf-on-primary:var(--color-gray-900,#171717);--cf-modal:var(--color-gray-950,#0d0d0d);--cf-danger:#dc2626;--cf-danger-text:#f87171;--cf-warn:#fbbf24;--cf-shadow:0 10px 30px -10px rgb(0 0 0/.6);color-scheme:dark;
 --cf-k-pdf:#f87171;--cf-k-doc:#60a5fa;--cf-k-sheet:#4ade80;--cf-k-slide:#fb923c;--cf-k-code:#a78bfa;--cf-k-audio:#f472b6;--cf-k-video:#2dd4bf;--cf-k-image:#facc15;--cf-k-archive:#fbbf24;--cf-k-ref:#38bdf8;--cf-k-other:#9ca3af}
 .cf-dialog{position:fixed;left:0;top:0;z-index:45;box-sizing:border-box;display:flex;flex-direction:column;container:cf/inline-size;margin:0;padding:0;border:0;background:transparent;color:var(--cf-text);overflow:hidden;overscroll-behavior:contain;font-family:inherit;font-size:.875rem;line-height:1.4}
 .cf-dialog[hidden]{display:none}
 .cf-dialog.cf-solo{background:var(--cf-surface)}
 [data-cf-covered]{opacity:0!important;pointer-events:none!important}
-.cf-viewing>.cf-head{display:none}
+.cf-viewing>.cf-head,.cf-viewing>.cf-tools,.cf-viewing>.cf-kinds{display:none}
 .cf-viewing .cf-scroll,.cf-viewing .cf-foot{visibility:hidden}
 .panel-tab-strip.cf-dim > :is([data-panel-tab], :has(> #chat-panel-main-chat)){background:transparent!important;color:var(--color-gray-500,#6b7280)!important}
 .dark .panel-tab-strip.cf-dim > :is([data-panel-tab], :has(> #chat-panel-main-chat)){color:var(--color-gray-400,#9ca3af)!important}
 #owui-chat-files-tabs{scrollbar-width:none}
 .cf-dialog *{box-sizing:border-box}
 .cf-dialog button,.cf-dialog select,.cf-dialog input{font:inherit;color:inherit}
-.cf-dialog :focus-visible{outline:2px solid var(--cf-accent);outline-offset:2px}
-.cf-head{display:flex;flex-wrap:wrap;align-items:center;gap:.5rem;padding:1rem 1.25rem .75rem}
-.cf-tabs{display:flex;gap:2px;padding:2px;border-radius:.75rem;background:var(--cf-soft)}
-.cf-tab{border:0;background:transparent;padding:.25rem .75rem;border-radius:.625rem;cursor:pointer;color:var(--cf-muted);white-space:nowrap}
-.cf-tab[aria-selected=true]{background:var(--cf-surface);color:var(--cf-text);box-shadow:0 1px 2px rgb(0 0 0/.08)}
-.dark .cf-tab[aria-selected=true]{background:var(--cf-hover)}
+.cf-dialog :focus-visible{outline:2px solid var(--cf-text)!important;outline-offset:2px!important}
+.cf-dialog :is(.cf-search,.cf-main,.cf-stage,.cf-menuitem):focus-visible{outline:none!important}
+.cf-head{display:flex;flex-wrap:wrap;align-items:center;gap:.375rem;padding:1rem 1.25rem .5rem}
+.cf-tools{display:flex;align-items:center;gap:.375rem;padding:0 1.25rem .5rem}
+.cf-kinds{display:flex;gap:.375rem;padding:0 1.25rem .625rem;overflow-x:auto;scrollbar-width:none}
+.cf-kinds[hidden]{display:none}
+.cf-tabs,.cf-seg{display:flex;gap:2px;padding:2px;border-radius:.75rem;background:var(--cf-soft)}
+.cf-tab{border:0;background:transparent;padding:.25rem .75rem;border-radius:.625rem;cursor:pointer;color:var(--cf-muted);white-space:nowrap;transition:background .12s,color .12s}
+.cf-tab:hover{color:var(--cf-text)}
+.cf-tab[aria-selected=true],.cf-segbtn[aria-pressed=true]{background:var(--cf-surface);color:var(--cf-text);box-shadow:0 1px 2px rgb(0 0 0/.08)}
+.dark .cf-tab[aria-selected=true],.dark .cf-segbtn[aria-pressed=true]{background:var(--cf-hover)}
 .cf-tab[hidden]{display:none}
+.cf-segbtn{width:1.75rem;height:1.75rem;border-radius:.625rem}
+.cf-segbtn svg{width:1rem!important;height:1rem!important}
 .cf-spacer{flex:1}
-.cf-search{width:min(14rem,100%);height:2rem;padding:0 .75rem;border:0;border-radius:.75rem;background:var(--cf-soft);color:inherit;font-size:.875rem;outline:none}
+.cf-searchbox{position:relative;display:flex;align-items:center;flex:1;min-width:8rem;max-width:28rem;margin:0}
+.cf-searchbox svg{position:absolute;inset-inline-start:.625rem;width:1rem;height:1rem;color:var(--cf-muted);pointer-events:none}
+.cf-search{width:100%;height:2rem;padding:0 .75rem 0 2rem;border:1px solid transparent;border-radius:.75rem;background:var(--cf-soft);color:inherit;font-size:.875rem;outline:none;transition:border-color .12s}
+[dir=rtl] .cf-search{padding:0 2rem 0 .75rem}
+.cf-search:focus{border-color:var(--cf-strong-line)}
 .cf-search::placeholder{color:var(--cf-muted);opacity:1}
-.cf-select{appearance:auto;height:2rem;max-width:11rem;padding:0 .5rem;border:0;border-radius:.75rem;background:var(--cf-soft);cursor:pointer}
-.dark .cf-select,.dark .cf-search{box-shadow:inset 0 0 0 1px var(--cf-line)}
+.cf-select{appearance:auto;height:2rem;max-width:11rem;padding:0 .5rem;border:0;border-radius:.75rem;background:var(--cf-soft);cursor:pointer;margin-inline-start:auto}
+.dark .cf-select,.dark .cf-search{border-color:var(--cf-line)}
 .cf-select option{background:var(--cf-surface);color:var(--cf-text)}
-.cf-btn{display:inline-flex;align-items:center;justify-content:center;gap:.375rem;height:2rem;padding:0 .75rem;border:0;border-radius:.75rem;background:var(--cf-soft);cursor:pointer;white-space:nowrap}
+.cf-chip{display:inline-flex;align-items:center;gap:.375rem;flex:none;height:1.75rem;padding:0 .625rem;border:1px solid var(--cf-line);border-radius:999px;background:transparent;color:var(--cf-muted);font-size:.8125rem;cursor:pointer;white-space:nowrap;transition:background .12s,color .12s,border-color .12s}
+.cf-chip:hover{background:var(--cf-soft);color:var(--cf-text)}
+.cf-chip[aria-pressed=true]{background:var(--cf-primary);border-color:var(--cf-primary);color:var(--cf-on-primary)}
+.cf-chipcount{font-variant-numeric:tabular-nums;opacity:.8}
+.cf-btn{display:inline-flex;align-items:center;justify-content:center;gap:.375rem;height:2rem;padding:0 .75rem;border:0;border-radius:.75rem;background:var(--cf-soft);cursor:pointer;white-space:nowrap;transition:background .12s}
 .cf-btn:hover{background:var(--cf-hover)}
 .cf-btn:disabled{opacity:.5;cursor:default}
 .cf-btn[aria-pressed=true],.cf-btn.cf-primary{background:var(--cf-primary);color:var(--cf-on-primary)}
+.cf-btn.cf-primary:hover,.cf-btn[aria-pressed=true]:hover{filter:brightness(.9)}
+.dark .cf-btn.cf-primary:hover,.dark .cf-btn[aria-pressed=true]:hover{filter:brightness(1.1)}
 .cf-btn.cf-danger{background:var(--cf-danger);color:#fff}
-.cf-btn.cf-danger:hover,.cf-btn.cf-primary:hover{filter:brightness(1.1)}
+.cf-btn.cf-danger:hover{filter:brightness(1.1)}
 .cf-btn[hidden],.cf-icon[hidden]{display:none}
-.cf-icon{display:inline-flex;align-items:center;justify-content:center;width:2rem;height:2rem;flex:none;border:0;border-radius:.75rem;background:transparent;cursor:pointer;color:var(--cf-muted)}
+.cf-icon{display:inline-flex;align-items:center;justify-content:center;width:2rem;height:2rem;flex:none;border:0;border-radius:.75rem;background:transparent;cursor:pointer;color:var(--cf-muted);transition:background .12s,color .12s}
 .cf-icon:hover{background:var(--cf-hover);color:var(--cf-text)}
 .cf-icon:disabled{opacity:.4;cursor:default}
 .cf-icon svg,.cf-btn svg{width:1.125rem;height:1.125rem}
-.cf-modal{box-sizing:border-box;width:min(26rem,calc(100vw - 2rem));margin:auto;padding:1.25rem;border:1px solid var(--cf-line);border-radius:1.25rem;background:var(--cf-surface);color:var(--cf-text);box-shadow:0 20px 40px -12px rgb(0 0 0/.35);font-size:.875rem;line-height:1.45}
-.cf-modal::backdrop{background:rgb(0 0 0/.4)}
-.cf-modal h3{margin:0 0 .5rem;font-size:1rem;font-weight:600}
+.cf-mini{width:1.5rem;height:1.5rem;border-radius:.5rem}
+.cf-mini svg{width:.875rem;height:.875rem}
+.cf-modal{position:fixed;inset:0;box-sizing:border-box;width:min(28rem,calc(100vw - 2rem));height:fit-content;max-height:calc(100vh - 2rem);margin:auto;padding:1.5rem;border:1px solid var(--cf-line);border-radius:1.5rem;background:var(--cf-modal);color:var(--cf-text);box-shadow:var(--cf-shadow);font-size:.875rem;line-height:1.45;overflow:auto}
+.cf-modal::backdrop{background:rgb(0 0 0/.6)}
+.cf-modal h3{margin:0 0 .75rem;font-size:1.0625rem;font-weight:600}
 .cf-modal p{margin:0 0 1rem;color:var(--cf-muted)}
 .cf-modal .cf-bad{color:var(--cf-danger-text)}
+.cf-names{margin:0 0 .75rem;padding:.5rem .75rem;border-radius:.75rem;background:var(--cf-soft);list-style:none;font-size:.8125rem}
+.cf-names li{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cf-namesmore{color:var(--cf-muted)}
 .cf-label{display:flex;flex-direction:column;gap:.375rem;margin:0 0 .5rem;color:var(--cf-muted)}
 .cf-input{height:2.25rem;padding:0 .75rem;border:1px solid var(--cf-line);border-radius:.75rem;background:var(--cf-soft);color:var(--cf-text);outline:none}
-.cf-input:focus{border-color:var(--cf-accent)}
+.cf-input:focus{border-color:var(--cf-strong-line)}
 .cf-actions{display:flex;justify-content:flex-end;gap:.5rem}
 .cf-body{position:relative;flex:1;min-height:0;display:flex;flex-direction:column}
 .cf-scroll{flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain;padding:0 1.25rem 1rem}
-.cf-list{display:flex;flex-direction:column;gap:2px;margin:0;padding:0;list-style:none}
+.cf-colhead{display:grid;grid-template-columns:minmax(0,1fr) 8.5rem 5.5rem 8rem 2rem;align-items:center;gap:.75rem;padding:.25rem .5rem;border-bottom:1px solid var(--cf-line);color:var(--cf-muted);font-size:.75rem}
+.cf-colhead .cf-colname{padding-inline-start:3.5rem}
+.cf-colhead:has(~.cf-selecting) .cf-colname{padding-inline-start:5.5rem}
+.cf-colhead[hidden]{display:none}
+.cf-colbtn{display:inline-flex;align-items:center;gap:.25rem;min-width:0;height:1.75rem;padding:0 .25rem;border:0;border-radius:.5rem;background:transparent;color:inherit;text-align:start;cursor:pointer;white-space:nowrap}
+span.cf-colbtn{cursor:default}
+button.cf-colbtn:hover{color:var(--cf-text)}
+.cf-colbtn[aria-pressed=true]{color:var(--cf-text);font-weight:600}
+.cf-colsize{justify-content:flex-end}
+.cf-list{display:flex;flex-direction:column;gap:1px;margin:0;padding:.25rem 0 0;list-style:none}
 .cf-list li{margin:0;min-width:0}
-.cf-list li:not(.cf-empty){content-visibility:auto;contain-intrinsic-size:auto 3.25rem}
-.cf-row{display:flex;align-items:center;gap:.75rem;width:100%;min-height:3.25rem;padding:.5rem .75rem;border:0;border-radius:.75rem;background:transparent;text-align:start;cursor:pointer}
+.cf-item{content-visibility:auto;contain-intrinsic-size:auto 3.25rem}
+.cf-group{padding:.875rem .5rem .375rem;color:var(--cf-muted);font-size:.75rem;font-weight:600;letter-spacing:.01em}
+.cf-group:first-child{padding-top:.25rem}
+.cf-row{position:relative;display:grid;grid-template-columns:minmax(0,1fr) 8.5rem 5.5rem 8rem 2rem;align-items:center;gap:.75rem;min-height:3.25rem;padding:0 .5rem;border-radius:.75rem;transition:background .12s}
 .cf-row:hover{background:var(--cf-soft)}
-.cf-row[aria-pressed=true]{background:color-mix(in srgb,var(--cf-accent) 14%,transparent)}
+.cf-row.cf-picked{background:var(--cf-picked)}
+.cf-row:has(.cf-main:focus-visible){outline:2px solid var(--cf-text);outline-offset:-2px}
+.cf-main{display:flex;align-items:center;gap:.75rem;min-width:0;padding:.5rem 0;border:0;background:transparent;text-align:start;cursor:pointer;color:inherit}
+.cf-main::after{content:'';position:absolute;inset:0;border-radius:inherit}
 .cf-row.cf-gone .cf-name{text-decoration:line-through;color:var(--cf-muted)}
-.cf-badge{flex:none;display:inline-flex;align-items:center;justify-content:center;width:2.5rem;height:2.25rem;border-radius:.5rem;font-size:.625rem;font-weight:700;letter-spacing:.02em;color:var(--cf-tone);background:color-mix(in srgb,var(--cf-tone) 13%,transparent)}
-.cf-badge[data-tone=pdf]{--cf-tone:var(--cf-k-pdf)}.cf-badge[data-tone=doc]{--cf-tone:var(--cf-k-doc)}.cf-badge[data-tone=sheet]{--cf-tone:var(--cf-k-sheet)}.cf-badge[data-tone=slide]{--cf-tone:var(--cf-k-slide)}
-.cf-badge[data-tone=code]{--cf-tone:var(--cf-k-code)}.cf-badge[data-tone=audio]{--cf-tone:var(--cf-k-audio)}.cf-badge[data-tone=video]{--cf-tone:var(--cf-k-video)}.cf-badge[data-tone=image]{--cf-tone:var(--cf-k-image)}
-.cf-badge[data-tone=archive]{--cf-tone:var(--cf-k-archive)}.cf-badge[data-tone=ref]{--cf-tone:var(--cf-k-ref)}.cf-badge[data-tone=other]{--cf-tone:var(--cf-k-other)}
+.cf-thumb{position:relative;flex:none;display:flex;align-items:center;justify-content:center;width:2.5rem;height:2.25rem;border-radius:.5rem;overflow:hidden;background:color-mix(in srgb,var(--cf-tone) 13%,transparent)}
+.cf-thumb[data-tone=pdf]{--cf-tone:var(--cf-k-pdf)}.cf-thumb[data-tone=doc]{--cf-tone:var(--cf-k-doc)}.cf-thumb[data-tone=sheet]{--cf-tone:var(--cf-k-sheet)}.cf-thumb[data-tone=slide]{--cf-tone:var(--cf-k-slide)}
+.cf-thumb[data-tone=code]{--cf-tone:var(--cf-k-code)}.cf-thumb[data-tone=audio]{--cf-tone:var(--cf-k-audio)}.cf-thumb[data-tone=video]{--cf-tone:var(--cf-k-video)}.cf-thumb[data-tone=image]{--cf-tone:var(--cf-k-image)}
+.cf-thumb[data-tone=archive]{--cf-tone:var(--cf-k-archive)}.cf-thumb[data-tone=ref]{--cf-tone:var(--cf-k-ref)}.cf-thumb[data-tone=other]{--cf-tone:var(--cf-k-other)}
+.cf-badge{font-size:.625rem;font-weight:700;letter-spacing:.02em;color:var(--cf-tone)}
+.cf-thumbimg{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;background:var(--cf-soft)}
+.cf-thumb.cf-hasimg .cf-badge{visibility:hidden}
 .cf-text{display:flex;flex-direction:column;min-width:0;flex:1}
 .cf-name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;unicode-bidi:plaintext}
 .cf-sub{display:flex;flex-wrap:wrap;align-items:center;gap:.375rem;color:var(--cf-muted);font-size:.75rem;font-variant-numeric:tabular-nums}
-.cf-flag{padding:0 .375rem;border-radius:.375rem;font-size:.6875rem;font-weight:600;color:var(--cf-warn);background:color-mix(in srgb,var(--cf-warn) 14%,transparent)}
+.cf-sub:empty{display:none}
+.cf-cell{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--cf-muted);font-size:.8125rem;font-variant-numeric:tabular-nums;pointer-events:none}
+.cf-sizecell{text-align:end}
+.cf-list[data-view=list] .cf-subtext{display:none}
+.cf-flag{flex:none;white-space:nowrap;padding:0 .375rem;border-radius:.375rem;font-size:.6875rem;font-weight:600;color:var(--cf-warn);background:color-mix(in srgb,var(--cf-warn) 14%,transparent)}
 .cf-flag[data-state=failed],.cf-flag[data-state=missing]{color:var(--cf-danger-text);background:color-mix(in srgb,var(--cf-danger-text) 12%,transparent)}
-.cf-check{display:none;flex:none;width:1.25rem;height:1.25rem;border:1.5px solid var(--cf-muted);border-radius:50%}
-.cf-check svg{width:100%;height:100%;opacity:0;color:var(--cf-on-primary)}
-.cf-selecting .cf-row:not(.cf-gone) .cf-check{display:block}
-.cf-row[aria-pressed=true] .cf-check{background:var(--cf-accent);border-color:var(--cf-accent)}
-.cf-row[aria-pressed=true] .cf-check svg{opacity:1;color:#fff}
+.cf-more{position:relative;z-index:1;width:1.75rem;height:1.75rem;opacity:0}
+.cf-row:hover .cf-more,.cf-row:focus-within .cf-more,.cf-more[aria-expanded=true]{opacity:1}
+@media(hover:none){.cf-more{opacity:1}}
+.cf-check{display:none;flex:none;align-items:center;justify-content:center;width:1.25rem;height:1.25rem;border:1.5px solid var(--cf-muted);border-radius:.375rem;background:var(--cf-surface)}
+.cf-check svg{width:.875rem;height:.875rem;opacity:0;color:var(--cf-on-primary)}
+.cf-selecting .cf-row:not(.cf-gone) .cf-check{display:flex}
+.cf-row.cf-picked .cf-check{background:var(--cf-primary);border-color:var(--cf-primary)}
+.cf-row.cf-picked .cf-check svg{opacity:1}
+.cf-list[data-view=grid]{display:grid;grid-template-columns:repeat(auto-fill,minmax(10rem,1fr));gap:.75rem;padding-top:.5rem}
+.cf-list[data-view=grid] .cf-item{contain-intrinsic-size:auto 13rem}
+.cf-list[data-view=grid] .cf-group,.cf-list[data-view=grid] .cf-empty{grid-column:1/-1}
+.cf-list[data-view=grid] .cf-row{display:block;min-height:0;padding:.5rem;border:1px solid var(--cf-line)}
+.cf-list[data-view=grid] .cf-row:hover{border-color:var(--cf-strong-line)}
+.cf-list[data-view=grid] .cf-main{flex-direction:column;align-items:stretch;gap:.5rem;width:100%;padding:0}
+.cf-list[data-view=grid] .cf-thumb{width:100%;height:auto;aspect-ratio:16/10;border-radius:.5rem}
+.cf-list[data-view=grid] .cf-sub{min-width:0}
+.cf-list[data-view=grid] .cf-subtext{min-width:0;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cf-list[data-view=grid] .cf-badge{font-size:1rem}
+.cf-list[data-view=grid] .cf-text{padding:0 .125rem .125rem}
+.cf-list[data-view=grid] .cf-name{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;white-space:normal;overflow-wrap:anywhere;line-height:1.3;min-height:2.6em}
+.cf-list[data-view=grid] .cf-cell{display:none}
+.cf-list[data-view=grid] .cf-check{position:absolute;top:1rem;inset-inline-start:1rem;z-index:1}
+.cf-list[data-view=grid] .cf-more{position:absolute;top:1rem;inset-inline-end:1rem;background:var(--cf-surface);box-shadow:0 1px 3px rgb(0 0 0/.15)}
 .cf-empty{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.25rem;min-height:12rem;padding:2rem;color:var(--cf-muted);text-align:center}
 .cf-empty strong{color:var(--cf-text);font-weight:500}
 .cf-empty .cf-btn{margin-top:.5rem;color:var(--cf-text)}
 .cf-sentinel{height:1px}
-.cf-foot{display:flex;align-items:center;gap:.5rem;min-height:2.5rem;padding:.25rem 1.25rem .75rem;color:var(--cf-muted);font-size:.8125rem;font-variant-numeric:tabular-nums}
+.cf-foot{display:flex;align-items:center;gap:.5rem;min-height:2.5rem;padding:.25rem 1.25rem .75rem;color:var(--cf-muted);font-size:.8125rem;font-variant-numeric:tabular-nums;border-top:1px solid var(--cf-line)}
 .cf-foot .cf-btn{height:1.625rem;padding:0 .5rem;font-size:.75rem;color:var(--cf-text)}
-.cf-viewer{position:absolute;inset:0;z-index:2;display:none;grid-template-columns:minmax(0,1fr) 18rem;grid-template-rows:auto minmax(0,1fr)}
+.cf-menu{position:absolute;z-index:6;min-width:12rem;max-width:18rem;padding:.25rem;border:1px solid var(--cf-line);border-radius:1rem;background:var(--cf-modal);color:var(--cf-text);box-shadow:var(--cf-shadow)}
+.cf-menuitem{display:flex;align-items:center;gap:.625rem;width:100%;height:2rem;padding:0 .625rem;border:0;border-radius:.625rem;background:transparent;font-size:.8125rem;text-align:start;cursor:pointer;white-space:nowrap}
+.cf-menuitem svg{flex:none;width:1rem;height:1rem;color:var(--cf-muted)}
+.cf-menuitem:hover,.cf-menuitem:focus-visible{background:var(--cf-hover)}
+.cf-menudanger,.cf-menudanger svg{color:var(--cf-danger-text)}
+.cf-viewer{position:absolute;inset:0;z-index:2;display:none;grid-template-columns:minmax(0,1fr) 19rem;grid-template-rows:auto minmax(0,1fr)}
 .cf-solo .cf-viewer{background:var(--cf-surface)}
 .cf-viewer.cf-open{display:grid}
 .cf-vbar{grid-column:1/-1;display:flex;align-items:center;gap:.125rem;min-width:0;padding:.75rem 1rem;border-bottom:1px solid var(--cf-line);overflow-x:auto;scrollbar-width:none}
 .cf-count{margin:0 .25rem;color:var(--cf-muted);font-variant-numeric:tabular-nums;white-space:nowrap}
 .cf-stage{position:relative;min-width:0;min-height:0;overflow:auto;display:flex;flex-direction:column}
-.cf-stage:focus{outline:none}
 .cf-stage.cf-loading>*{opacity:.6}
 .cf-pdf{flex:1;width:100%;min-height:20rem;border:0;background:var(--cf-soft)}
 .cf-media{max-width:100%;max-height:100%;margin:auto;padding:1rem}
@@ -533,22 +598,29 @@ img.cf-media{object-fit:contain}
 .cf-facts{display:grid;grid-template-columns:auto 1fr;gap:.375rem .75rem;margin:0}
 .cf-facts dt{color:var(--cf-muted)}
 .cf-facts dd{margin:0;overflow-wrap:anywhere;font-variant-numeric:tabular-nums}
+.cf-iddd{display:flex;align-items:center;gap:.25rem;min-width:0}
+.cf-id{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:.75rem}
 .cf-error{margin:0;padding:.5rem .75rem;border-radius:.5rem;color:var(--cf-danger-text);background:color-mix(in srgb,var(--cf-danger-text) 10%,transparent);font-size:.8125rem;overflow-wrap:anywhere}
-.cf-toast{position:absolute;left:50%;bottom:1rem;translate:-50% 0;z-index:3;max-width:calc(100% - 2rem);padding:.5rem .875rem;border-radius:.75rem;background:var(--cf-primary);color:var(--cf-on-primary);font-size:.8125rem;pointer-events:none;opacity:0;transition:opacity .15s}
+.cf-toast{position:absolute;left:50%;bottom:1rem;translate:-50% 0;z-index:7;max-width:calc(100% - 2rem);padding:.5rem .875rem;border-radius:999px;background:var(--cf-primary);color:var(--cf-on-primary);font-size:.8125rem;pointer-events:none;opacity:0;transition:opacity .15s}
 .cf-toast.cf-show{opacity:1}
 .cf-sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
-@media(prefers-reduced-motion:reduce){.cf-toast{transition:none}}
-@media(forced-colors:active){.cf-row,.cf-btn,.cf-tab,.cf-select,.cf-search{border:1px solid CanvasText}.cf-row[aria-pressed=true]{outline:2px solid Highlight}}
+@media(prefers-reduced-motion:reduce){.cf-toast,.cf-row,.cf-btn,.cf-icon,.cf-chip,.cf-tab{transition:none}}
+@media(forced-colors:active){.cf-row,.cf-btn,.cf-tab,.cf-select,.cf-search,.cf-chip{border:1px solid CanvasText}.cf-row.cf-picked,.cf-chip[aria-pressed=true]{outline:2px solid Highlight}}
 @container cf (max-width:760px){
 .cf-head{padding:.75rem .75rem .5rem}
-.cf-search{order:9;flex:1;width:auto;min-width:8rem}
+.cf-tools{padding:0 .75rem .5rem}
+.cf-kinds{padding:0 .75rem .5rem}
 .cf-scroll{padding:0 .5rem .75rem}
-.cf-row{padding:.5rem}
+.cf-colhead{display:none}
+.cf-row{grid-template-columns:minmax(0,1fr) 2rem;padding:0 .375rem}
+.cf-list[data-view=list] .cf-cell{display:none}
+.cf-list[data-view=list] .cf-subtext{display:inline}
+.cf-list[data-view=grid]{grid-template-columns:repeat(auto-fill,minmax(8.5rem,1fr));gap:.5rem}
 .cf-foot{padding:.25rem .75rem .75rem}
 .cf-viewer{grid-template-columns:minmax(0,1fr);grid-template-rows:auto minmax(10rem,1fr) auto}
 .cf-vbar{padding:.5rem}
 .cf-info{border-inline-start:0;border-top:1px solid var(--cf-line);padding:.75rem;max-height:16rem;gap:.75rem}
-.cf-tabs{order:0}.cf-close{order:1;margin-inline-start:auto}.cf-head>:not(.cf-tabs,.cf-close,.cf-search,.cf-spacer){order:2}.cf-spacer{display:none}
+.cf-tabs{order:0}.cf-close{order:1;margin-inline-start:auto}.cf-head>:not(.cf-tabs,.cf-close,.cf-spacer){order:2}.cf-spacer{display:none}
 .cf-textwrap{padding:.75rem}
 }
 """
@@ -603,7 +675,15 @@ LOADER_SCRIPT = r"""
       deleted_one: 'File deleted', deleted_many: '{n} files deleted', deleted_some: '{n} deleted, {failed} couldn’t be deleted', delete_failed_one: 'Couldn’t delete the file', delete_failed_many: 'Couldn’t delete the files',
       download_failed: 'Couldn’t download the file', copy_failed: 'Couldn’t copy', open_chat_to_attach: 'Open a chat to attach files', attach_failed: 'Couldn’t attach the file',
       preparing: 'Preparing {i} of {n}…', zip_stopped: 'Stopped at {mb} MB. Select fewer files.', zip_none: 'None of these files could be downloaded', zip_cancelled: 'Download cancelled',
-      saved_one: '{n} file saved', saved_other: '{n} files saved', skipped: ', {n} skipped'
+      saved_one: '{n} file saved', saved_other: '{n} files saved', skipped: ', {n} skipped',
+      all: 'All', view: 'View', view_list: 'List', view_grid: 'Grid', col_name: 'Name', col_kind: 'Kind', col_size: 'Size', col_date: 'Date',
+      kinds: 'Kinds of file', kind_count: '{label}, {n}', more_for: 'More for {name}', open: 'Open', copy_name: 'Copy name', name_copied: 'Name copied',
+      selected_n: '{n} selected', g_today: 'Today', g_yesterday: 'Yesterday', g_week: 'Previous 7 days', g_month: 'Previous 30 days', g_undated: 'No date',
+      f_kind: 'Kind', f_mime: 'Media type', f_ext: 'Extension', f_bytes: '{n} bytes', f_updated: 'Changed', f_from: 'Sent by', from_you: 'You', from_answer: 'An answer',
+      f_lines: 'Lines', f_words: 'Words', f_chars: 'Characters', f_rows: 'Rows', f_cols: 'Columns', f_dims: 'Dimensions', f_duration: 'Duration', f_id: 'File ID',
+      copy_id: 'Copy file ID', id_copied: 'File ID copied', chat_missing: 'That chat is no longer available',
+      rename_dots: 'A name needs more than dots.', delete_more: 'and {n} more', zip_many: 'A zip holds at most {n} files. Select fewer.',
+      keys: 'Arrow keys move, Enter opens, Space selects, Delete deletes, slash searches.'
     },
     fr: {
       files: 'Fichiers', close_files: 'Fermer les fichiers', files_to_show: 'Fichiers à afficher', this_chat: 'Cette conversation', my_files: 'Mes fichiers',
@@ -640,14 +720,23 @@ LOADER_SCRIPT = r"""
       deleted_one: 'Fichier supprimé', deleted_many: '{n} fichiers supprimés', deleted_some: '{n} supprimés, {failed} n’ont pas pu l’être', delete_failed_one: 'Impossible de supprimer le fichier', delete_failed_many: 'Impossible de supprimer les fichiers',
       download_failed: 'Impossible de télécharger le fichier', copy_failed: 'Copie impossible', open_chat_to_attach: 'Ouvrez une conversation pour joindre des fichiers', attach_failed: 'Impossible de joindre le fichier',
       preparing: 'Préparation {i} sur {n}…', zip_stopped: 'Arrêt à {mb} Mo. Sélectionnez moins de fichiers.', zip_none: 'Aucun de ces fichiers n’a pu être téléchargé', zip_cancelled: 'Téléchargement annulé',
-      saved_one: '{n} fichier enregistré', saved_other: '{n} fichiers enregistrés', skipped: ', {n} ignorés'
+      saved_one: '{n} fichier enregistré', saved_other: '{n} fichiers enregistrés', skipped: ', {n} ignorés',
+      all: 'Tous', view: 'Affichage', view_list: 'Liste', view_grid: 'Grille', col_name: 'Nom', col_kind: 'Type', col_size: 'Poids', col_date: 'Date',
+      kinds: 'Types de fichier', kind_count: '{label}, {n}', more_for: 'Plus d’actions pour {name}', open: 'Ouvrir', copy_name: 'Copier le nom', name_copied: 'Nom copié',
+      selected_n: '{n} sélectionnés', g_today: 'Aujourd’hui', g_yesterday: 'Hier', g_week: '7 derniers jours', g_month: '30 derniers jours', g_undated: 'Sans date',
+      f_kind: 'Type', f_mime: 'Type de média', f_ext: 'Extension', f_bytes: '{n} octets', f_updated: 'Modifié le', f_from: 'Envoyé par', from_you: 'Vous', from_answer: 'Une réponse',
+      f_lines: 'Lignes', f_words: 'Mots', f_chars: 'Caractères', f_rows: 'Lignes', f_cols: 'Colonnes', f_dims: 'Dimensions', f_duration: 'Durée', f_id: 'Identifiant',
+      copy_id: 'Copier l’identifiant', id_copied: 'Identifiant copié', chat_missing: 'Cette conversation n’est plus disponible',
+      rename_dots: 'Un nom ne peut pas être fait que de points.', delete_more: 'et {n} autres', zip_many: 'Une archive contient au plus {n} fichiers. Sélectionnez-en moins.',
+      keys: 'Les flèches déplacent, Entrée ouvre, Espace sélectionne, Suppr supprime, la barre oblique recherche.'
     }
   };
+  // Open WebUI writes the chosen language on <html lang> as soon as it changes; its saved setting is the fallback
   const language = () => {
     if (STRINGS[CONFIG.language]) return CONFIG.language;
-    let locale = '';
-    try { locale = localStorage.getItem('locale') || ''; } catch {}
-    locale = String(locale || document.documentElement.lang || navigator.language || 'en').toLowerCase();
+    let locale = document.documentElement.getAttribute('lang') || '';
+    if (!locale) { try { locale = localStorage.getItem('locale') || ''; } catch {} }
+    locale = String(locale || navigator.language || 'en').toLowerCase();
     return STRINGS[locale.slice(0, 2)] ? locale.slice(0, 2) : 'en';
   };
   let lang = 'en';
@@ -656,6 +745,33 @@ LOADER_SCRIPT = r"""
     return vars ? text.replace(/\{(\w+)\}/g, (whole, name) => name in vars ? vars[name] : whole) : text;
   };
   const tn = (key, n, vars) => t(key + (n === 1 ? '_one' : '_other'), {n, ...vars});
+
+  // Every piece of state that changes over time is a small machine: a table of the moves it may make, so a late
+  // answer or a second click can't leave it half in one state and half in another. The state is shown on <html>
+  // as data-cf-<name>, which also lets the browser tests read it.
+  function machine(name, initial, table, onEnter) {
+    let current = initial;
+    const attr = name ? 'cf' + name.charAt(0).toUpperCase() + name.slice(1) : '';
+    const write = () => { if (attr) try { document.documentElement.dataset[attr] = current; } catch {} };
+    write();
+    return {
+      get state() { return current; },
+      is: (...states) => states.includes(current),
+      send(event, data) {
+        const rule = table[current]?.[event] ?? table['*']?.[event];
+        if (rule === undefined) return false;
+        const next = typeof rule === 'function' ? rule(data, current) : rule;
+        if (!next) return false;
+        const from = current; current = next; write();
+        onEnter?.(next, from, event, data);
+        return true;
+      }
+    };
+  }
+  // Direction controls can make "invoice\u202Efdp.exe" read as "invoiceexe.pdf". They are dropped from every name,
+  // so what is shown, searched, renamed and saved is what the name really says.
+  const BIDI_RE = /[\u061C\u200E\u200F\u202A-\u202E\u2066-\u2069]/g;
+  const cleanName = name => String(name ?? '').replace(BIDI_RE, '');
 
   const icons = {
     files: 'M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z',
@@ -670,6 +786,12 @@ LOADER_SCRIPT = r"""
     external: 'M13.5 6H5.25A2.25 2.25 0 0 0 3 8.25v10.5A2.25 2.25 0 0 0 5.25 21h10.5A2.25 2.25 0 0 0 18 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25',
     pencil: 'm16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125',
     check: 'm6 12.5 4 4 8-9',
+    list: 'M8.25 6.75h12M8.25 12h12m-12 5.25h12M3.75 6.75h.007v.008H3.75V6.75Zm.375 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0ZM3.75 12h.007v.008H3.75V12Zm.375 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm-.375 5.25h.007v.008H3.75v-.008Zm.375 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Z',
+    grid: 'M3.75 6A2.25 2.25 0 0 1 6 3.75h2.25A2.25 2.25 0 0 1 10.5 6v2.25a2.25 2.25 0 0 1-2.25 2.25H6a2.25 2.25 0 0 1-2.25-2.25V6ZM3.75 15.75A2.25 2.25 0 0 1 6 13.5h2.25a2.25 2.25 0 0 1 2.25 2.25V18a2.25 2.25 0 0 1-2.25 2.25H6A2.25 2.25 0 0 1 3.75 18v-2.25ZM13.5 6a2.25 2.25 0 0 1 2.25-2.25H18A2.25 2.25 0 0 1 20.25 6v2.25A2.25 2.25 0 0 1 18 10.5h-2.25a2.25 2.25 0 0 1-2.25-2.25V6ZM13.5 15.75a2.25 2.25 0 0 1 2.25-2.25H18a2.25 2.25 0 0 1 2.25 2.25V18A2.25 2.25 0 0 1 18 20.25h-2.25A2.25 2.25 0 0 1 13.5 18v-2.25Z',
+    more: 'M6.75 12a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0ZM12.75 12a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0ZM18.75 12a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0Z',
+    eye: 'M2.036 12.322a1.012 1.012 0 0 1 0-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178ZM15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z',
+    search: 'm21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z',
+    hash: 'M5.25 8.25h15m-16.5 7.5h15m-1.8-13.5-3.9 19.5m-2.1-19.5-3.9 19.5',
     refresh: 'M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182m0-4.991v4.99',
     trash: 'm14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0'
   };
@@ -826,15 +948,16 @@ LOADER_SCRIPT = r"""
   const wanted = item => item.ref ? CONFIG.showReferences : includeImages() || classify(item) !== 'images';
 
   /* ---- collecting files ---- */
-  const makeItem = fields => ({fileId: null, ref: '', refId: '', url: '', name: '', contentType: '', bytes: 0, sized: false, created: 0, sent: 0, messageId: null, chatId: null, ownerId: '', status: '', error: '', missing: false, ...fields});
+  const makeItem = fields => ({fileId: null, ref: '', refId: '', url: '', name: '', contentType: '', bytes: 0, sized: false, created: 0, updated: 0, sent: 0, messageId: null, chatId: null, fromUser: false, ownerId: '', status: '', error: '', missing: false, facts: null, ...fields});
   function applyRecord(item, record) {
     if (!record || typeof record !== 'object') return;
     const meta = record.meta && typeof record.meta === 'object' ? record.meta : {};
     const data = record.data && typeof record.data === 'object' ? record.data : {};
-    item.name = meta.name || record.filename || item.name || '';
+    item.name = cleanName(meta.name || record.filename || item.name || '');
     if (meta.content_type) item.contentType = meta.content_type;
     if (typeof meta.size === 'number') { item.bytes = meta.size; item.sized = true; }
     if (record.created_at) item.created = record.created_at;
+    if (record.updated_at) item.updated = record.updated_at;
     if (typeof record.user_id === 'string') item.ownerId = record.user_id;
     if (typeof data.status === 'string') item.status = data.status;
     if (typeof data.error === 'string') item.error = data.error;
@@ -855,25 +978,25 @@ LOADER_SCRIPT = r"""
       if (!file || typeof file !== 'object') return;
       const type = String(file.type || '');
       if (['collection', 'note', 'chat', 'folder'].includes(type) || (type === 'file' && file.legacy && file.type === 'collection')) {
-        if (file.id) add(type + ':' + file.id, {...base, ref: type, refId: String(file.id), name: String(file.name || file.meta?.name || file.title || '')});
+        if (file.id) add(type + ':' + file.id, {...base, ref: type, refId: String(file.id), name: cleanName(file.name || file.meta?.name || file.title || '')});
         return;
       }
       if (type === 'web' || (type === 'url' && /^https?:/i.test(file.url || ''))) {
         for (const url of [file.url, ...(Array.isArray(file.data) ? file.data : [])]) {
-          if (typeof url === 'string' && /^https?:\/\//i.test(url)) add('web:' + url, {...base, ref: 'web', url, name: file.name && file.name !== url ? String(file.name) : url});
+          if (typeof url === 'string' && /^https?:\/\//i.test(url)) add('web:' + url, {...base, ref: 'web', url, name: cleanName(file.name && file.name !== url ? file.name : url)});
         }
         return;
       }
-      if (type === 'filesystem') { if (file.name) add('fs:' + file.name, {...base, ref: 'filesystem', name: String(file.name)}); return; }
+      if (type === 'filesystem') { if (file.name) add('fs:' + file.name, {...base, ref: 'filesystem', name: cleanName(file.name)}); return; }
       if (type === 'image') return;
       const record = file.file && typeof file.file === 'object' ? file.file : null;
       const url = typeof file.url === 'string' ? file.url : '';
       const id = record?.id || (UUID_RE.test(url) ? url : null) || fileIdOf(url) || (UUID_RE.test(file.id || '') ? file.id : null);
       if (!id) return;
-      const item = makeItem({...base, chatId, fileId: id, url: fileUrl(id), name: String(file.name || ''), contentType: String(file.content_type || file.meta?.content_type || ''), bytes: +file.size || 0, sized: typeof file.size === 'number'});
+      const item = makeItem({...base, chatId, fileId: id, url: fileUrl(id), name: cleanName(file.name || ''), contentType: String(file.content_type || file.meta?.content_type || ''), bytes: +file.size || 0, sized: typeof file.size === 'number'});
       if (seen.has(id)) return;
       if (record) applyRecord(item, record);
-      if (!item.name) item.name = String(file.name || '');
+      if (!item.name) item.name = cleanName(file.name || '');
       seen.set(id, item); items.push(item);
     };
     for (const message of messages) {
@@ -919,17 +1042,34 @@ LOADER_SCRIPT = r"""
   }
 
   /* ---- the panel ---- */
-  let dialog, head, tabChat, tabLibrary, search, kindSelect, sortSelect, refreshButton, soloClose, selectButton, zipButton, allButton, scroller, listEl, sentinel, foot, footText, footAction, live, toast;
+  let dialog, head, tools, tabChat, tabLibrary, search, kindBar, sortSelect, refreshButton, soloClose, selectButton, zipButton, allButton, deleteSelected, viewList, viewGrid;
+  let scroller, colHead, columnButtons = {}, listEl, sentinel, foot, footText, footAction, live, toast;
   let viewer, stage, info, countEl, chatButton, openTabButton, copyButton, attachButton, downloadButton, renameButton, deleteButton, prevButton, nextButton, confirmBox, renameBox;
   let me = null;
-  let scope = 'chat', items = [], shown = [], selecting = false, busy = false, opener = null, headerButton = null, collectController = null, zipController = null;
-  let chatLoading = false, chatError = '', chatLoadedAt = 0, kind = 'all', builtLang = '';
+  let scope = 'chat', items = [], shown = [], opener = null, headerButton = null, collectController = null, zipController = null;
+  let chatError = '', chatLoadedAt = 0, kind = 'all', builtLang = '', anchorItem = null, footStatus = '', footActionSpec = null;
   const order = {chat: 'oldest', library: 'newest'};
-  const freshLibrary = () => ({items: [], offset: 0, done: false, loading: false, error: null, controller: new AbortController()});
-  let library = freshLibrary();
   const selected = new Set();
   const chatExists = new Map();
-  const rows = new Map();
+  const rows = new Map(), mains = new WeakMap(), groupNodes = new Map();
+
+  // The chat's files: no chat open, being collected, there, or not to be had
+  const chatLoad = machine('chat', 'none', {'*': {none: 'none', load: 'loading'}, loading: {done: 'ready', fail: 'failed'}});
+  // My files arrive a page at a time; each refresh starts a new list with its own machine, and a late page for an old list is dropped
+  const freshLibrary = (initial = 'idle') => ({items: [], offset: 0, controller: new AbortController(),
+    state: machine('library', initial, {idle: {load: 'loading'}, more: {load: 'loading'}, failed: {load: 'loading'}, loading: {page: 'more', last: 'done', fail: 'failed'}})});
+  let library = freshLibrary();
+  // Picking files to zip or delete
+  const picking = machine('select', 'off', {off: {start: 'on'}, on: {stop: 'off'}});
+  const selecting = () => picking.is('on');
+  // One long job at a time: a zip being built, or files being deleted
+  const job = machine('job', 'idle', {idle: {zip: 'zipping', delete: 'deleting'}, zipping: {done: 'idle'}, deleting: {done: 'idle'}});
+  const busy = () => !job.is('idle');
+  // List or grid, remembered in this browser
+  const VIEW_KEY = 'owui-chat-files:view';
+  const savedView = (() => { try { const value = localStorage.getItem(VIEW_KEY); return value === 'grid' || value === 'list' ? value : ''; } catch { return ''; } })();
+  const layout = machine('view', savedView || (CONFIG.defaultView === 'grid' ? 'grid' : 'list'), {list: {grid: 'grid'}, grid: {list: 'list'}});
+  const pickable = item => !!item && !item.ref && !item.missing;
 
   function say(text, action) {
     footText.textContent = text;
@@ -943,11 +1083,12 @@ LOADER_SCRIPT = r"""
   }
   function build() {
     lang = builtLang = language();
+    rows.clear(); groupNodes.clear();
     dialog = el('div', 'cf-dialog'); dialog.id = 'owui-chat-files'; dialog.hidden = true; dialog.lang = lang;
     dialog.setAttribute('role', 'tabpanel'); dialog.setAttribute('aria-labelledby', 'owui-chat-files-tab');
     head = el('div', 'cf-head');
     const tabs = el('div', 'cf-tabs'); tabs.setAttribute('role', 'tablist'); tabs.setAttribute('aria-label', t('files_to_show'));
-    const tab = (label, value) => {
+    const scopeTab = (label, value) => {
       const node = el('button', 'cf-tab', label); node.type = 'button'; node.setAttribute('role', 'tab');
       node.id = 'cf-tab-' + value; node.setAttribute('aria-controls', 'cf-panel');
       node.addEventListener('click', () => setScope(value));
@@ -962,102 +1103,214 @@ LOADER_SCRIPT = r"""
       });
       tabs.append(node); return node;
     };
-    tabChat = tab(t('this_chat'), 'chat'); tabLibrary = tab(t('my_files'), 'library');
-    search = el('input', 'cf-search'); search.type = 'search'; search.placeholder = t('search');
-    search.setAttribute('aria-label', t('search_label')); search.title = t('search_label');
-    let searchTimer = 0;
-    search.addEventListener('input', () => { clearTimeout(searchTimer); searchTimer = setTimeout(render, 120); });
-    kindSelect = el('select', 'cf-select'); kindSelect.setAttribute('aria-label', t('kind'));
-    kindSelect.addEventListener('change', () => { kind = kindSelect.value; scroller.scrollTop = 0; render(); });
-    sortSelect = el('select', 'cf-select'); sortSelect.setAttribute('aria-label', t('sort'));
-    for (const value of ['newest', 'oldest', 'name', 'largest']) { const option = el('option', null, t('sort_' + value)); option.value = value; sortSelect.append(option); }
-    sortSelect.addEventListener('change', () => { order[scope] = sortSelect.value; scroller.scrollTop = 0; render(); });
+    tabChat = scopeTab(t('this_chat'), 'chat'); tabLibrary = scopeTab(t('my_files'), 'library');
+    const views = el('div', 'cf-seg'); views.setAttribute('role', 'group'); views.setAttribute('aria-label', t('view'));
+    viewList = iconButton(t('view_list'), 'list', () => setView('list'), 'cf-icon cf-segbtn');
+    viewGrid = iconButton(t('view_grid'), 'grid', () => setView('grid'), 'cf-icon cf-segbtn');
+    views.append(viewList, viewGrid);
     refreshButton = iconButton(t('refresh'), 'refresh', () => refresh());
-    selectButton = textButton(t('select'), () => setSelecting(!selecting));
-    allButton = textButton(t('select_all'), () => {
-      const pickable = shown.filter(item => !item.ref && !item.missing);
-      const all = pickable.every(item => selected.has(item));
-      for (const item of pickable) all ? selected.delete(item) : selected.add(item);
-      paintSelection();
-    });
+    selectButton = textButton(t('select'), () => setSelecting(!selecting()));
+    allButton = textButton(t('select_all'), () => selectAll());
     zipButton = textButton(t('download_all'), () => zipController ? zipController.abort() : downloadZip());
     zipButton.prepend(svg('download'));
-    const deleteSelected = textButton(t('delete'), () => deleteItems(shown.filter(item => selected.has(item) && deletable(item))));
+    deleteSelected = textButton(t('delete'), () => deleteItems(shown.filter(item => selected.has(item) && deletable(item))));
     deleteSelected.prepend(svg('trash')); deleteSelected.hidden = true; deleteSelected.classList.add('cf-delete-selected');
     soloClose = iconButton(t('close_files'), 'close', () => closeTab(), 'cf-icon cf-close'); soloClose.hidden = true;
-    head.append(tabs, el('span', 'cf-spacer'), search, kindSelect, sortSelect, refreshButton, selectButton, allButton, deleteSelected, zipButton, soloClose);
+    head.append(tabs, el('span', 'cf-spacer'), views, refreshButton, selectButton, allButton, deleteSelected, zipButton, soloClose);
+    tools = el('div', 'cf-tools');
+    const searchBox = el('label', 'cf-searchbox'); searchBox.append(svg('search'));
+    search = el('input', 'cf-search'); search.type = 'search'; search.placeholder = t('search'); search.maxLength = 200; search.spellcheck = false;
+    search.setAttribute('aria-label', t('search_label')); search.title = t('search_label');
+    searchBox.append(search);
+    let searchTimer = 0;
+    search.addEventListener('input', () => { clearTimeout(searchTimer); searchTimer = setTimeout(() => { scroller.scrollTop = 0; render(); }, 120); });
+    sortSelect = el('select', 'cf-select'); sortSelect.setAttribute('aria-label', t('sort'));
+    for (const value of ['newest', 'oldest', 'name', 'largest']) { const option = el('option', null, t('sort_' + value)); option.value = value; sortSelect.append(option); }
+    sortSelect.addEventListener('change', () => setOrder(sortSelect.value));
+    kindBar = el('div', 'cf-kinds'); kindBar.setAttribute('role', 'group'); kindBar.setAttribute('aria-label', t('kinds'));
+    tools.append(searchBox, sortSelect);
     const body = el('div', 'cf-body');
     scroller = el('div', 'cf-scroll'); scroller.id = 'cf-panel'; scroller.setAttribute('role', 'tabpanel');
-    listEl = el('ul', 'cf-list'); listEl.setAttribute('aria-label', t('list'));
-    listEl.addEventListener('keydown', moveFocus);
+    scroller.addEventListener('scroll', () => closeMenu(false), {passive: true});
+    colHead = buildColumns();
+    listEl = el('ul', 'cf-list'); listEl.setAttribute('aria-label', t('list')); listEl.setAttribute('aria-description', t('keys'));
+    listEl.addEventListener('keydown', listKeys);
+    // A button acts on Space when the key comes up; here Space picks the file instead
+    listEl.addEventListener('keyup', event => { if (event.key === ' ' && event.target.closest?.('.cf-main')) event.preventDefault(); });
     sentinel = el('div', 'cf-sentinel');
-    scroller.append(listEl, sentinel);
+    scroller.append(colHead, listEl, sentinel);
     foot = el('div', 'cf-foot');
     footText = el('span'); footAction = textButton('', () => {}); footAction.hidden = true;
     foot.append(footText, footAction);
     live = el('div', 'cf-sr'); live.setAttribute('aria-live', 'polite');
     toast = el('div', 'cf-toast'); toast.setAttribute('aria-hidden', 'true');
     body.append(scroller, foot, buildViewer(), toast, live);
-    dialog.append(head, body, buildConfirm(), buildRename());
+    dialog.append(head, tools, kindBar, body, buildConfirm(), buildRename());
     dialog.addEventListener('keydown', event => {
-      if (event.key !== 'Escape' || event.defaultPrevented || event.target.closest('dialog')) return;
-      if (viewer.classList.contains('cf-open')) { event.preventDefault(); closeViewer(); }
-      else if (selecting) { event.preventDefault(); setSelecting(false); }
+      if (event.defaultPrevented || event.target.closest('dialog')) return;
+      if (event.key === '/' && !event.ctrlKey && !event.metaKey && !event.altKey && !viewerOpen() && !event.target.closest('input,textarea,select,[contenteditable]')) { event.preventDefault(); search.focus(); search.select(); return; }
+      if (event.key !== 'Escape') return;
+      if (menuEl) { event.preventDefault(); closeMenu(); }
+      else if (viewerOpen()) { event.preventDefault(); closeViewer(); }
+      else if (event.target === search) { event.preventDefault(); if (search.value) { search.value = ''; render(); } else listEl.querySelector('.cf-main')?.focus(); }
+      else if (selecting()) { event.preventDefault(); setSelecting(false); }
       else if (dialog.classList.contains('cf-solo')) { event.preventDefault(); deactivate(); headerButton?.focus({preventScroll: true}); }
     });
     new IntersectionObserver(entries => {
-      if (entries.some(entry => entry.isIntersecting) && scope === 'library' && tabOpen) loadLibrary();
+      if (entries.some(entry => entry.isIntersecting) && scope === 'library' && isOpen()) loadLibrary();
     }, {root: scroller, rootMargin: '400px'}).observe(sentinel);
+    paintView();
     document.body.append(dialog);
   }
-  // Up and down arrows move between rows, as in a file manager
-  function moveFocus(event) {
-    if (!['ArrowDown', 'ArrowUp', 'Home', 'End'].includes(event.key) || !event.target.classList?.contains('cf-row')) return;
-    const all = [...listEl.querySelectorAll('.cf-row')];
-    const at = all.indexOf(event.target);
-    const next = {ArrowDown: all[at + 1], ArrowUp: all[at - 1], Home: all[0], End: all[all.length - 1]}[event.key];
-    if (!next) return;
-    event.preventDefault(); next.focus(); next.scrollIntoView({block: 'nearest'});
+  // Column titles over the list; each one that can order the files does so
+  function buildColumns() {
+    const row = el('div', 'cf-colhead');
+    const column = (key, label, next) => {
+      const button = el('button', 'cf-colbtn cf-col' + key); button.type = 'button';
+      button.append(el('span', null, label), el('span', 'cf-arrow'));
+      button.addEventListener('click', () => setOrder(next(order[scope])));
+      row.append(button); return button;
+    };
+    columnButtons = {
+      name: column('name', t('col_name'), () => 'name'),
+      kind: (() => { const span = el('span', 'cf-colbtn cf-colkind', t('col_kind')); row.append(span); return span; })(),
+      size: column('size', t('col_size'), () => 'largest'),
+      date: column('date', t('col_date'), now => now === 'newest' ? 'oldest' : 'newest')
+    };
+    row.append(el('span', 'cf-colmore'));
+    return row;
+  }
+  function paintColumns() {
+    const how = order[scope], on = {name: how === 'name', size: how === 'largest', date: how === 'newest' || how === 'oldest'};
+    for (const key of ['name', 'size', 'date']) {
+      const button = columnButtons[key];
+      button.setAttribute('aria-pressed', String(on[key]));
+      button.lastChild.textContent = on[key] ? (key === 'date' && how === 'oldest' ? '↑' : key === 'name' ? '↑' : '↓') : '';
+    }
+  }
+  function setOrder(value) {
+    if (!['newest', 'oldest', 'name', 'largest'].includes(value)) return;
+    order[scope] = value; scroller.scrollTop = 0; render();
+  }
+  function setView(value) {
+    if (layout.send(value)) { try { localStorage.setItem(VIEW_KEY, value); } catch {} }
+    paintView(); render();
+    (rows.get(shown[0])?.main)?.scrollIntoView?.({block: 'nearest'});
+  }
+  function paintView() {
+    listEl.dataset.view = layout.state;
+    viewList.setAttribute('aria-pressed', String(layout.is('list'))); viewGrid.setAttribute('aria-pressed', String(layout.is('grid')));
+    colHead.hidden = layout.is('grid');
+  }
+  // Grid columns, read from where the cards actually sit
+  function columns() {
+    if (!layout.is('grid')) return 1;
+    const cards = listEl.querySelectorAll('.cf-item');
+    if (cards.length < 2) return 1;
+    const top = cards[0].offsetTop; let n = 0;
+    for (const card of cards) { if (card.offsetTop !== top) break; n++; }
+    return Math.max(1, n);
+  }
+  // Arrows move as in a file manager (in the grid, in two directions); Space picks, Delete deletes, the menu key opens the menu
+  function listKeys(event) {
+    const main = event.target.closest?.('.cf-main'), entry = main && mains.get(main);
+    if (!entry || event.target !== main || event.altKey) return;
+    const all = [...listEl.querySelectorAll('.cf-main')], at = all.indexOf(main);
+    const rtl = getComputedStyle(listEl).direction === 'rtl', mod = event.ctrlKey || event.metaKey;
+    let to = null;
+    switch (event.key) {
+      case 'ArrowDown': to = at + columns(); break;
+      case 'ArrowUp': to = at - columns(); break;
+      case 'ArrowRight': if (layout.is('grid')) to = at + (rtl ? -1 : 1); break;
+      case 'ArrowLeft': if (layout.is('grid')) to = at + (rtl ? 1 : -1); break;
+      case 'Home': to = 0; break;
+      case 'End': to = all.length - 1; break;
+      case ' ': if (!mod) { event.preventDefault(); toggle(entry.item, event.shiftKey); } return;
+      case 'Delete': case 'Backspace': {
+        const list = selecting() && selected.size ? shown.filter(item => selected.has(item)) : [entry.item];
+        if (list.some(deletable)) { event.preventDefault(); deleteItems(list); }
+        return;
+      }
+      case 'ContextMenu': event.preventDefault(); openRowMenu(entry, entry.more); return;
+      case 'F10': if (event.shiftKey) { event.preventDefault(); openRowMenu(entry, entry.more); } return;
+      case 'a': case 'A': if (mod) { event.preventDefault(); selectAll(); } return;
+      default: return;
+    }
+    if (to === null) return;
+    event.preventDefault();
+    const next = all[Math.max(0, Math.min(all.length - 1, to))];
+    if (next && next !== main) { next.focus(); next.scrollIntoView({block: 'nearest'}); }
   }
   function setSelecting(on) {
-    selecting = on; if (!on) selected.clear();
-    listEl.classList.toggle('cf-selecting', on);
-    selectButton.textContent = on ? t('cancel') : t('select');
-    selectButton.setAttribute('aria-pressed', String(on));
+    picking.send(on ? 'start' : 'stop');
+    if (!on) { selected.clear(); anchorItem = null; }
+    listEl.classList.toggle('cf-selecting', selecting());
+    selectButton.textContent = selecting() ? t('cancel') : t('select');
+    selectButton.setAttribute('aria-pressed', String(selecting()));
+    paintSelection();
+  }
+  // Click picks one; Shift picks everything from the last one picked
+  function toggle(item, range) {
+    if (!pickable(item)) return;
+    if (!selecting()) setSelecting(true);
+    if (range && anchorItem && shown.includes(anchorItem)) {
+      const a = shown.indexOf(anchorItem), b = shown.indexOf(item);
+      for (const each of shown.slice(Math.min(a, b), Math.max(a, b) + 1)) if (pickable(each)) selected.add(each);
+    } else { selected.has(item) ? selected.delete(item) : selected.add(item); anchorItem = item; }
+    paintSelection();
+  }
+  function selectAll() {
+    const choosable = shown.filter(pickable);
+    if (!choosable.length) return;
+    if (!selecting()) setSelecting(true);
+    const all = choosable.every(item => selected.has(item));
+    for (const item of choosable) all ? selected.delete(item) : selected.add(item);
     paintSelection();
   }
   function paintSelection() {
-    const pickable = shown.filter(item => !item.ref && !item.missing);
-    allButton.hidden = !selecting;
-    allButton.textContent = pickable.length && pickable.every(item => selected.has(item)) ? t('select_none') : t('select_all');
+    const choosable = shown.filter(pickable), on = selecting();
+    allButton.hidden = !on;
+    allButton.textContent = choosable.length && choosable.every(item => selected.has(item)) ? t('select_none') : t('select_all');
     for (const [item, entry] of rows) {
       if (!entry.li.isConnected) continue;
-      if (selecting && !item.ref && !item.missing) entry.row.setAttribute('aria-pressed', String(selected.has(item))); else entry.row.removeAttribute('aria-pressed');
+      const picked = on && pickable(item) && selected.has(item);
+      if (on && pickable(item)) entry.main.setAttribute('aria-pressed', String(picked)); else entry.main.removeAttribute('aria-pressed');
+      entry.row.classList.toggle('cf-picked', picked);
     }
-    const picked = pickable.filter(item => selected.has(item)).length;
-    zipButton.lastChild.textContent = zipController ? t('cancel') : selecting ? (picked ? t('download_n', {n: picked}) : t('download')) : t('download_all');
-    zipButton.disabled = zipController ? false : busy || !pickable.length || (selecting && !picked);
-    const deleteSelected = head.querySelector('.cf-delete-selected');
+    const picked = choosable.filter(item => selected.has(item)).length;
+    zipButton.lastChild.textContent = zipController ? t('cancel') : on ? (picked ? t('download_n', {n: picked}) : t('download')) : t('download_all');
+    zipButton.disabled = zipController ? false : busy() || !choosable.length || (on && !picked);
     const removable = shown.filter(item => selected.has(item) && deletable(item)).length;
-    deleteSelected.hidden = !selecting || !shown.some(deletable);
+    deleteSelected.hidden = !on || !shown.some(deletable);
     deleteSelected.lastChild.textContent = removable ? t('delete_n', {n: removable}) : t('delete');
-    deleteSelected.disabled = busy || !removable;
+    deleteSelected.disabled = busy() || !removable;
+    paintFoot();
   }
-  function setScope(value) {
+  // The footer counts what is shown, or what is picked; while a zip is built it shows its progress instead
+  function paintFoot() {
+    if (job.is('zipping')) return;
+    const picked = selecting() ? shown.filter(item => pickable(item) && selected.has(item)) : [];
+    if (picked.length) { const bytes = picked.reduce((sum, item) => sum + (item.bytes || 0), 0); say(t('selected_n', {n: picked.length}) + (bytes ? ' · ' + formatBytes(bytes) : '')); }
+    else say(footStatus, footActionSpec);
+  }
+  function setScope(value, load = true) {
     scope = value;
     tabChat.setAttribute('aria-selected', String(value === 'chat')); tabLibrary.setAttribute('aria-selected', String(value === 'library'));
     tabChat.tabIndex = value === 'chat' ? 0 : -1; tabLibrary.tabIndex = value === 'library' ? 0 : -1;
     scroller.setAttribute('aria-labelledby', 'cf-tab-' + value);
     if (kind === 'references' && value === 'library') kind = 'all';
     setSelecting(false); scroller.scrollTop = 0;
-    if (value === 'chat') loadChat(); else { render(); if (!library.items.length && !library.done) loadLibrary(); }
+    if (!load) render();
+    else if (value === 'chat') loadChat();
+    else { render(); if (!library.items.length && !library.state.is('done', 'loading')) loadLibrary(); }
   }
   async function loadChat(quiet) {
     collectController?.abort();
     const controller = collectController = new AbortController();
     const chatId = chatIdFromPath();
     if (!quiet || !chatId) items = [];
-    chatError = ''; chatLoading = !!chatId;
+    chatError = '';
+    chatLoad.send(chatId ? 'load' : 'none');
     if (scope === 'chat') render();
     if (!chatId) return;
     try {
@@ -1069,40 +1322,41 @@ LOADER_SCRIPT = r"""
         found = found.map(item => { const old = known.get(keyOf(item)); return old ? Object.assign(old, {missing: item.missing, status: item.status || old.status}) : item; });
       }
       items = found;
+      chatLoad.send('done');
     } catch (error) {
       if (controller.signal.aborted) return;
       if (!quiet) items = [];
       chatError = error.status === 401 || error.status === 403 ? t('err_access') : error.status === 404 ? t('err_unsaved') : t('err_generic');
+      chatLoad.send('fail');
     }
-    chatLoading = false; chatLoadedAt = Date.now();
+    chatLoadedAt = Date.now();
     if (scope === 'chat') render();
   }
   const keyOf = item => item.fileId || item.ref + ':' + (item.refId || item.url || item.name);
   async function loadLibrary() {
     const lib = library;
-    if (lib.loading || lib.done || !tabOpen) return;
-    lib.loading = true; lib.error = null; if (scope === 'library') render();
+    if (!isOpen() || !lib.state.send('load')) return;
+    if (scope === 'library') render();
     try {
       const page = await api('/api/v1/files/user/search?filename=*&content=false&skip=' + lib.offset + '&limit=' + PAGE_SIZE, lib.controller.signal);
       if (library !== lib) return;
       const list = Array.isArray(page) ? page : [];
-      library.offset += list.length;
-      const known = new Set(library.items.map(item => item.fileId));
+      lib.offset += list.length;
+      const known = new Set(lib.items.map(item => item.fileId));
       for (const record of list) {
         if (!record?.id || known.has(record.id)) continue;
         const item = makeItem({fileId: record.id, url: fileUrl(record.id)});
         applyRecord(item, record);
         records.set(record.id, Promise.resolve(record));
-        library.items.push(item);
+        lib.items.push(item); known.add(record.id);
       }
-      if (list.length < PAGE_SIZE) library.done = true;
+      lib.state.send(list.length < PAGE_SIZE ? 'last' : 'page');
     } catch (error) {
       if (library !== lib) return;
-      library.error = error;
+      lib.state.send('fail');
     }
-    library.loading = false;
     if (scope === 'library') render();
-    if (tabOpen && scope === 'library' && !library.done && !library.error && scroller.scrollHeight <= scroller.clientHeight + 400) loadLibrary();
+    if (isOpen() && scope === 'library' && lib.state.is('more') && scroller.scrollHeight <= scroller.clientHeight + 400) loadLibrary();
   }
   function refresh() {
     if (scope === 'chat') { records.clear(); loadChat(true); return; }
@@ -1126,85 +1380,144 @@ LOADER_SCRIPT = r"""
     else sorted.sort((a, b) => how === 'oldest' ? dateOf(a) - dateOf(b) : dateOf(b) - dateOf(a));
     return sorted;
   }
+  // My files, ordered by date, fall into Today, Yesterday, the last week and month, then months
+  const grouped = () => scope === 'library' && (order.library === 'newest' || order.library === 'oldest');
+  function groupOf(item) {
+    const ms = dateOf(item);
+    if (!ms) return t('g_undated');
+    const now = new Date(), day = 86400000, start = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+    if (ms >= start) return t('g_today');
+    if (ms >= start - day) return t('g_yesterday');
+    if (ms >= start - 7 * day) return t('g_week');
+    if (ms >= start - 30 * day) return t('g_month');
+    try { return new Date(ms).toLocaleDateString(lang, {month: 'long', year: 'numeric'}); } catch { return t('g_undated'); }
+  }
+  function groupNode(label) {
+    let node = groupNodes.get(label);
+    if (!node) { node = el('li', 'cf-group', label); node.dir = 'auto'; groupNodes.set(label, node); }
+    return node;
+  }
   const statusOf = item => item.missing ? 'missing' : item.status === 'failed' ? 'failed' : item.status === 'pending' || item.status === 'processing' ? 'processing' : '';
+  // Pictures of images, small ones only, in the list's badge and the grid's card. An <img> never runs what it loads.
+  const RASTER = new Set(['png', 'jpg', 'jpeg', 'gif', 'webp', 'bmp', 'avif', 'ico']);
+  const THUMB_LIMIT = 8388608;
+  const thumbable = item => CONFIG.thumbnails && pickable(item) && classify(item) === 'images' && !(item.sized && item.bytes > THUMB_LIMIT)
+    && (RASTER.has(extOf(item.name)) || /^image\/(png|jpe?g|gif|webp|bmp|avif)$/.test(String(item.contentType).toLowerCase()));
+  function paintThumb(entry) {
+    const want = thumbable(entry.item) && !entry.thumbFailed;
+    if (want && !entry.img) {
+      const img = el('img', 'cf-thumbimg'); img.alt = ''; img.loading = 'lazy'; img.decoding = 'async'; img.draggable = false;
+      img.addEventListener('load', () => entry.thumb.classList.add('cf-hasimg'), {once: true});
+      img.addEventListener('error', () => { entry.thumbFailed = true; img.remove(); entry.img = null; entry.thumb.classList.remove('cf-hasimg'); }, {once: true});
+      img.src = entry.item.url; entry.thumb.append(img); entry.img = img;
+    } else if (!want && entry.img) { entry.img.remove(); entry.img = null; entry.thumb.classList.remove('cf-hasimg'); }
+  }
   function rowFor(item) {
     let entry = rows.get(item);
     if (entry) return entry;
-    const li = el('li');
-    const row = el('button', 'cf-row'); row.type = 'button';
-    const badge = el('span', 'cf-badge');
-    const text = el('span', 'cf-text');
-    const name = nameSpan('cf-name');
-    const sub = el('span', 'cf-sub');
-    text.append(name, sub);
+    const li = el('li', 'cf-item');
+    const row = el('div', 'cf-row');
+    const main = el('button', 'cf-main'); main.type = 'button';
     const check = el('span', 'cf-check'); check.append(svg('check'));
-    row.append(check, badge, text);
+    const thumb = el('span', 'cf-thumb'), badge = el('span', 'cf-badge'); thumb.append(badge);
+    const text = el('span', 'cf-text'), name = nameSpan('cf-name'), sub = el('span', 'cf-sub'), subText = el('span', 'cf-subtext');
+    sub.append(subText); text.append(name, sub);
+    main.append(check, thumb, text);
+    // The row's label already says all of this, so the columns are for the eye only
+    const cells = ['kind', 'size', 'date'].map(key => { const cell = el('span', 'cf-cell cf-' + key + 'cell'); cell.setAttribute('aria-hidden', 'true'); return cell; });
+    const more = el('button', 'cf-icon cf-more'); more.type = 'button'; more.tabIndex = -1; more.setAttribute('aria-haspopup', 'menu'); more.setAttribute('aria-expanded', 'false'); more.append(svg('more'));
+    row.append(main, ...cells, more);
     li.append(row);
-    entry = {item, li, row, badge, name, sub, index: 0};
-    row.addEventListener('click', () => {
-      if (selecting && !item.ref && !item.missing) { selected.has(item) ? selected.delete(item) : selected.add(item); paintSelection(); }
-      else if (!selecting) openViewer(entry.index);
+    entry = {item, li, row, main, thumb, badge, name, sub, subText, kindCell: cells[0], sizeCell: cells[1], dateCell: cells[2], more, img: null, thumbFailed: false, index: 0};
+    main.addEventListener('click', event => {
+      if (pickable(item) && (selecting() || event.ctrlKey || event.metaKey || (event.shiftKey && anchorItem))) toggle(item, event.shiftKey);
+      else if (!selecting()) openViewer(entry.index);
     });
+    more.addEventListener('click', event => { event.stopPropagation(); openRowMenu(entry, more); });
+    row.addEventListener('contextmenu', event => { event.preventDefault(); openRowMenu(entry, more, {x: event.clientX, y: event.clientY}); });
+    mains.set(main, entry);
     rows.set(item, entry);
     return entry;
   }
   function paintRow(entry) {
     const item = entry.item, badge = badgeOf(item), state = statusOf(item);
-    entry.badge.textContent = badge.text; entry.badge.dataset.tone = badge.tone;
+    entry.badge.textContent = badge.text; entry.thumb.dataset.tone = badge.tone;
     entry.name.textContent = item.name || item.url || t('list');
     entry.name.title = item.name || item.url || '';
-    const parts = [item.ref ? t('ref_' + item.ref) : t('kind_' + classify(item))];
-    if (!item.ref && item.sized) parts.push(formatBytes(item.bytes));
+    const kindText = item.ref ? t('ref_' + item.ref) : t('kind_' + classify(item));
+    const size = !item.ref && item.sized ? formatBytes(item.bytes) : '';
     const when = formatDate(item.created || item.sent);
-    if (when) parts.push(when);
-    entry.sub.replaceChildren(document.createTextNode(parts.join(' · ')));
+    const parts = [kindText, size, when].filter(Boolean);
+    entry.subText.textContent = parts.join(' · ');
+    entry.sub.querySelector('.cf-flag')?.remove();
     if (state) { const flag = el('span', 'cf-flag', t('st_' + state)); flag.dataset.state = state; entry.sub.append(flag); }
+    entry.kindCell.textContent = kindText; entry.sizeCell.textContent = size || '–'; entry.dateCell.textContent = when;
     entry.row.classList.toggle('cf-gone', item.missing);
-    entry.row.setAttribute('aria-label', [item.name || item.url, ...parts, state ? t('st_' + state) : ''].filter(Boolean).join(', '));
+    entry.main.setAttribute('aria-label', [item.name || item.url, ...parts, state ? t('st_' + state) : ''].filter(Boolean).join(', '));
+    setLabel(entry.more, t('more_for', {name: item.name || item.url || ''}));
+    paintThumb(entry);
   }
   function forgetRows() {
     const alive = new Set([...items, ...library.items]);
     for (const item of rows.keys()) if (!alive.has(item)) rows.delete(item);
   }
+  // A chip per kind there is, with how many; the one chosen stays even when nothing of it is left
   function fillKinds(list) {
-    const present = new Set(list.map(classify));
-    const kinds = ['all', 'documents', 'sheets', 'slides', 'code', 'audio', 'video', 'images', 'archives', 'other', 'references'].filter(value => value === 'all' || present.has(value) || value === kind);
-    const signature = kinds.join();
-    if (kindSelect.dataset.kinds !== signature) {
-      kindSelect.replaceChildren(...kinds.map(value => { const option = el('option', null, t('kind_' + value)); option.value = value; return option; }));
-      kindSelect.dataset.kinds = signature;
-    }
-    if (kindSelect.value !== kind) kindSelect.value = kind;
+    const counts = new Map();
+    for (const item of list) { const value = classify(item); counts.set(value, (counts.get(value) || 0) + 1); }
+    const kinds = ['all', 'documents', 'sheets', 'slides', 'code', 'audio', 'video', 'images', 'archives', 'other', 'references'].filter(value => value === 'all' || counts.has(value) || value === kind);
+    const signature = kinds.map(value => value + ':' + (value === 'all' ? list.length : counts.get(value) || 0)).join() + '|' + kind + '|' + lang;
+    kindBar.hidden = kinds.length < 3 && kind === 'all';
+    if (kindBar.dataset.kinds === signature) return;
+    const focused = kindBar.contains(document.activeElement) ? document.activeElement.dataset.kind : null;
+    kindBar.dataset.kinds = signature;
+    kindBar.replaceChildren(...kinds.map(value => {
+      const n = value === 'all' ? list.length : counts.get(value) || 0, label = t(value === 'all' ? 'all' : 'kind_' + value);
+      const chip = el('button', 'cf-chip'); chip.type = 'button'; chip.dataset.kind = value;
+      chip.setAttribute('aria-pressed', String(value === kind));
+      chip.setAttribute('aria-label', t('kind_count', {label, n}));
+      chip.append(el('span', null, label), el('span', 'cf-chipcount', String(n)));
+      chip.addEventListener('click', () => { kind = value; scroller.scrollTop = 0; render(); });
+      return chip;
+    }));
+    if (focused) kindBar.querySelector(`[data-kind="${focused}"]`)?.focus({preventScroll: true});
   }
   function render() {
+    if (!dialog) return;
     const query = search.value.trim().toLocaleLowerCase(lang);
     const list = current();
     fillKinds(list);
     shown = sortList(list.filter(item => matches(item, query)));
     forgetRows();
-    let node = listEl.firstElementChild;
+    const want = [], groups = grouped();
+    let lastGroup = null;
     shown.forEach((item, index) => {
+      if (groups) { const label = groupOf(item); if (label !== lastGroup) { want.push(groupNode(label)); lastGroup = label; } }
       const entry = rowFor(item);
       entry.index = index;
       paintRow(entry);
-      if (node === entry.li) node = node.nextElementSibling; else listEl.insertBefore(entry.li, node);
+      want.push(entry.li);
     });
-    while (node) { const next = node.nextElementSibling; node.remove(); node = next; }
-    const loading = scope === 'library' ? library.loading : chatLoading;
+    const loading = scope === 'library' ? library.state.is('loading') : chatLoad.is('loading');
     const filtered = !!query || kind !== 'all';
     if (!shown.length && !loading) {
       const empty = el('li', 'cf-empty');
       const words = (title, hint) => empty.append(el('strong', null, t(title)), el('span', null, hint));
       if (scope === 'chat' && !chatIdFromPath()) words('no_chat', t('no_chat_hint'));
-      else if (scope === 'chat' && chatError) { words('chat_failed', chatError); empty.append(textButton(t('retry'), () => loadChat())); }
-      else if (scope === 'library' && library.error) { words('library_failed', t('library_failed_hint')); empty.append(textButton(t('retry'), () => loadLibrary())); }
+      else if (scope === 'chat' && chatLoad.is('failed')) { words('chat_failed', chatError); empty.append(textButton(t('retry'), () => loadChat())); }
+      else if (scope === 'library' && library.state.is('failed')) { words('library_failed', t('library_failed_hint')); empty.append(textButton(t('retry'), () => loadLibrary())); }
       else if (filtered) words('none_match', t('none_match_hint'));
       else if (scope === 'chat') words('chat_empty', t('chat_empty_hint'));
       else words('library_empty', t('library_empty_hint'));
-      listEl.append(empty);
+      want.push(empty);
     }
+    // Put the rows in place, moving as few as possible, so focus and scrolling stay where they are
+    let node = listEl.firstElementChild;
+    for (const wanted of want) { if (node === wanted) node = node.nextElementSibling; else listEl.insertBefore(wanted, node); }
+    while (node) { const next = node.nextElementSibling; node.remove(); node = next; }
+    colHead.hidden = layout.is('grid') || !shown.length;
     const filesIn = list.filter(item => !item.ref), refs = list.length - filesIn.length;
-    const total = filesIn.length, more = scope === 'library' && !library.done;
+    const total = filesIn.length, more = scope === 'library' && !library.state.is('done');
     const bytes = filesIn.reduce((sum, item) => sum + (item.missing ? 0 : item.bytes || 0), 0);
     let status = '', action = null;
     if (loading && !list.length) status = scope === 'chat' ? t('collecting') : t('loading');
@@ -1214,15 +1527,86 @@ LOADER_SCRIPT = r"""
       const words = [counted, refs ? tn('refs', refs) : ''].filter(Boolean).join(' · ');
       status = (filtered ? t('of', {shown: shown.length, total: words}) : words) + (more ? t('so_far') : '');
     }
-    if (!loading && scope === 'library' && library.error && list.length) action = {label: t('retry'), run: () => loadLibrary()};
-    say(status, action);
+    if (!loading && scope === 'library' && library.state.is('failed') && list.length) action = {label: t('retry'), run: () => loadLibrary()};
+    footStatus = status; footActionSpec = action;
     if (sortSelect.value !== order[scope]) sortSelect.value = order[scope];
+    paintColumns();
     refreshButton.disabled = loading || (scope === 'chat' && !chatIdFromPath());
+    if (menuEl && !shown.includes(menuEl.cfItem)) closeMenu(false);
     paintSelection();
+  }
+
+  /* ---- a file's menu: the ⋯ button, a right click, or the menu key ---- */
+  let menuEl = null;
+  const outside = event => { if (menuEl && !menuEl.contains(event.target) && event.target !== menuEl.cfAnchor && !menuEl.cfAnchor?.contains(event.target)) closeMenu(false); };
+  function closeMenu(focusBack = true) {
+    if (!menuEl) return;
+    const box = menuEl; menuEl = null;
+    box.cfAnchor?.setAttribute('aria-expanded', 'false');
+    box.remove();
+    document.removeEventListener('pointerdown', outside, true);
+    if (focusBack && box.cfBack?.isConnected) box.cfBack.focus({preventScroll: true});
+  }
+  function openRowMenu(entry, anchor, point, refresh = false) {
+    const item = entry.item;
+    if (!refresh && menuEl?.cfItem === item && menuEl.cfAnchor === anchor && !point) { closeMenu(); return; }
+    const keepFocus = refresh && menuEl ? [...menuEl.querySelectorAll('.cf-menuitem')].indexOf(document.activeElement) : 0;
+    closeMenu(false);
+    if (!dialog || !entry.li.isConnected) return;
+    const box = el('div', 'cf-menu'); box.setAttribute('role', 'menu'); box.setAttribute('aria-label', item.name || item.url || '');
+    const add = (label, icon, run, danger) => {
+      const button = el('button', 'cf-menuitem' + (danger ? ' cf-menudanger' : '')); button.type = 'button';
+      button.setAttribute('role', 'menuitem'); button.tabIndex = -1;
+      button.append(svg(icon), el('span', null, label));
+      button.addEventListener('click', () => { closeMenu(false); run(); });
+      box.append(button);
+    };
+    const file = pickable(item);
+    add(t(item.ref ? 'open_ref' : 'open'), 'eye', () => openViewer(entry.index));
+    if (file) add(t('download'), 'download', () => downloadOne(item));
+    if (file && composer()) add(t('attach'), 'attach', () => attachItem(item));
+    if (item.chatId && (scope !== 'chat' || item.messageId)) add(t(item.chatId === chatIdFromPath() ? 'show_in_chat' : 'open_in_chat'), 'chat', () => goToChat(item));
+    add(t('copy_name'), 'copy', () => copyToClipboard(item.name || item.url || '', t('name_copied')));
+    if (renamable(item)) add(t('rename'), 'pencil', () => renameItem(item));
+    if (deletable(item)) add(t('delete'), 'trash', () => deleteItems([item]), true);
+    box.cfItem = item; box.cfAnchor = anchor; box.cfBack = entry.main;
+    box.addEventListener('keydown', event => {
+      const all = [...box.querySelectorAll('.cf-menuitem')], at = all.indexOf(document.activeElement);
+      const go = {ArrowDown: all[(at + 1) % all.length], ArrowUp: all[(at - 1 + all.length) % all.length], Home: all[0], End: all[all.length - 1]}[event.key];
+      if (go) { event.preventDefault(); go.focus(); return; }
+      if (event.key === 'Escape') { event.preventDefault(); event.stopPropagation(); closeMenu(); }
+      else if (event.key === 'Tab') { event.preventDefault(); closeMenu(); }
+    });
+    dialog.append(box); menuEl = box;
+    anchor.setAttribute('aria-expanded', 'true');
+    // By the button, or where the pointer was, and always inside the panel
+    const frame = dialog.getBoundingClientRect(), size = box.getBoundingClientRect(), near = anchor.getBoundingClientRect();
+    const from = point || {x: near.right - size.width, y: near.bottom + 4};
+    const left = Math.max(8, Math.min(from.x - frame.left, frame.width - size.width - 8));
+    let top = from.y - frame.top;
+    if (top + size.height > frame.height - 8) top = Math.max(8, (point ? point.y : near.top) - frame.top - size.height - 4);
+    box.style.left = Math.round(left) + 'px'; box.style.top = Math.round(top) + 'px';
+    const choices = box.querySelectorAll('.cf-menuitem');
+    (choices[Math.max(0, Math.min(choices.length - 1, keepFocus))] || choices[0])?.focus({preventScroll: true});
+    setTimeout(() => { if (menuEl === box) document.addEventListener('pointerdown', outside, true); });
+    // Rename and delete depend on who owns the file, which a chat doesn't always say: ask, then offer them
+    if (file && !item.ownerId) recordOf(item.fileId).then(record => {
+      applyRecord(item, record);
+      if (menuEl === box && (renamable(item) || deletable(item))) openRowMenu(entry, anchor, point, true);
+    }).catch(() => {});
   }
 
   /* ---- preview ---- */
   let index = 0, viewItem = null, viewController = null, objectUrls = [], returnRow = null, viewText = '';
+  // The preview: closed, loading a file, showing it, or unable to
+  const preview = machine('preview', 'closed', {'*': {close: 'closed'}, closed: {open: 'loading'}, loading: {open: 'loading', ready: 'ready', fail: 'failed'}, ready: {open: 'loading'}, failed: {open: 'loading'}}, next => {
+    if (!viewer) return;
+    const open = next !== 'closed';
+    viewer.classList.toggle('cf-open', open); dialog.classList.toggle('cf-viewing', open);
+    head.inert = tools.inert = kindBar.inert = scroller.inert = open;
+    stage.classList.toggle('cf-loading', next === 'loading');
+  });
+  const viewerOpen = () => !preview.is('closed');
   function buildViewer() {
     viewer = el('div', 'cf-viewer'); viewer.setAttribute('role', 'group'); viewer.setAttribute('aria-roledescription', t('viewer')); viewer.setAttribute('aria-label', t('viewer'));
     const bar = el('div', 'cf-vbar');
@@ -1249,21 +1633,20 @@ LOADER_SCRIPT = r"""
     return viewer;
   }
   function openViewer(at) {
-    returnRow = rows.get(shown[at])?.row || null;
-    viewer.classList.add('cf-open'); dialog.classList.add('cf-viewing');
-    head.inert = scroller.inert = true;
+    if (!shown[at]) return;
+    closeMenu(false);
+    returnRow = rows.get(shown[at])?.main || null;
     show(at);
     viewer.querySelector('.cf-vbar .cf-icon').focus();
   }
   function releaseUrls() { for (const url of objectUrls) URL.revokeObjectURL(url); objectUrls = []; }
   function closeViewer(silent) {
-    if (!viewer.classList.contains('cf-open')) return;
+    if (!viewerOpen()) return;
     viewController?.abort(); releaseUrls();
-    viewer.classList.remove('cf-open'); dialog.classList.remove('cf-viewing');
+    preview.send('close');
     stage.replaceChildren(); info.replaceChildren();
-    head.inert = scroller.inert = false;
     const item = viewItem; viewItem = null;
-    if (!silent) (rows.get(item)?.li.isConnected ? rows.get(item).row : returnRow)?.focus();
+    if (!silent) (rows.get(item)?.li.isConnected ? rows.get(item).main : returnRow)?.focus();
   }
   function step(delta) {
     if (shown.length < 2) return;
@@ -1281,6 +1664,7 @@ LOADER_SCRIPT = r"""
     const item = viewItem = shown[at];
     viewController?.abort(); releaseUrls(); viewText = '';
     const controller = viewController = new AbortController(), signal = controller.signal;
+    preview.send('open');
     countEl.textContent = (at + 1) + ' / ' + shown.length;
     prevButton.hidden = nextButton.hidden = shown.length < 2;
     const file = !item.ref && !item.missing;
@@ -1292,7 +1676,6 @@ LOADER_SCRIPT = r"""
     renameButton.hidden = !renamable(item); deleteButton.hidden = !deletable(item);
     paintInfo();
     stage.replaceChildren(notice(t('preview_loading')));
-    stage.classList.add('cf-loading');
     checkChatLink(item, signal);
     // Who owns a file decides whether it can be renamed or deleted; a chat may not say, so ask once
     // A failed file's reason is only in its record, which a chat doesn't carry
@@ -1302,11 +1685,14 @@ LOADER_SCRIPT = r"""
       if (signal.aborted || viewItem !== item) return;
       stage.replaceChildren(view);
       copyButton.hidden = !viewText;
+      preview.send('ready');
+      paintInfo();
     } catch (error) {
-      if (signal.aborted) return;
+      if (signal.aborted || viewItem !== item) return;
+      preview.send('fail');
       if (error.status === 404) { item.missing = true; const entry = rows.get(item); if (entry) paintRow(entry); downloadButton.hidden = attachButton.hidden = renameButton.hidden = deleteButton.hidden = true; paintInfo(); stage.replaceChildren(notice(t('missing'), t('missing_hint'))); }
       else stage.replaceChildren(notice(t('preview_failed'), '', textButton(t('retry'), () => show(index))));
-    } finally { if (!signal.aborted) stage.classList.remove('cf-loading'); }
+    }
   }
   const decodeText = bytes => {
     let text = new TextDecoder('utf-8').decode(bytes);
@@ -1318,6 +1704,9 @@ LOADER_SCRIPT = r"""
   function mediaFrom(item, tag) {
     const node = el(tag, 'cf-media');
     if (tag !== 'img') { node.controls = true; node.preload = 'metadata'; } else node.alt = item.name;
+    const learn = facts => { item.facts = {...(item.facts || {}), ...facts}; if (viewItem === item) paintInfo(); };
+    if (tag === 'img') node.addEventListener('load', () => { if (node.naturalWidth) learn({width: node.naturalWidth, height: node.naturalHeight}); });
+    else node.addEventListener('loadedmetadata', () => { if (Number.isFinite(node.duration) && node.duration > 0) learn({duration: node.duration, ...(tag === 'video' && node.videoWidth ? {width: node.videoWidth, height: node.videoHeight} : {})}); });
     let fellBack = false;
     node.addEventListener('error', async () => {
       if (fellBack || !viewItem || viewItem !== item) return;
@@ -1355,9 +1744,10 @@ LOADER_SCRIPT = r"""
       let text = decodeText(bytes);
       if (truncated) text = text.slice(0, Math.max(text.lastIndexOf('\n'), text.length - 2000));
       viewText = text;
+      if (mode !== 'table') item.facts = {lines: text ? text.split('\n').length - (text.endsWith('\n') ? 1 : 0) : 0, words: (text.match(/\S+/g) || []).length, chars: [...text].length, more: truncated};
       const wrap = el('div', 'cf-textwrap');
       if (truncated) wrap.append(el('p', 'cf-cut', t('truncated', {size: formatBytes(TEXT_LIMIT)})));
-      if (mode === 'table') { wrap.append(tableOf(text, item)); return wrap; }
+      if (mode === 'table') { wrap.append(tableOf(text, item, truncated)); return wrap; }
       if (mode === 'json' && !truncated) { try { text = JSON.stringify(JSON.parse(text), null, 2); viewText = text; } catch {} }
       const pre = el('pre', 'cf-pre' + (TEXT_EXT.has(extOf(item.name)) && !['txt','text','md','markdown','rst','org','adoc'].includes(extOf(item.name)) || mode === 'json' ? ' cf-code' : ''), text);
       pre.dir = 'auto'; pre.tabIndex = 0;
@@ -1401,12 +1791,13 @@ LOADER_SCRIPT = r"""
     if ((field || row.length) && out.length < maxRows) { row.push(field); out.push(row); }
     return out;
   }
-  function tableOf(text, item) {
+  function tableOf(text, item, truncated) {
     const firstLine = text.slice(0, text.indexOf('\n') >>> 0 || text.length);
     const delimiter = extOf(item.name) === 'tsv' || /tab-separated/.test(item.contentType) ? '\t' : (firstLine.split(';').length > firstLine.split(',').length ? ';' : ',');
     const maxRows = 500, maxCols = 50;
     const data = parseDelimited(text, delimiter, maxRows + 1);
-    const cols = Math.min(maxCols, Math.max(0, ...data.map(row => row.length)));
+    const widest = Math.max(0, ...data.map(row => row.length)), cols = Math.min(maxCols, widest);
+    item.facts = {rows: Math.max(0, Math.min(data.length, maxRows) - 1), cols: widest, more: truncated || data.length > maxRows};
     const box = el('div', 'cf-tablebox'); box.tabIndex = 0;
     const table = el('table', 'cf-table');
     data.slice(0, maxRows).forEach((row, r) => {
@@ -1420,6 +1811,8 @@ LOADER_SCRIPT = r"""
     wrap.append(box);
     return wrap;
   }
+  const wholeNumber = n => { try { return new Intl.NumberFormat(lang).format(n); } catch { return String(n); } };
+  const duration = seconds => { const s = Math.round(seconds), h = Math.floor(s / 3600), m = Math.floor(s / 60) % 60, rest = String(s % 60).padStart(2, '0'); return h ? h + ':' + String(m).padStart(2, '0') + ':' + rest : m + ':' + rest; };
   function paintInfo() {
     const item = viewItem;
     if (!item) return;
@@ -1427,36 +1820,58 @@ LOADER_SCRIPT = r"""
     const title = el('h2', 'cf-title'); title.append(nameSpan(null, item.name || item.url || ''));
     info.append(title);
     const facts = [];
-    if (item.ref) facts.push([t('f_type'), t('ref_' + item.ref)]);
-    else {
-      const badge = badgeOf(item);
-      facts.push([t('f_type'), t('kind_' + classify(item)) + ' · ' + (item.contentType || badge.text)]);
-      if (item.sized) facts.push([t('f_size'), formatBytes(item.bytes)]);
+    facts.push([t('f_kind'), item.ref ? t('ref_' + item.ref) : t('kind_' + classify(item))]);
+    if (!item.ref) {
+      if (item.contentType) facts.push([t('f_mime'), item.contentType]);
+      const ext = extOf(item.name);
+      if (ext) facts.push([t('f_ext'), '.' + ext]);
+      if (item.sized) facts.push([t('f_size'), formatBytes(item.bytes) + (item.bytes >= 1024 ? ' (' + t('f_bytes', {n: wholeNumber(item.bytes)}) + ')' : '')]);
       if (item.created) facts.push([t('f_created'), formatDate(item.created, true)]);
+      if (item.updated && toMs(item.updated) - toMs(item.created) > 60000) facts.push([t('f_updated'), formatDate(item.updated, true)]);
     }
-    if (scope === 'chat' && item.sent) facts.push([t('f_sent'), formatDate(item.sent, true)]);
+    if (scope === 'chat' && item.sent) {
+      facts.push([t('f_sent'), formatDate(item.sent, true)]);
+      if (item.messageId) facts.push([t('f_from'), t(item.fromUser ? 'from_you' : 'from_answer')]);
+    }
     const state = statusOf(item);
     if (!item.ref) facts.push([t('f_status'), t('st_' + (state || 'ready'))]);
     if (!item.ref && item.ownerId && me) facts.push([t('f_owner'), t(item.ownerId === me.id ? 'owner_you' : 'owner_other')]);
+    // What the preview found inside: lines and words, rows and columns, size of a picture, length of a recording
+    const found = item.facts, plus = found?.more ? '+' : '';
+    if (found) {
+      if (found.rows != null) facts.push([t('f_rows'), wholeNumber(found.rows) + plus], [t('f_cols'), wholeNumber(found.cols)]);
+      if (found.lines != null) facts.push([t('f_lines'), wholeNumber(found.lines) + plus], [t('f_words'), wholeNumber(found.words) + plus], [t('f_chars'), wholeNumber(found.chars) + plus]);
+      if (found.width) facts.push([t('f_dims'), wholeNumber(found.width) + ' × ' + wholeNumber(found.height)]);
+      if (found.duration) facts.push([t('f_duration'), duration(found.duration)]);
+    }
     const list = el('dl', 'cf-facts');
     for (const [key, value] of facts) { const dd = el('dd', null, value); dd.dir = 'auto'; list.append(el('dt', null, key), dd); }
+    if (item.fileId) {
+      const dd = el('dd', 'cf-iddd'), code = el('code', 'cf-id', item.fileId);
+      dd.append(code, iconButton(t('copy_id'), 'copy', () => copyToClipboard(item.fileId, t('id_copied')), 'cf-icon cf-mini'));
+      list.append(el('dt', null, t('f_id')), dd);
+    }
     info.append(list);
     if (state === 'failed' && item.error) { const error = el('p', 'cf-error', item.error); error.dir = 'auto'; info.append(error); }
   }
   async function checkChatLink(item, signal) {
     const chatId = item.chatId;
     if (!chatId || (scope === 'chat' && !item.messageId)) return;
-    if (!chatExists.has(chatId)) chatExists.set(chatId, request('/api/v1/chats/' + encodeURIComponent(chatId)).then(r => r.ok).catch(() => false));
-    const ok = await chatExists.get(chatId);
+    const ok = await chatIsThere(chatId);
     if (!signal.aborted && viewItem === item) {
       chatButton.hidden = !ok;
       setLabel(chatButton, t(chatId === chatIdFromPath() ? 'show_in_chat' : 'open_in_chat'));
     }
   }
   const navigate = href => { const link = el('a'); link.href = href; document.body.append(link); link.click(); link.remove(); };
-  function showInChat() {
-    const item = viewItem;
+  const chatIsThere = chatId => {
+    if (!chatExists.has(chatId)) chatExists.set(chatId, request('/api/v1/chats/' + encodeURIComponent(chatId)).then(r => r.ok).catch(() => false));
+    return chatExists.get(chatId);
+  };
+  const showInChat = () => goToChat(viewItem);
+  async function goToChat(item) {
     if (!item?.chatId) return;
+    if (!(await chatIsThere(item.chatId))) { flash(t('chat_missing')); return; }
     const params = new URLSearchParams(location.search);
     deactivate();
     if (item.chatId === chatIdFromPath() && item.messageId && params.get('message') === item.messageId) {
@@ -1497,22 +1912,27 @@ LOADER_SCRIPT = r"""
     renameBox.setAttribute('aria-labelledby', 'cf-rename-title');
     return renameBox;
   }
-  function confirmDelete(count) {
+  // The box names what is about to go, so nothing is deleted by mistake
+  function confirmDelete(list) {
+    const count = list.length;
     return new Promise(done => {
+      const names = el('ul', 'cf-names');
+      for (const item of list.slice(0, 5)) { const li = el('li'); li.append(nameSpan(null, item.name || item.url || '')); names.append(li); }
+      if (count > 5) names.append(el('li', 'cf-namesmore', t('delete_more', {n: count - 5})));
       const title = el('h3', null, count === 1 ? t('confirm_one') : t('confirm_many', {n: count})); title.id = 'cf-confirm-title';
       const text = el('p', null, t(count === 1 ? 'confirm_text_one' : 'confirm_text_many')); text.id = 'cf-confirm-text';
       const cancel = textButton(t('cancel'), () => confirmBox.close('cancel'));
       const ok = textButton(t('delete'), () => confirmBox.close('delete')); ok.classList.add('cf-danger');
       const actions = el('div', 'cf-actions'); actions.append(cancel, ok);
-      confirmBox.replaceChildren(title, text, actions);
+      confirmBox.replaceChildren(title, names, text, actions);
       confirmBox.returnValue = '';
       confirmBox.addEventListener('close', () => done(confirmBox.returnValue === 'delete'), {once: true});
       confirmBox.showModal(); cancel.focus();
     });
   }
-  const validName = name => !/[\\/\x00-\x1f]/.test(name) && name.length <= 255;
+  const validName = name => !/[\\/\x00-\x1f\x7f]/.test(name) && name.length <= 255;
   function renameItem(item) {
-    if (!renamable(item) || busy) return;
+    if (!renamable(item) || busy()) return;
     const title = el('h3', null, t('rename_title')); title.id = 'cf-rename-title';
     const label = el('label', 'cf-label', t('rename_label'));
     const input = el('input', 'cf-input'); input.type = 'text'; input.value = item.name; input.dir = 'auto'; input.maxLength = 255; input.spellcheck = false;
@@ -1524,9 +1944,10 @@ LOADER_SCRIPT = r"""
     const form = el('form'); form.method = 'dialog'; form.append(title, label, message, actions);
     form.addEventListener('submit', async event => {
       event.preventDefault();
-      const name = input.value.trim();
+      const name = cleanName(input.value).trim();
       if (!name) { message.textContent = t('rename_empty'); message.classList.add('cf-bad'); input.focus(); return; }
       if (!validName(name)) { message.textContent = t('rename_bad'); message.classList.add('cf-bad'); input.focus(); return; }
+      if (/^\.+$/.test(name)) { message.textContent = t('rename_dots'); message.classList.add('cf-bad'); input.focus(); return; }
       if (name === item.name) { renameBox.close(); return; }
       save.disabled = true;
       try {
@@ -1544,18 +1965,20 @@ LOADER_SCRIPT = r"""
   }
   async function deleteItems(list) {
     list = list.filter(deletable);
-    if (!list.length || busy || !(await confirmDelete(list.length))) return;
-    busy = true; paintSelection();
+    if (!list.length || busy() || !(await confirmDelete(list)) || !job.send('delete')) return;
+    paintSelection();
     const gone = new Set();
-    await pool(list, 4, async item => {
-      try {
-        const response = await request('/api/v1/files/' + encodeURIComponent(item.fileId), {method: 'DELETE'});
-        if (response.ok || response.status === 404) gone.add(item.fileId);
-      } catch {}
-    });
-    busy = false;
+    try {
+      await pool(list, 4, async item => {
+        try {
+          const response = await request('/api/v1/files/' + encodeURIComponent(item.fileId), {method: 'DELETE'});
+          if (response.ok || response.status === 404) gone.add(item.fileId);
+        } catch {}
+      });
+    } finally { job.send('done'); }
+    if (!dialog) return;
     for (const id of gone) records.delete(id);
-    const wasViewing = viewer.classList.contains('cf-open') && viewItem && gone.has(viewItem.fileId);
+    const wasViewing = viewerOpen() && viewItem && gone.has(viewItem.fileId);
     const at = index;
     // A chat still mentions a deleted file, so it stays there marked deleted; the library forgets it
     for (const item of items) if (gone.has(item.fileId)) item.missing = true;
@@ -1563,24 +1986,25 @@ LOADER_SCRIPT = r"""
     for (const item of [...selected]) if (gone.has(item.fileId)) selected.delete(item);
     const failed = list.length - gone.size;
     flash(failed ? (gone.size ? t('deleted_some', {n: gone.size, failed}) : t(list.length === 1 ? 'delete_failed_one' : 'delete_failed_many')) : (gone.size === 1 ? t('deleted_one') : t('deleted_many', {n: gone.size})));
-    if (selecting && !selected.size) setSelecting(false);
+    if (selecting() && !selected.size) setSelecting(false);
     render();
     if (wasViewing) { if (shown.length) show(Math.min(at, shown.length - 1)); else closeViewer(); }
   }
 
   /* ---- copy, download, attach ---- */
-  async function copyText() {
-    if (!viewText) return;
-    try { await navigator.clipboard.writeText(viewText); flash(t('text_copied')); }
+  async function copyToClipboard(text, done) {
+    if (!text) return;
+    try { await navigator.clipboard.writeText(text); flash(done); }
     catch {
-      const area = el('textarea'); area.value = viewText; area.style.cssText = 'position:fixed;opacity:0';
+      const area = el('textarea'); area.value = text; area.style.cssText = 'position:fixed;opacity:0';
       dialog.append(area); area.select();
-      try { document.execCommand('copy'); flash(t('text_copied')); } catch { flash(t('copy_failed')); }
+      try { flash(document.execCommand('copy') ? done : t('copy_failed')); } catch { flash(t('copy_failed')); }
       area.remove();
     }
   }
+  const copyText = () => copyToClipboard(viewText, t('text_copied'));
   const safeName = (name, fallback = 'file') => {
-    let clean = String(name || '').replace(/[\x00-\x1f\x7f/\\:*?"<>|]/g, '_').replace(/^[\s.]+|[\s.]+$/g, '');
+    let clean = cleanName(name).replace(/[\x00-\x1f\x7f/\\:*?"<>|]/g, '_').replace(/^[\s.]+|[\s.]+$/g, '');
     if (!clean) clean = fallback;
     if (clean.length > 180) { const ext = extOf(clean); clean = clean.slice(0, 170 - ext.length) + (ext ? '.' + ext : ''); }
     return clean;
@@ -1613,9 +2037,9 @@ LOADER_SCRIPT = r"""
     return null;
   }
   // Hands the file to the composer's own file input, so Open WebUI's upload and model checks apply as usual
-  async function attachToComposer() {
-    const item = viewItem;
-    if (!item || item.ref || item.missing) return;
+  const attachToComposer = () => attachItem(viewItem);
+  async function attachItem(item) {
+    if (!pickable(item)) return;
     try {
       const blob = await fetchBlob(item.url);
       const input = composer();
@@ -1665,16 +2089,19 @@ LOADER_SCRIPT = r"""
     return candidate;
   }
   async function downloadZip() {
-    if (busy) return;
-    const pickable = shown.filter(item => !item.ref && !item.missing);
-    const list = selecting ? pickable.filter(item => selected.has(item)) : pickable;
+    if (busy()) return;
+    const choosable = shown.filter(pickable);
+    const list = selecting() ? choosable.filter(item => selected.has(item)) : choosable;
     if (!list.length) return;
+    // A zip without its 64-bit extension holds at most 65,535 entries
+    if (list.length > 65535) { flash(t('zip_many', {n: wholeNumber(65535)})); return; }
     const title = (document.querySelector('#chat-container nav h1')?.textContent || document.title || '').replace(/\s*[·|•-]\s*Open WebUI\s*$/i, '').trim();
     // Browsers drop a download name they can't use, so the zip's own name keeps to plain letters and digits
     const ascii = title.normalize('NFKD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 60);
     const zipName = 'files-' + (scope === 'chat' ? ascii || 'chat' : 'mine') + '.zip';
+    if (!job.send('zip')) return;
     const controller = zipController = new AbortController();
-    busy = true; paintSelection();
+    paintSelection();
     const files = [], taken = new Set();
     let total = 0, skipped = 0, stopped = '';
     for (let i = 0; i < list.length && !stopped; i++) {
@@ -1688,12 +2115,13 @@ LOADER_SCRIPT = r"""
         files.push({name: uniqueName(safeName(item.name), taken), data: new Uint8Array(await blob.arrayBuffer())});
       } catch { if (controller.signal.aborted) stopped = t('zip_cancelled'); else skipped++; }
     }
-    busy = false; zipController = null;
+    job.send('done'); zipController = null;
+    if (!dialog) return;
     if (stopped) { flash(stopped); render(); return; }
     if (!files.length) { flash(t('zip_none')); render(); return; }
     save(makeZip(files), zipName);
     flash(tn('saved', files.length) + (skipped ? t('skipped', {n: skipped}) : ''));
-    if (selecting) setSelecting(false); else render();
+    if (selecting()) setSelecting(false); else render();
   }
 
   /* ---- the Files tab in the Tabs panel ---- */
@@ -1704,7 +2132,10 @@ LOADER_SCRIPT = r"""
   const idleClass = 'text-gray-500 dark:text-gray-400 hover:bg-gray-100/30 dark:hover:bg-gray-800/20 hover:text-gray-600 dark:hover:text-gray-300';
   const headerClass = 'flex size-6 cursor-pointer items-center justify-center rounded-lg text-gray-500 transition hover:bg-gray-50/40 hover:text-gray-700 dark:text-gray-400 dark:hover:bg-gray-800/40 dark:hover:text-gray-200';
   const barClass = 'flex items-center justify-center w-7 h-7 rounded-lg text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors duration-100 shrink-0';
-  let tabOpen = false, active = false, solo = false, strip = null, tabEl = null, tabButton = null, homeGroup = null, menuGroup = null;
+  // The Files tab: not open, open in front, or open behind another tab
+  const tab = machine('tab', 'closed', {closed: {open: 'front'}, front: {hide: 'behind', close: 'closed'}, behind: {show: 'front', close: 'closed'}});
+  const isOpen = () => !tab.is('closed'), isFront = () => tab.is('front');
+  let solo = false, strip = null, tabEl = null, tabButton = null, homeGroup = null, menuGroup = null;
   let lastNative = '', lastGroups = -1, lastPath = null, keepUntil = 0, tracking = 0;
   const plusOf = list => list.parentElement?.querySelector(':scope > :not([role="tablist"]) > button[aria-haspopup="true"]') ?? null;
   function panel() {
@@ -1724,7 +2155,7 @@ LOADER_SCRIPT = r"""
   const nativeSignature = list => list ? [...list.querySelectorAll('[role="tab"]')].map(tab => tab.id + (tab.getAttribute('aria-selected') === 'true' ? '*' : '')).join() : '';
   const soloArea = () => isChatRoute() ? document.getElementById('chat-pane') || document.getElementById('chat-container') : null;
   function target() {
-    if (!active) return null;
+    if (!isFront()) return null;
     const found = panel();
     if (!found) {
       const box = solo ? soloArea()?.getBoundingClientRect() : null;
@@ -1748,7 +2179,7 @@ LOADER_SCRIPT = r"""
     tracking = 0;
     const spot = target();
     dialog.hidden = !spot;
-    if (!spot) { if (tabOpen && active) tracking = requestAnimationFrame(place); return; }
+    if (!spot) { if (isFront()) tracking = requestAnimationFrame(place); return; }
     const {rect, layer} = spot, style = dialog.style;
     const next = [rect.left, rect.top, rect.width, rect.height].map(value => Math.round(value) + 'px');
     if (style.left !== next[0]) style.left = next[0];
@@ -1760,8 +2191,8 @@ LOADER_SCRIPT = r"""
   }
   const track = () => { if (dialog && !tracking) tracking = requestAnimationFrame(place); };
   function cover() {
-    const found = active && panel(), want = new Set();
-    if (active && solo && !found) { const area = soloArea(); if (area) want.add(area); }
+    const found = isFront() && panel(), want = new Set();
+    if (isFront() && solo && !found) { const area = soloArea(); if (area) want.add(area); }
     if (found?.group) {
       const id = found.group.dataset.panelGroup;
       for (const node of document.querySelectorAll('[data-panel-group]')) {
@@ -1776,15 +2207,15 @@ LOADER_SCRIPT = r"""
   }
   function paintTab() {
     cover();
-    if (headerButton) headerButton.setAttribute('aria-pressed', String(tabOpen && active));
+    if (headerButton) headerButton.setAttribute('aria-pressed', String(isFront()));
     if (!tabEl) return;
     const found = panel();
     const padding = found?.list?.querySelector('[data-panel-tab]')?.classList.contains('ps-2.5') ? 'ps-2.5 pe-2' : 'px-2.5';
-    const wanted = tabBase + ' ' + padding + ' ' + (active ? activeClass : idleClass);
+    const wanted = tabBase + ' ' + padding + ' ' + (isFront() ? activeClass : idleClass);
     if (tabEl.className !== wanted) tabEl.className = wanted;
-    if (tabButton.getAttribute('aria-selected') !== String(active)) tabButton.setAttribute('aria-selected', String(active));
-    tabButton.tabIndex = active ? 0 : -1;
-    for (const list of document.querySelectorAll('.panel-tab-strip')) list.classList.toggle('cf-dim', active && list === found?.list);
+    if (tabButton.getAttribute('aria-selected') !== String(isFront())) tabButton.setAttribute('aria-selected', String(isFront()));
+    tabButton.tabIndex = isFront() ? 0 : -1;
+    for (const list of document.querySelectorAll('.panel-tab-strip')) list.classList.toggle('cf-dim', isFront() && list === found?.list);
     const alone = solo && !found;
     if (dialog) { dialog.classList.toggle('cf-solo', alone); soloClose.hidden = !alone; }
     track();
@@ -1805,45 +2236,52 @@ LOADER_SCRIPT = r"""
     tabEl.append(tabButton, close); strip.append(tabEl);
   }
   const announce = () => dispatchEvent(new CustomEvent('owui-panel-tab-front', {detail: {owner: 'chat-files'}}));
-  const tellState = () => dispatchEvent(new CustomEvent('owui-chat-files-state', {detail: {open: tabOpen}}));
+  const tellState = () => dispatchEvent(new CustomEvent('owui-chat-files-state', {detail: {open: isOpen()}}));
   function activate() {
-    if (!tabOpen) return;
-    const back = !active;
-    active = true; lastNative = nativeSignature(panel()?.list); announce(); paintTab();
+    if (!isOpen()) return;
+    const back = tab.send('show');
+    lastNative = nativeSignature(panel()?.list); announce(); paintTab();
     if (tabEl.isConnected) tabEl.scrollIntoView({block: 'nearest', inline: 'nearest'});
-    if (back && scope === 'chat' && chatLoadedAt && !chatLoading && Date.now() - chatLoadedAt > 3000 && !viewer.classList.contains('cf-open')) loadChat(true);
+    // Back in front after a while: the chat may have new files
+    if (back && scope === 'chat' && chatLoadedAt && !chatLoad.is('loading') && Date.now() - chatLoadedAt > 3000 && !viewerOpen()) loadChat(true);
   }
-  function deactivate() { if (active) { active = false; paintTab(); } }
+  function deactivate() { if (tab.send('hide')) { closeMenu(false); paintTab(); } }
+  function teardown() { closeMenu(false); dialog?.remove(); strip?.remove(); dialog = strip = tabEl = tabButton = null; rows.clear(); groupNodes.clear(); }
   function openTab() {
-    if (dialog && !tabOpen && builtLang !== language()) { dialog.remove(); strip?.remove(); opener?.remove(); headerButton?.remove(); dialog = strip = opener = headerButton = null; rows.clear(); }
+    if (dialog && tab.is('closed') && builtLang !== language()) { teardown(); opener?.remove(); headerButton?.remove(); opener = headerButton = null; }
     if (!dialog) build();
     if (menuGroup) homeGroup = menuGroup;
     if (!strip) buildTab();
-    const fresh = !tabOpen;
-    tabOpen = true; solo = !panel();
+    const fresh = tab.is('closed');
+    solo = !panel();
     if (fresh) {
       search.value = ''; kind = 'all'; order.chat = 'oldest'; order.library = 'newest';
       library = freshLibrary();
       chatExists.clear();
-      if (!me) api('/api/v1/auths/').then(user => { me = user; if (tabOpen) { paintSelection(); if (viewItem) { renameButton.hidden = !renamable(viewItem); deleteButton.hidden = !deletable(viewItem); paintInfo(); } } }).catch(() => {});
+      if (!me) api('/api/v1/auths/').then(user => { me = user; if (isOpen() && dialog) { paintSelection(); if (viewItem) { renameButton.hidden = !renamable(viewItem); deleteButton.hidden = !deletable(viewItem); paintInfo(); } } }).catch(() => {});
     }
+    if (fresh) tab.send('open');
     schedule(); activate(); tellState();
     if (fresh) { const chatId = chatIdFromPath(); tabChat.hidden = !chatId; setScope(chatId ? 'chat' : 'library'); }
-    setTimeout(() => { if (tabOpen) (tabChat.hidden ? tabLibrary : scope === 'chat' ? tabChat : tabLibrary).focus({preventScroll: true}); });
+    setTimeout(() => { if (isOpen() && dialog) (tabChat.hidden ? tabLibrary : scope === 'chat' ? tabChat : tabLibrary).focus({preventScroll: true}); });
   }
   function closeTab() {
-    collectController?.abort(); library.controller.abort(); zipController?.abort(); closeViewer(true); setSelecting(false);
-    records.clear(); items = []; library = freshLibrary(); library.done = true; forgetRows(); listEl.replaceChildren();
+    if (!dialog) return;
+    collectController?.abort(); library.controller.abort(); zipController?.abort(); closeViewer(true); closeMenu(false); setSelecting(false);
+    records.clear(); items = []; library = freshLibrary('done'); forgetRows(); listEl.replaceChildren();
     const found = panel(), wasSolo = solo && !found;
-    tabOpen = false; active = false; solo = false; strip?.remove(); paintTab(); dialog.hidden = true;
+    tab.send('close'); solo = false; strip?.remove(); paintTab(); dialog.hidden = true;
     if (found?.list) (found.list.querySelector('[role="tab"][aria-selected="true"]') || plusOf(found.list))?.focus({preventScroll: true});
     else if (wasSolo) headerButton?.focus({preventScroll: true});
     tellState();
   }
-  // The way in for accounts with no + menu. With Chat Gallery installed its button stays nearest the edge and this one sits beside it.
+  // Where the tab row has a + menu, Files is chosen from that menu and needs no button of its own. The button is
+  // the way in where there is no such menu: Open WebUI's classic top bar, phones, accounts without the Tabs panel.
+  // With Chat Gallery's button there too, Gallery's stays nearest the edge and this one sits beside it.
   function syncHeader(found) {
     let host = null, inBar = false;
-    if (CONFIG.headerButton && isChatRoute()) {
+    const menuThere = !!(found?.list && plusOf(found.list));
+    if (CONFIG.headerButton && isChatRoute() && (!menuThere || CONFIG.buttonBesideMenu)) {
       const group = [...document.querySelectorAll('#chat-container nav .flex.flex-none.items-center.self-center')].pop();
       if (group && group.getClientRects().length) host = group;
       else if (found?.lists?.length) { host = found.lists[0].parentElement; inBar = true; }
@@ -1852,8 +2290,8 @@ LOADER_SCRIPT = r"""
     if (!headerButton) {
       lang = language();
       headerButton = iconButton(t('files'), 'files', () => {
-        if (tabOpen && active) { deactivate(); return; }
-        if (tabOpen) { solo = !panel(); activate(); return; }
+        if (isFront()) { deactivate(); return; }
+        if (isOpen()) { solo = !panel(); activate(); return; }
         menuGroup = headerButton.closest('[data-panel-group]')?.dataset.panelGroup ?? null; openTab();
       }, headerClass);
       headerButton.id = 'owui-chat-files-header'; headerButton.setAttribute('aria-pressed', 'false');
@@ -1876,7 +2314,7 @@ LOADER_SCRIPT = r"""
     if (lastPath === null) lastPath = location.pathname;
     if (location.pathname !== lastPath) {
       lastPath = location.pathname; keepUntil = Date.now() + 1500;
-      if (tabOpen) { chatExists.clear(); const chatId = chatIdFromPath(); tabChat.hidden = !chatId; if (!chatId && scope === 'chat') { closeViewer(true); setScope('library'); } else if (scope === 'chat') { closeViewer(true); setSelecting(false); loadChat(); } }
+      if (isOpen() && dialog) { chatExists.clear(); const chatId = chatIdFromPath(); tabChat.hidden = !chatId; if (!chatId && scope === 'chat') { closeViewer(true); setScope('library'); } else if (scope === 'chat') { closeViewer(true); setSelecting(false); loadChat(); } }
     }
     syncHeader(found);
     const open = found?.lists.find(list => plusOf(list)?.getAttribute('aria-expanded') === 'true');
@@ -1892,7 +2330,7 @@ LOADER_SCRIPT = r"""
       }
       if (opener.parentElement !== menu) menu.append(opener);
     } else opener?.remove();
-    if (!tabOpen || !found) { if (tabOpen) paintTab(); else track(); return; }
+    if (!isOpen() || !found || !strip) { if (isOpen()) paintTab(); else track(); return; }
     if (found.group && found.group.dataset.panelGroup !== homeGroup) homeGroup = found.group.dataset.panelGroup;
     let anchor = found.list;
     if (anchor.nextElementSibling?.id === 'owui-chat-workspace-tabs') anchor = anchor.nextElementSibling;
@@ -1900,9 +2338,22 @@ LOADER_SCRIPT = r"""
     const moved = strip.previousElementSibling !== anchor;
     if (moved) anchor.after(strip);
     const signature = nativeSignature(found.list), groups = found.lists.length;
-    if (active && !moved && signature !== lastNative && !(groups !== lastGroups && lastGroups !== -1) && Date.now() > keepUntil) deactivate();
+    if (isFront() && !moved && signature !== lastNative && !(groups !== lastGroups && lastGroups !== -1) && Date.now() > keepUntil) deactivate();
     lastNative = signature; lastGroups = groups;
     paintTab();
+  }
+  function relang() {
+    lang = language();
+    opener?.remove(); headerButton?.remove(); opener = headerButton = null;
+    if (!dialog) { schedule(); return; }
+    if (tab.is('closed')) { teardown(); schedule(); return; }
+    const keep = {scope, query: search.value, items, library, kind};
+    closeViewer(true); setSelecting(false); teardown();
+    build(); buildTab();
+    items = keep.items; library = keep.library; kind = keep.kind; search.value = keep.query;
+    tabChat.hidden = !chatIdFromPath();
+    setScope(keep.scope, false);
+    lastNative = ''; paintTab(); schedule();
   }
   let syncPending = false;
   const schedule = () => { if (!syncPending) { syncPending = true; requestAnimationFrame(sync); } };
@@ -1919,6 +2370,9 @@ LOADER_SCRIPT = r"""
       if (choice && choice !== opener && opener?.parentElement === choice.parentElement && (menuGroup ?? null) === (homeGroup ?? menuGroup ?? null)) deactivate();
     }, true);
     addEventListener('popstate', schedule);
+    // Open WebUI sets <html lang> when someone changes language; everything is redrawn in the new one at once
+    let shownLang = language();
+    new MutationObserver(() => { const now = language(); if (now !== shownLang) { shownLang = now; relang(); } }).observe(document.documentElement, {attributes: true, attributeFilter: ['lang']});
     sync();
   };
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start, {once: true}); else start();
@@ -1952,7 +2406,19 @@ class Event:
         )
         header_button: bool = Field(
             default=True,
-            description="Add a Files button to the chat's tab row or top bar. Without it the tab opens only from the Tabs panel's + menu, which many user accounts don't have.",
+            description="Add a Files button where the chat has no Tabs panel + menu to choose Files from: Open WebUI's classic top bar, phones, and accounts without the Tabs panel. Where the + menu is there, Files is in it.",
+        )
+        button_beside_menu: bool = Field(
+            default=False,
+            description="Also show the Files button beside the Tabs panel's + menu, as well as in it.",
+        )
+        default_view: Literal["list", "grid"] = Field(
+            default="list",
+            description="How files are laid out until a person chooses for themselves: a list with columns, or a grid of cards. Each person's choice is kept in their browser.",
+        )
+        thumbnails: bool = Field(
+            default=True,
+            description="Show small pictures of images (PNG, JPEG, GIF, WebP and similar, up to 8 MB) in the list and the grid, when images are listed.",
         )
         language: Literal["auto", "en", "fr"] = Field(
             default="auto",
@@ -1979,6 +2445,9 @@ class Event:
             "allowRename": bool(valves.allow_rename),
             "allowDelete": bool(valves.allow_delete),
             "headerButton": bool(valves.header_button),
+            "buttonBesideMenu": bool(valves.button_beside_menu),
+            "defaultView": valves.default_view,
+            "thumbnails": bool(valves.thumbnails),
             "language": valves.language,
         }
 
