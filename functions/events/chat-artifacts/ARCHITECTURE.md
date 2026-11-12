@@ -52,7 +52,27 @@ Everything shown outside frames is built from elements and text: `renderMarkdown
 
 `artifacts_mode.py` is a separate toggle Filter (one file can hold one function type). When it is switched on, or on by default for a model, its `inlet` adds the instructions once to the system message, marked with `<!-- artifacts-mode -->`. The instructions describe exactly the formats the panel reads.
 
-## 9. Where to change things
+## 9. State machines
+
+Each piece of state that used to be a set of flags is a small machine made by `machine(name, initial, table, onEnter)`: a table of `state → event → next state` (`'*'` for any state; a function may refuse a move by returning nothing). `send(event)` returns whether anything happened, and the current state is written on `<html>` as `data-ar-<name>`, which the browser suite reads.
+
+| Machine | States | Moves |
+| --- | --- | --- |
+| `view` | closed, list, viewer | `list`, `artifact`, `back`, `gone` (the artifact disappeared), `close`; leaving the viewer forgets the open artifact |
+| `load` | idle, loading, ready, failed, denied | `start`, `none`, `done`, `fail`, `deny` |
+| `size` | normal, full | `toggle`, `reset` |
+| `stream` | settling, idle, writing, finishing | `navigate` (a new chat; settles after 2.5 s), `change`, `quiet`, `loaded` |
+| `cell` (one per grid) | select, edit | `edit`, `commit`, `cancel` |
+
+## 10. Correcting cells and slides
+
+`sheetView` keeps a selection (`anchor`, `focus`) in the rows shown, after filtering and sorting, and maps it back to the CSV. Every change goes through `change(apply)`: it records the grid for undo (100 steps), applies the change, saves it as an edit and paints again, keeping the keyboard on the grid. Copy and paste use tab-separated text. `deckParts` splits a deck into its marker and front matter and its slides, so one slide can be edited, added or removed and `deckText` puts the rest back untouched.
+
+## 11. PowerPoint
+
+`pptxOf` writes a minimal PresentationML package with the same ZIP writer: one blank layout, and for each slide text boxes for the title and body (bullets, bold, italics, highlights; two columns side by side) and pictures for its figures, rasterised to PNG in the browser after `diagramsReady`.
+
+## 12. Where to change things
 
 | To change | Look at |
 | --- | --- |
@@ -64,5 +84,6 @@ Everything shown outside frames is built from elements and text: `renderMarkdown
 | Versions | `artifactsOf` |
 | The sandbox and its policy | `SANDBOX`, `policy()`, `BOOT`, `reactDoc`, `mermaidDoc` |
 | Formulas | `sheetEngine`, `toNumber` |
-| Downloads | `downloadItems`, `xlsxOf`, `slidesHtml`, `wordHtml` |
+| Downloads | `downloadItems`, `xlsxOf`, `pptxOf`, `slidesHtml`, `wordHtml` |
+| A state and its moves | the `machine(…)` tables (`view`, `load`, `size`, `stream`), and `cell` in `sheetView` |
 | Where it sits in Open WebUI | `place`, `syncHeaderButton`, `syncMenu`, `syncChat` |

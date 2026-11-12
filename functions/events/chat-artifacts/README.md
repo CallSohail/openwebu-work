@@ -2,11 +2,11 @@
 
 When a model writes something you'd keep (a document, a slide deck, a spreadsheet, a diagram, a web page, an app), it shouldn't stay buried in the chat as code. **Artifacts** opens it in a panel beside the chat, the way Claude does: running, readable and editable, with every version the model has made of it, ready to download or ask the model to change. Ordinary answers stay ordinary: only what you ask to create becomes an artifact.
 
-Version v1.1.0. Event Function, with an optional companion Filter, **Artifacts mode**. Requires Open WebUI v0.13.0 or later; tested in a browser on v0.13.0 and v0.13.3. It replaces Chat Canvas.
+Version v1.2.0. Event Function, with an optional companion Filter, **Artifacts mode**. Requires Open WebUI v0.13.0 or later; tested in a browser on v0.13.0 and v0.13.3. It replaces Chat Canvas.
 
 | A web page, beside the chat | Slides, in dark mode | A spreadsheet with formulas |
 | --- | --- | --- |
-| ![The Budget tracker page running in the Artifacts panel on the right, with its version switcher at v2 of 2 and Preview, Code and Changes; the chat on the left has made room, and each answer carries a card for its version.](screenshots/page-light.png) | ![A four-slide deck titled Study skills, one slide large with thumbnails below, Speaker notes and Present buttons, beside a dark chat.](screenshots/slides-dark.png) | ![A spreadsheet of items, costs and quantities, with totals computed by formulas, a formula bar, a filter box, and Table and Chart views.](screenshots/sheet-light.png) |
+| ![The Budget tracker page running in the Artifacts panel on the right, with its version switcher at v2 of 2 and Preview, Code and Changes; the chat on the left has made room, and each answer carries a card for its version.](screenshots/page-light.png) | ![A four-slide deck titled Study skills, one slide large with thumbnails below, Speaker notes and Present buttons, beside a dark chat.](screenshots/slides-dark.png) | ![A spreadsheet of items, costs and quantities being corrected: the range B2:C4 is selected, its sum, average, minimum, maximum and count shown below, with a toolbar to insert and delete rows and columns, undo, redo and Ask about this.](screenshots/sheet-edit-light.png) |
 
 | An app built with React | A document | Phone |
 | --- | --- | --- |
@@ -31,8 +31,8 @@ Only when it is worth one. Greetings, questions, explanations and ordinary answe
 | Kind | What the model writes | What you get |
 | --- | --- | --- |
 | **Document** | A Markdown block | A formatted page with an outline, callouts, highlights, diagrams, charts, drawings and pictures; download as Markdown, HTML or Word, or print to PDF |
-| **Slides** | A ```` ```slides ```` block (or Markdown with `---` between slides) | One slide at a time with thumbnails, speaker notes, arrow keys and Present; diagrams, charts, drawings, pictures, tables, highlights, callouts, columns and title or section layouts on slides; download as a presentation that runs on its own, or print to PDF |
-| **Spreadsheet** | A ```` ```csv ```` block | A grid with formulas (`=SUM(B2:B9)`, `=AVERAGE(C:C)`, `=IF(B2>10,"high","low")`, `=ROUND(…)` and more), sorting, filtering, column statistics, bar, line, area and pie charts of one column or all of them, and editing; download as CSV or Excel (formulas kept), the chart as SVG or PNG, or print |
+| **Slides** | A ```` ```slides ```` block (or Markdown with `---` between slides) | One slide at a time with thumbnails, speaker notes, arrow keys and Present; diagrams, charts, drawings, pictures, tables, highlights, callouts, columns and title or section layouts on slides; edit, add or delete a slide; download as PowerPoint (`.pptx`, figures as pictures), a presentation that runs on its own, or print to PDF |
+| **Spreadsheet** | A ```` ```csv ```` block | A grid you correct cell by cell, as in Excel, with formulas (`=SUM(B2:B9)`, `=SUMIF(C2:C9,">1",B2:B9)`, `=IFERROR(…)`, `=ROUND(…)` and more) recalculated as you type, sorting, filtering, statistics of the selected range, bar, line, area and pie charts of one column or all of them, and editing; download as CSV or Excel (formulas kept), the chart as SVG or PNG, or print |
 | **Chart** | A ```` ```chart ```` block: optional `type:` (bar, line, area, pie) and `title:` lines, then CSV | The chart, with its data as a spreadsheet one click away |
 | **Diagram** | A ```` ```mermaid ```` block | A flowchart, sequence, timeline, mind map or Gantt chart; download as Mermaid, SVG or PNG |
 | **Web page / design** | An ```` ```html ```` block | The page running in a sandbox, at desktop, tablet or phone width; download as HTML or print |
@@ -69,7 +69,9 @@ Like Claude's, each artifact carries its versions. When a later answer has a blo
 - **Nothing half-made.** While a model writes an artifact, its code is folded away in the chat behind a card saying it is being written. When the answer is done, the panel opens on it (not on phones), complete. The card can show the code in the chat again.
 - **Try fixing.** An error inside a page or an app is shown under it, with *Try fixing*, which sends the error to the model; the fix arrives as the next version.
 - **Ask about a part.** Select text in an artifact, choose *Ask about this*, say what should change, and it is sent with the part it is about.
-- **Edit it yourself.** Code is editable, and so are spreadsheet cells. An edit is a draft only you see, kept in your browser; *Send my edit to the chat* puts it in the message box for the model to continue from, and *Discard my edit* drops it.
+- **Correct a spreadsheet.** Click a cell and type, or double-click (or F2) to change what is there; Enter moves down, Tab right, Escape cancels. Everything that depends on it recalculates at once. Drag or Shift-click to select a range and see its sum, average and count; copy, cut and paste work with Excel and Google Sheets; Delete clears; Ctrl+Z and Ctrl+Y undo and redo; the toolbar inserts and deletes rows and columns, and *Ask about this* sends the selected range to the chat.
+- **Correct a presentation.** *Edit slide* opens the current slide's text (Ctrl+Enter saves); *Add a slide* and *Delete this slide* work on the one shown. The rest of the deck is left as it was.
+- **Edit it yourself.** Code is editable too. An edit is a draft only you see, kept in your browser; *Send my edit to the chat* puts it in the message box for the model to continue from, and *Discard my edit* drops it.
 - **Start one.** *New* offers ready requests for each kind; one goes into the message box for you to complete and send. *Write it yourself* makes a blank artifact on this device.
 - **Keep it.** Copy, download, *Save to my files*, *Save as a note*, or *Show in chat*.
 - **Full screen** widens the panel over the chat; on a phone the panel always covers the screen.
@@ -157,13 +159,13 @@ Artifacts come from models and, in shared chats, from other people. They are tre
 
 - **Libraries come from the network.** Apps need `esm_cdn` and Babel; diagrams need Mermaid. Where they can't be reached, the panel says so and the code is still there.
 - **Grouping into versions is a guess** when nothing is named; *Changes* shows what really differs.
-- **Spreadsheets** have one sheet, up to 2,000 rows and 60 columns, and the functions listed in the formula hint (SUM, AVERAGE, MIN, MAX, MEDIAN, COUNT, COUNTA, PRODUCT, ROUND, ABS, SQRT, POWER, INT, MOD, IF, AND, OR, NOT, CONCAT, LEN, UPPER, LOWER). Excel export keeps values and formulas, not styling.
-- **Documents** export to Word as a Word-readable HTML file (`.doc`); slides export to HTML and PDF, not PowerPoint.
+- **Spreadsheets** have one sheet, up to 2,000 rows and 60 columns (500 shown at once), and the functions listed in the formula hint (SUM, AVERAGE, MIN, MAX, MEDIAN, COUNT, COUNTA, COUNTIF, SUMIF, AVERAGEIF, PRODUCT, ROUND, ROUNDUP, ROUNDDOWN, ABS, SQRT, POWER, INT, MOD, IF, IFERROR, AND, OR, NOT, CONCAT, LEN, UPPER, LOWER). Excel export keeps values and formulas, not styling.
+- **Documents** export to Word as a Word-readable HTML file (`.doc`). **PowerPoint** files hold each slide's text as text boxes and its diagrams, charts, drawings and pictures as images, without speaker notes or animations; pictures from other sites are left out.
 - **Pages with external pictures or APIs** need those addresses in `extra_hosts`, or `network = open`.
 - **Sharing** is not offered. A chat shared with Open WebUI's own Share still shows its artifacts, read-only.
 - **Drafts live in one browser.**
 - **Interface markers.** It finds Open WebUI's interface by markers stable from v0.13.0 to v0.13.3 (`chat-container`, `messages-container`, `chat-context-menu-button`, `code-textarea-…`, `copy-code-button`, `response-content-container`, `data-panel-tab`). A later release may need an update.
-- English and French.
+- English and French. The panel follows the language chosen in Open WebUI (*Settings → General → Language*) and switches with it at once; the `language` valve can fix one.
 
 ## Tests
 
@@ -187,10 +189,10 @@ node tests/e2e.mjs seed.json
 
 | Open WebUI | With Chat Inspector, Files and Gallery | Checks |
 | --- | --- | --- |
-| v0.13.3 | yes | 125 of 125 passed |
-| v0.13.3 | no | 125 of 125 passed |
-| v0.13.0 | yes | 125 of 125 passed |
+| v0.13.3 | yes | 153 of 153 passed |
+| v0.13.3 | no | 153 of 153 passed |
+| v0.13.0 | yes | 153 of 153 passed |
 
-They cover every kind of artifact and its downloads (the Excel file is opened and its formulas read back), versions and Changes, the panel docking beside the chat, the address reopening an artifact, drafts that survive a reload and go to the message box, the ⋯ menu, Escape, Open WebUI's Preview button and its own Artifacts tab, **the attack page** (parent page, token, cookies, top navigation, network and pictures blocked, its posted prompt ignored), `window.storage`, `window.claude.complete` with its consent dialog, **Try fixing** with the fake model's fix becoming version 2, **ordinary answers making nothing** (a long answer with a table, a script and JSON, and a live "hello"), **a page streamed live** shown as a writing card with its code folded and the panel closed, then opening complete and running, the code shown again from its card, **Artifacts mode** reaching the model when on by default and not otherwise, documents and **slides holding diagrams, multi-series charts, columns, section layouts, callouts, drawings and pictures** (a picture from another site not loaded) and their downloads, a chart block on its own, asking about a selected part, a chat shared through Open WebUI opening read-only, the small copy note, *New* and blank artifacts, contrast of 4.5:1 or better in light, dark, OLED black and *Her*, a phone, French, and the valves, including `detect` in its three settings. The Chat Inspector suite also passes with Artifacts installed.
+They cover every kind of artifact and its downloads (the Excel file is opened and its formulas read back), versions and Changes, the panel docking beside the chat, the address reopening an artifact, drafts that survive a reload and go to the message box, the ⋯ menu, Escape, Open WebUI's Preview button and its own Artifacts tab, **the attack page** (parent page, token, cookies, top navigation, network and pictures blocked, its posted prompt ignored), `window.storage`, `window.claude.complete` with its consent dialog, **Try fixing** with the fake model's fix becoming version 2, **ordinary answers making nothing** (a long answer with a table, a script and JSON, and a live "hello"), **a page streamed live** shown as a writing card with its code folded and the panel closed, then opening complete and running, the code shown again from its card, **Artifacts mode** reaching the model when on by default and not otherwise, documents and **slides holding diagrams, multi-series charts, columns, section layouts, callouts, drawings and pictures** (a picture from another site not loaded) and their downloads, a chart block on its own, asking about a selected part, **correcting cells** (typing, double-click, Tab, Escape, ranges and their sum, copy and paste as tab-separated text, undo and redo, inserting and deleting rows, a `SUMIF` typed in, all checked again in the Excel file), **editing, adding and deleting slides** and the **PowerPoint download** (opened with python-pptx, pictures counted), buttons in Open WebUI's greys, dialogs centred, French switched on and off from the page's language, a refused AI request remembered, a chat shared through Open WebUI opening read-only, the small copy note, *New* and blank artifacts, contrast of 4.5:1 or better in light, dark, OLED black and *Her*, a phone, French, and the valves, including `detect` in its three settings. The Chat Inspector suite also passes with Artifacts installed.
 
 Not tested in a browser: the public CDNs themselves (unreachable from the test machine; the same files were served locally), a real model, Ollama, and printing to paper.

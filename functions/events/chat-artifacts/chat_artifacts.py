@@ -2,7 +2,7 @@
 title: Artifacts
 description: Claude-style Artifacts for Open WebUI: documents, slides, spreadsheets, diagrams, web pages, React apps, drawings and data open in a panel beside the chat, with versions, editing, exports (PDF, Word, Excel, PNG) and a sandbox. Pair it with Artifacts mode, the switch that tells the model when and how to make them.
 author: Muhammad Sohail
-version: 1.1.0
+version: 1.2.0
 license: MIT
 required_open_webui_version: 0.13.0
 """
@@ -420,8 +420,8 @@ def asset_register(
 # =========================== end shared asset block ========================
 ARTIFACTS_CSS = r"""
 :root{--ar-w:640px}
-.ar-panel,.ar-cards,#owui-chat-artifacts-header.ar-floating{--ar-surface:#fff;--ar-text:var(--color-gray-800,#262626);--ar-muted:var(--color-gray-600,#5d5d5d);--ar-soft:var(--color-gray-50,#f9f9f9);--ar-hover:var(--color-gray-100,#ececec);--ar-line:var(--color-gray-100,#ececec);--ar-strong-line:var(--color-gray-200,#e3e3e3);--ar-accent:#2563eb;--ar-accent-text:#fff;--ar-ok:#166534;--ar-warn:#92400e;--ar-bad:#b91c1c;--ar-add:#166534;--ar-add-bg:#dcfce7;--ar-del:#991b1b;--ar-del-bg:#fee2e2;--ar-t-document:#2563eb;--ar-t-slides:#c2410c;--ar-t-sheet:#15803d;--ar-t-diagram:#7c3aed;--ar-t-html:#0e7490;--ar-t-react:#0369a1;--ar-t-svg:#be185d;--ar-t-data:#a16207;--ar-t-code:#475569}
-.dark .ar-panel,.dark .ar-cards,.dark #owui-chat-artifacts-header.ar-floating{--ar-surface:var(--color-gray-900,#171717);--ar-text:var(--color-gray-100,#ececec);--ar-muted:var(--color-gray-400,#b4b4b4);--ar-soft:var(--color-gray-850,#262626);--ar-hover:var(--color-gray-800,#333);--ar-line:var(--color-gray-800,#333);--ar-strong-line:var(--color-gray-700,#4e4e4e);--ar-accent:#60a5fa;--ar-accent-text:#0b1220;--ar-ok:#4ade80;--ar-warn:#fbbf24;--ar-bad:#f87171;--ar-add:#86efac;--ar-add-bg:rgb(22 101 52/.35);--ar-del:#fca5a5;--ar-del-bg:rgb(153 27 27/.35);--ar-t-document:#93c5fd;--ar-t-slides:#fdba74;--ar-t-sheet:#86efac;--ar-t-diagram:#c4b5fd;--ar-t-html:#67e8f9;--ar-t-react:#7dd3fc;--ar-t-svg:#f9a8d4;--ar-t-data:#fde047;--ar-t-code:#cbd5e1;color-scheme:dark}
+.ar-panel,.ar-cards,#owui-chat-artifacts-header.ar-floating{--ar-surface:#fff;--ar-text:var(--color-gray-800,#262626);--ar-muted:var(--color-gray-600,#5d5d5d);--ar-soft:var(--color-gray-50,#f9f9f9);--ar-hover:var(--color-gray-100,#ececec);--ar-line:var(--color-gray-100,#ececec);--ar-strong-line:var(--color-gray-200,#e3e3e3);--ar-accent:#2563eb;--ar-accent-text:#fff;--ar-primary-bg:var(--color-gray-900,#171717);--ar-primary-fg:#fff;--ar-primary-hover:#000;--ar-second:var(--color-gray-100,#ececec);--ar-second-hover:color-mix(in srgb,var(--color-gray-100,#ececec) 70%,transparent);--ar-modal:#fff;--ar-modal-line:#fff;--ar-ok:#166534;--ar-warn:#92400e;--ar-bad:#b91c1c;--ar-add:#166534;--ar-add-bg:#dcfce7;--ar-del:#991b1b;--ar-del-bg:#fee2e2;--ar-t-document:#2563eb;--ar-t-slides:#c2410c;--ar-t-sheet:#15803d;--ar-t-diagram:#7c3aed;--ar-t-html:#0e7490;--ar-t-react:#0369a1;--ar-t-svg:#be185d;--ar-t-data:#a16207;--ar-t-code:#475569}
+.dark .ar-panel,.dark .ar-cards,.dark #owui-chat-artifacts-header.ar-floating{--ar-surface:var(--color-gray-900,#171717);--ar-text:var(--color-gray-100,#ececec);--ar-muted:var(--color-gray-400,#b4b4b4);--ar-soft:var(--color-gray-850,#262626);--ar-hover:var(--color-gray-800,#333);--ar-line:var(--color-gray-800,#333);--ar-strong-line:var(--color-gray-700,#4e4e4e);--ar-accent:#60a5fa;--ar-accent-text:#0b1220;--ar-primary-bg:var(--color-gray-100,#ececec);--ar-primary-fg:var(--color-gray-900,#171717);--ar-primary-hover:#fff;--ar-second:var(--color-gray-850,#262626);--ar-second-hover:color-mix(in srgb,var(--color-gray-850,#262626) 60%,transparent);--ar-modal:var(--color-gray-950,#0d0d0d);--ar-modal-line:var(--color-gray-900,#171717);--ar-ok:#4ade80;--ar-warn:#fbbf24;--ar-bad:#f87171;--ar-add:#86efac;--ar-add-bg:rgb(22 101 52/.35);--ar-del:#fca5a5;--ar-del-bg:rgb(153 27 27/.35);--ar-t-document:#93c5fd;--ar-t-slides:#fdba74;--ar-t-sheet:#86efac;--ar-t-diagram:#c4b5fd;--ar-t-html:#67e8f9;--ar-t-react:#7dd3fc;--ar-t-svg:#f9a8d4;--ar-t-data:#fde047;--ar-t-code:#cbd5e1;color-scheme:dark}
 .ar-docked{box-sizing:border-box!important;padding-inline-end:var(--ar-w)!important}
 .ar-panel{position:fixed;top:0;inset-inline-end:0;height:100vh;height:100dvh;width:var(--ar-w);z-index:40;display:flex;flex-direction:column;box-sizing:border-box;background:var(--ar-surface);color:var(--ar-text);border-inline-start:1px solid var(--ar-line);font-family:inherit;font-size:.875rem;line-height:1.45;container:ar/inline-size}
 .ar-panel[hidden]{display:none}
@@ -429,9 +429,9 @@ ARTIFACTS_CSS = r"""
 .ar-panel.ar-full{z-index:56}
 .ar-panel *{box-sizing:border-box}
 .ar-panel button,.ar-panel select,.ar-panel input,.ar-panel textarea{font:inherit;color:inherit}
-.ar-panel :focus-visible,.ar-cards :focus-visible{outline:2px solid var(--ar-accent);outline-offset:2px}
+.ar-panel :focus-visible,.ar-cards :focus-visible,.ar-dialog :focus-visible{outline:2px solid var(--ar-text)!important;outline-offset:2px!important}
 .ar-resizer{position:absolute;inset-block:0;inset-inline-start:-3px;width:6px;cursor:col-resize;z-index:3}
-.ar-resizer:hover,.ar-resizer:focus-visible,.ar-dragging .ar-resizer{background:var(--ar-accent);opacity:.5}
+.ar-resizer:hover,.ar-resizer:focus-visible,.ar-dragging .ar-resizer{background:var(--ar-strong-line)}
 .ar-overlay .ar-resizer{display:none}
 .ar-dragging,.ar-dragging *{user-select:none}
 .ar-dragging .ar-frame{pointer-events:none}
@@ -446,23 +446,24 @@ ARTIFACTS_CSS = r"""
 .ar-meta{color:var(--ar-muted);font-size:.75rem}
 .ar-spacer{flex:1}
 .ar-versions{display:flex;align-items:center;gap:.125rem}
-.ar-modes{display:inline-flex;padding:2px;border-radius:.625rem;background:var(--ar-soft);box-shadow:inset 0 0 0 1px var(--ar-line)}
+.ar-modes{display:inline-flex;gap:2px;padding:2px;border-radius:.625rem;background:var(--ar-second)}
 .ar-mode{height:1.75rem;padding:0 .625rem;border:0;border-radius:.5rem;background:transparent;cursor:pointer;color:var(--ar-muted);font-size:.8125rem}
-.ar-mode[aria-selected=true]{background:var(--ar-surface);color:var(--ar-text);box-shadow:0 1px 2px rgb(0 0 0/.12);font-weight:500}
-.ar-icon{display:inline-flex;align-items:center;justify-content:center;width:2rem;height:2rem;flex:none;border:0;border-radius:.625rem;background:transparent;cursor:pointer;color:var(--ar-muted)}
+.ar-mode[aria-selected=true]{background:var(--ar-surface);color:var(--ar-text);box-shadow:0 1px 2px rgb(0 0 0/.1);font-weight:500}
+.ar-icon{display:inline-flex;align-items:center;justify-content:center;width:2rem;height:2rem;flex:none;border:0;border-radius:.5rem;background:transparent;cursor:pointer;color:var(--ar-muted)}
 .ar-icon:hover{background:var(--ar-hover);color:var(--ar-text)}
 .ar-icon:disabled{opacity:.35;cursor:default;background:transparent}
 .ar-icon svg{width:1.125rem;height:1.125rem}
-.ar-btn{display:inline-flex;align-items:center;justify-content:center;gap:.375rem;min-height:2rem;padding:0 .75rem;border:0;border-radius:.625rem;background:var(--ar-soft);box-shadow:inset 0 0 0 1px var(--ar-line);cursor:pointer;white-space:nowrap;font-size:.8125rem}
-.ar-btn:hover{background:var(--ar-hover)}
+.ar-btn{display:inline-flex;align-items:center;justify-content:center;gap:.375rem;min-height:1.875rem;padding:0 .75rem;border:0;border-radius:.5rem;background:var(--ar-second);color:var(--ar-text);cursor:pointer;white-space:nowrap;font-size:.8125rem;font-weight:400;transition:background .1s}
+.ar-btn:hover{background:var(--ar-second-hover)}
 .ar-btn svg{width:1rem;height:1rem}
-.ar-btn[aria-pressed=true]{background:var(--ar-text);color:var(--ar-surface);box-shadow:none}
-.ar-primary{background:var(--ar-accent);color:var(--ar-accent-text);box-shadow:none}
-.ar-primary:hover{background:var(--ar-accent);filter:brightness(1.08)}
-.ar-danger{background:var(--ar-bad);color:#fff;box-shadow:none}
+.ar-btn[aria-pressed=true]{background:var(--ar-primary-bg);color:var(--ar-primary-fg)}
+.ar-primary{background:var(--ar-primary-bg);color:var(--ar-primary-fg)}
+.ar-primary:hover{background:var(--ar-primary-hover)}
+.ar-danger{background:#dc2626;color:#fff}
+.ar-danger:hover{background:#b91c1c}
 .ar-danger-text{color:var(--ar-bad)!important}
-.ar-chip{min-height:1.75rem;padding:0 .625rem}
-.ar-select{height:2rem;max-width:12rem;padding:0 .375rem;border:0;border-radius:.625rem;background:var(--ar-soft);box-shadow:inset 0 0 0 1px var(--ar-line);cursor:pointer}
+.ar-chip{min-height:1.75rem;padding:0 .625rem;font-size:.75rem}
+.ar-select{height:1.875rem;max-width:12rem;padding:0 .375rem;border:0;border-radius:.5rem;background:var(--ar-second);color:var(--ar-text);cursor:pointer;font-size:.8125rem}
 .ar-select option{background:var(--ar-surface);color:var(--ar-text)}
 .ar-vselect{max-width:8.5rem}
 .ar-body{flex:1;min-height:0;overflow:auto;overscroll-behavior:contain;display:flex;flex-direction:column}
@@ -486,7 +487,7 @@ ARTIFACTS_CSS = r"""
 .ar-notice{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.5rem;flex:1;min-height:14rem;padding:2rem;color:var(--ar-muted);text-align:center}
 .ar-notice strong{color:var(--ar-text);font-weight:600;font-size:.9375rem}
 .ar-notice .ar-btn{margin-top:.5rem;color:var(--ar-text)}
-.ar-search{margin:.75rem .75rem .25rem;height:2.25rem;padding:0 .75rem;border:0;border-radius:.75rem;background:var(--ar-soft);box-shadow:inset 0 0 0 1px var(--ar-line)}
+.ar-search{margin:.75rem .75rem .25rem;height:2.125rem;padding:0 .75rem;border:0;border-radius:.75rem;background:var(--ar-second);color:var(--ar-text);font-size:.8125rem;outline:none}
 .ar-filter{margin:0;height:2rem;min-width:7rem;flex:0 1 11rem}
 .ar-list{list-style:none;margin:0;padding:.25rem .5rem 1rem;display:flex;flex-direction:column;gap:.125rem}
 .ar-item,.ar-newitem,.ar-card{display:flex;align-items:center;gap:.75rem;width:100%;padding:.5rem;border:0;border-radius:.75rem;background:transparent;cursor:pointer;text-align:start;color:inherit}
@@ -551,7 +552,7 @@ mark{background:#fde68a;color:#111;padding:0 .15em;border-radius:.2em}
 @container ar (min-width:820px){.ar-outline{display:flex}}
 .ar-deck{display:flex;flex-direction:column;min-height:0}
 .ar-stage{flex:none!important;margin:1rem auto .5rem;width:min(100% - 2rem,64rem);aspect-ratio:16/9;outline:none;border-radius:.75rem;box-shadow:0 0 0 1px var(--ar-strong-line),0 8px 24px -12px rgb(0 0 0/.35);overflow:hidden;background:#fff}
-.ar-stage:focus-visible{outline:2px solid var(--ar-accent);outline-offset:3px}
+.ar-panel .ar-stage:focus-visible{outline:2px solid var(--ar-text)!important;outline-offset:3px!important}
 .ar-stage:fullscreen{width:100vw;height:100vh;aspect-ratio:auto;border-radius:0;display:flex;align-items:center;justify-content:center;background:#000;box-shadow:none}
 .ar-stage:fullscreen .ar-slide{width:min(100vw,177.78vh);height:min(56.25vw,100vh)}
 .ar-slide{width:100%;height:100%;container-type:inline-size;background:#fff;color:#111;overflow:hidden;color-scheme:light}
@@ -583,7 +584,7 @@ mark{background:#fde68a;color:#111;padding:0 .15em;border-radius:.2em}
 .ar-counter{font-variant-numeric:tabular-nums;color:var(--ar-muted);min-width:3.5rem;text-align:center}
 .ar-thumbs{flex:none!important;display:flex;gap:.5rem;overflow-x:auto;padding:.5rem 1rem 1rem}
 .ar-thumb{flex:none;width:8.5rem;aspect-ratio:16/9;padding:0;border:0;border-radius:.375rem;overflow:hidden;cursor:pointer;box-shadow:0 0 0 1px var(--ar-strong-line);background:#fff}
-.ar-thumb[aria-current=true]{box-shadow:0 0 0 2px var(--ar-accent)}
+.ar-thumb[aria-current=true]{box-shadow:0 0 0 2px var(--ar-text)}
 .ar-slide-small{pointer-events:none}
 .ar-sheet{display:flex;flex-direction:column;min-height:0}
 .ar-ref{min-width:3rem;font:600 .75rem ui-monospace,Menlo,monospace;color:var(--ar-muted);text-align:center}
@@ -593,10 +594,23 @@ mark{background:#fde68a;color:#111;padding:0 .15em;border-radius:.2em}
 .ar-grid{font-size:.8125rem;font-variant-numeric:tabular-nums}
 .ar-grid thead th{position:sticky;top:0;z-index:1;background:var(--ar-soft)}
 .ar-grid td{cursor:cell;max-width:22rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.ar-grid td[aria-selected=true]{outline:2px solid var(--ar-accent);outline-offset:-2px}
+.ar-grid{user-select:none}
+.ar-grid td.ar-sel{background:color-mix(in srgb,#16a34a 12%,transparent)}
+.ar-grid td.ar-cur{outline:2px solid #16a34a;outline-offset:-2px}
+.ar-grid td.ar-editing{padding:0;position:relative}
+.ar-celledit{width:100%;min-width:6rem;height:100%;min-height:1.75rem;padding:.25rem .5rem;border:0;outline:2px solid #16a34a;outline-offset:-2px;background:var(--ar-surface);color:var(--ar-text);font:inherit;font-variant-numeric:tabular-nums}
+.ar-panel .ar-gridbox:focus,.ar-panel .ar-gridbox:focus-visible{outline:none!important;box-shadow:none}
+.ar-sheetbar2{border-bottom:1px solid var(--ar-line);padding-top:.375rem}
+.ar-sheetbar2[hidden]{display:none}
+.ar-sheettools{display:flex;align-items:center;gap:.125rem;flex-wrap:wrap}
+.ar-tool{width:1.875rem;height:1.875rem}
+.ar-statref{font:600 .75rem ui-monospace,Menlo,monospace;color:var(--ar-text)}
+.ar-slideedit{flex:none!important;margin:0 auto .5rem;width:min(100% - 2rem,64rem)}
+.ar-slideedit[hidden]{display:none}
+.ar-slidearea{font:.8125rem/1.5 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace!important}
 .ar-grid .ar-headrow td{font-weight:600;background:var(--ar-soft)}
 .ar-grid .ar-num{text-align:end}
-.ar-grid .ar-fx{color:var(--ar-accent)}
+.ar-grid .ar-fx{color:inherit}
 .ar-grid .ar-errcell{color:var(--ar-bad)}
 .ar-rownum,.ar-corner{position:sticky;inset-inline-start:0;background:var(--ar-soft);color:var(--ar-muted);font-weight:500!important;text-align:end!important;min-width:2.5rem}
 .ar-sortbtn{border:0;background:none;cursor:pointer;font-weight:600;color:var(--ar-muted);width:100%;text-align:center}
@@ -633,21 +647,24 @@ mark{background:#fde68a;color:#111;padding:0 .15em;border-radius:.2em}
 .ar-dline[data-sign=del] .ar-dsign{color:var(--ar-del)}
 .ar-dtext{flex:1;padding-inline-end:.5rem}
 .ar-dskip{padding:.125rem 1.5rem;color:var(--ar-muted);background:var(--ar-soft);font-style:italic}
-.ar-menu{position:absolute;z-index:20;min-width:13rem;max-width:min(20rem,90%);padding:.25rem;border-radius:.75rem;background:var(--ar-surface);box-shadow:0 0 0 1px var(--ar-line),0 12px 32px -8px rgb(0 0 0/.3);display:flex;flex-direction:column}
-.ar-menuitem{display:flex;align-items:center;min-height:2rem;padding:0 .625rem;border:0;border-radius:.5rem;background:transparent;text-align:start;cursor:pointer}
-.ar-menuitem:hover,.ar-menuitem:focus-visible{background:var(--ar-hover)}
+.ar-menu{position:absolute;z-index:20;min-width:13rem;max-width:min(20rem,90%);padding:.25rem;border-radius:1rem;background:var(--ar-surface);border:1px solid var(--ar-line);box-shadow:0 10px 30px -10px rgb(0 0 0/.25);display:flex;flex-direction:column}
+.ar-menuitem{display:flex;align-items:center;min-height:1.875rem;padding:0 .625rem;border:0;border-radius:.75rem;background:transparent;text-align:start;cursor:pointer;font-size:.8125rem;color:var(--ar-text)}
+.ar-menuitem:hover,.ar-menuitem:focus-visible{background:var(--ar-soft);outline:none!important}
 .ar-menuitem:disabled{opacity:.4}
 .ar-menusep{height:1px;margin:.25rem .375rem;background:var(--ar-line)}
-.ar-dialog{width:min(32rem,calc(100vw - 2rem));padding:1.25rem;border:0;border-radius:1rem;background:var(--ar-surface);color:var(--ar-text);box-shadow:0 24px 48px -12px rgb(0 0 0/.45)}
-.ar-dialog::backdrop{background:rgb(0 0 0/.4)}
-.ar-dialog h3{margin:0 0 .5rem;font-size:1.0625rem;font-weight:600}
-.ar-dialog p{margin:0 0 .75rem;color:var(--ar-muted)}
+.ar-dialog{position:fixed;inset:0;margin:auto;height:fit-content;max-height:calc(100dvh - 2rem);overflow:auto;width:min(32rem,calc(100vw - 1rem));padding:1.25rem;border:1px solid var(--ar-modal-line);border-radius:1.5rem;background:var(--ar-modal);color:var(--ar-text);box-shadow:0 25px 50px -12px rgb(0 0 0/.35)}
+.ar-dialog[open]{animation:ar-pop .1s ease-out}
+@keyframes ar-pop{from{transform:scale(.985);opacity:0}to{transform:none;opacity:1}}
+.ar-dialog::backdrop{background:rgb(0 0 0/.6)}
+.ar-dialog h3{margin:0 0 .625rem;font-size:1rem;font-weight:500}
+.ar-dialog p{margin:0 0 .75rem;color:var(--ar-muted);font-size:.875rem}
 .ar-newdialog{width:min(40rem,calc(100vw - 2rem))}
 .ar-newgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(14rem,1fr));gap:.25rem;margin:.5rem 0 1rem}
-.ar-newitem{box-shadow:inset 0 0 0 1px var(--ar-line)}
+.ar-newitem{box-shadow:none;background:transparent}
+.ar-newitem:hover,.ar-newitem:focus-visible{background:var(--ar-soft)}
 .ar-actions{display:flex;flex-wrap:wrap;align-items:center;justify-content:flex-end;gap:.5rem;margin-top:.75rem}
 .ar-label{display:flex;flex-direction:column;gap:.25rem;margin:.5rem 0;font-weight:500}
-.ar-input{width:100%;min-height:2.25rem;padding:.5rem .625rem;border:0;border-radius:.625rem;background:var(--ar-soft);box-shadow:inset 0 0 0 1px var(--ar-strong-line);resize:vertical}
+.ar-input{width:100%;min-height:2.25rem;padding:.5rem .75rem;border:0;border-radius:.5rem;background:var(--ar-second);color:var(--ar-text);resize:vertical;font-size:.875rem;outline:none}
 .ar-linkrow{display:flex;gap:.375rem;margin:.5rem 0}
 .ar-linkrow[hidden]{display:none}
 .ar-quote{max-height:9rem;overflow:auto;margin:0 0 .75rem;padding:.5rem .625rem;border-radius:.5rem;background:var(--ar-soft);font:.75rem/1.5 ui-monospace,Menlo,monospace;white-space:pre-wrap}
@@ -663,9 +680,9 @@ mark{background:#fde68a;color:#111;padding:0 .15em;border-radius:.2em}
 .ar-cardcode{width:1.875rem;height:1.875rem;color:var(--ar-muted)}
 .ar-cardcode[aria-pressed=true]{background:var(--ar-soft);color:var(--ar-text)}
 .ar-card-writing{padding:.625rem .75rem;gap:.75rem}
-.ar-spinner{flex:none;width:1rem;height:1rem;border-radius:999px;border:2px solid var(--ar-strong-line);border-top-color:var(--ar-accent);animation:ar-spin .8s linear infinite}
+.ar-spinner{flex:none;width:1rem;height:1rem;border-radius:999px;border:2px solid var(--ar-strong-line);border-top-color:var(--ar-text);animation:ar-spin .8s linear infinite}
 @keyframes ar-spin{to{transform:rotate(360deg)}}
-.ar-cardopen{flex:none;font-size:.75rem;font-weight:600;color:var(--ar-muted);padding:.25rem .5rem;border-radius:.5rem;box-shadow:inset 0 0 0 1px var(--ar-strong-line)}
+.ar-cardopen{flex:none;font-size:.75rem;font-weight:500;color:var(--ar-text);padding:.25rem .625rem;border-radius:.5rem;background:var(--ar-second)}
 .ar-openbtn svg{width:.875rem;height:.875rem}
 html.ar-replace #chat-artifacts-button{display:none!important}
 .ar-collapsed:not(.ar-shown)>:not(:first-child){display:none!important}
@@ -711,7 +728,7 @@ LOADER_SCRIPT = r"""
      
       lines: '{n} lines', words: '{n} words', rows_cols: '{rows} rows × {cols} columns', slides_n: '{n} slides', items_n: '{n} items', chars: '{n} characters', read_min: '{n} min read',
       outline: 'Outline', slide: 'Slide {n} of {total}', prev_slide: 'Previous slide', next_slide: 'Next slide', present: 'Present', notes: 'Speaker notes', no_notes: 'No notes for this slide.',
-      filter_rows: 'Filter rows', sort_asc: 'Sort ascending', sort_desc: 'Sort descending', add_row: 'Add a row', add_col: 'Add a column', chart: 'Chart', table: 'Table', chart_bar: 'Bars', chart_line: 'Line', chart_of: 'Chart {col} by {by}', no_numbers: 'This table has no column of numbers to chart.', sum: 'Sum', avg: 'Average', min: 'Min', max: 'Max', count: 'Count', cell: 'Cell {ref}', formula_hint: 'Start with = for a formula: =SUM(B2:B9), =AVERAGE(C:C), =B2*1.2', rows_shown: 'Showing {n} of {total} rows',
+      filter_rows: 'Filter rows', sort_asc: 'Sort ascending', sort_desc: 'Sort descending', add_row: 'Insert a row below', add_col: 'Insert a column', chart: 'Chart', table: 'Table', chart_bar: 'Bars', chart_line: 'Line', chart_of: 'Chart {col} by {by}', no_numbers: 'This table has no column of numbers to chart.', sum: 'Sum', avg: 'Average', min: 'Min', max: 'Max', count: 'Count', cell: 'Cell {ref}', formula_hint: 'Start with = for a formula: =SUM(B2:B9), =AVERAGE(C:C), =B2*1.2', rows_shown: 'Showing {n} of {total} rows',
       tree: 'Tree', as_table: 'As a table', expand: 'Expand all', collapse: 'Collapse all', bad_json: 'This isn’t valid JSON: {error}', json_items: '{n} items', json_keys: '{n} keys',
       wrap: 'Wrap lines', diagram_failed: 'This diagram has an error', no_changes: 'No changes from the previous version.', compare_with: 'Compared with {what}', added: 'added', removed: 'removed', diff_sum: '{added} added, {removed} removed', diff_big: 'These versions are too different to compare line by line.', unchanged_n: '{n} unchanged lines', previous: 'the previous version',
       untitled: 'Untitled', in_message: 'In this answer', versions_n: '{n} versions', auto_opened: 'Opened {title}',
@@ -727,6 +744,7 @@ LOADER_SCRIPT = r"""
       tp_design: 'Design a screen for: \n\nPut the whole design in one code block opened with ```html artifact, with a clean layout, realistic content and a <title>.',
       tp_code: 'Write a program that: \n\nPut the whole program in one code block opened with ``` followed by the language and artifact, for example ```python artifact, and give its file name in a first-line comment.',
       all_columns: 'All columns', chart_area: 'Area', chart_pie: 'Pie', callout_note: 'Note', callout_tip: 'Tip', callout_important: 'Important', callout_warning: 'Warning', drawing: 'Drawing the diagram…', preparing: 'Preparing the download…', show_code: 'Show the code in the chat', hide_code: 'Hide the code in the chat',
+      del_row: 'Delete the selected rows', del_col: 'Delete the selected columns', undo: 'Undo', redo: 'Redo', sheet_keys: 'Spreadsheet. Arrow keys move, Shift selects, typing or Enter edits, Delete clears, Ctrl+Z undoes.', edit_slide: 'Edit this slide', add_slide: 'Add a slide after this one', del_slide: 'Delete this slide', save_slide: 'Save the slide', slide_saved: 'Slide saved as your edit', exporting: 'Making the presentation…',
       blank_type: 'Kind', blank_name: 'Title', blank_create: 'Create', blank_default: 'My artifact'
     },
     fr: {
@@ -748,7 +766,7 @@ LOADER_SCRIPT = r"""
      
       lines: '{n} lignes', words: '{n} mots', rows_cols: '{rows} lignes × {cols} colonnes', slides_n: '{n} diapositives', items_n: '{n} éléments', chars: '{n} caractères', read_min: '{n} min de lecture',
       outline: 'Plan', slide: 'Diapositive {n} sur {total}', prev_slide: 'Diapositive précédente', next_slide: 'Diapositive suivante', present: 'Présenter', notes: 'Notes de l’orateur', no_notes: 'Pas de notes pour cette diapositive.',
-      filter_rows: 'Filtrer les lignes', sort_asc: 'Trier par ordre croissant', sort_desc: 'Trier par ordre décroissant', add_row: 'Ajouter une ligne', add_col: 'Ajouter une colonne', chart: 'Graphique', table: 'Tableau', chart_bar: 'Barres', chart_line: 'Courbe', chart_of: '{col} selon {by}', no_numbers: 'Ce tableau n’a pas de colonne de nombres à représenter.', sum: 'Somme', avg: 'Moyenne', min: 'Min', max: 'Max', count: 'Nombre', cell: 'Cellule {ref}', formula_hint: 'Commencez par = pour une formule : =SUM(B2:B9), =AVERAGE(C:C), =B2*1,2', rows_shown: '{n} lignes affichées sur {total}',
+      filter_rows: 'Filtrer les lignes', sort_asc: 'Trier par ordre croissant', sort_desc: 'Trier par ordre décroissant', add_row: 'Insérer une ligne dessous', add_col: 'Insérer une colonne', chart: 'Graphique', table: 'Tableau', chart_bar: 'Barres', chart_line: 'Courbe', chart_of: '{col} selon {by}', no_numbers: 'Ce tableau n’a pas de colonne de nombres à représenter.', sum: 'Somme', avg: 'Moyenne', min: 'Min', max: 'Max', count: 'Nombre', cell: 'Cellule {ref}', formula_hint: 'Commencez par = pour une formule : =SUM(B2:B9), =AVERAGE(C:C), =B2*1,2', rows_shown: '{n} lignes affichées sur {total}',
       tree: 'Arborescence', as_table: 'En tableau', expand: 'Tout déplier', collapse: 'Tout replier', bad_json: 'Ce JSON n’est pas valide : {error}', json_items: '{n} éléments', json_keys: '{n} clés',
       wrap: 'Retour à la ligne', diagram_failed: 'Ce diagramme contient une erreur', no_changes: 'Aucun changement par rapport à la version précédente.', compare_with: 'Comparé à {what}', added: 'ajoutée', removed: 'supprimée', diff_sum: '{added} ajoutées, {removed} supprimées', diff_big: 'Ces versions sont trop différentes pour être comparées ligne à ligne.', unchanged_n: '{n} lignes inchangées', previous: 'la version précédente',
       untitled: 'Sans titre', in_message: 'Dans cette réponse', versions_n: '{n} versions', auto_opened: '{title} ouvert',
@@ -764,14 +782,16 @@ LOADER_SCRIPT = r"""
       tp_design: 'Conçois un écran pour : \n\nMets toute la maquette dans un seul bloc ouvert par ```html artifact, avec une mise en page soignée, un contenu réaliste et un <title>.',
       tp_code: 'Écris un programme qui : \n\nMets tout le programme dans un seul bloc ouvert par ``` suivi du langage et de artifact, par exemple ```python artifact, avec son nom de fichier dans un commentaire en première ligne.',
       all_columns: 'Toutes les colonnes', chart_area: 'Aires', chart_pie: 'Secteurs', callout_note: 'Remarque', callout_tip: 'Astuce', callout_important: 'Important', callout_warning: 'Attention', drawing: 'Dessin du diagramme…', preparing: 'Préparation du téléchargement…', show_code: 'Afficher le code dans la conversation', hide_code: 'Masquer le code dans la conversation',
+      del_row: 'Supprimer les lignes sélectionnées', del_col: 'Supprimer les colonnes sélectionnées', undo: 'Annuler', redo: 'Rétablir', sheet_keys: 'Tableur. Les flèches déplacent, Maj sélectionne, la saisie ou Entrée modifie, Suppr efface, Ctrl+Z annule.', edit_slide: 'Modifier cette diapositive', add_slide: 'Ajouter une diapositive après celle-ci', del_slide: 'Supprimer cette diapositive', save_slide: 'Enregistrer la diapositive', slide_saved: 'Diapositive enregistrée comme votre modification', exporting: 'Création de la présentation…',
       blank_type: 'Type', blank_name: 'Titre', blank_create: 'Créer', blank_default: 'Mon artefact'
     }
   };
   const language = () => {
     if (STRINGS[CONFIG.language]) return CONFIG.language;
-    let locale = '';
-    try { locale = localStorage.getItem('locale') || ''; } catch {}
-    locale = String(locale || document.documentElement.lang || navigator.language || 'en').toLowerCase();
+    // Open WebUI sets <html lang> whenever the language changes, and keeps the choice in localStorage
+    let locale = document.documentElement.getAttribute('lang') || '';
+    if (!locale) { try { locale = localStorage.getItem('locale') || ''; } catch {} }
+    locale = String(locale || navigator.language || 'en').toLowerCase();
     return STRINGS[locale.slice(0, 2)] ? locale.slice(0, 2) : 'en';
   };
   let lang = language();
@@ -806,6 +826,12 @@ LOADER_SCRIPT = r"""
     sparkle: 'M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09Z',
     play: 'M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.347a1.125 1.125 0 0 1 0 1.972l-11.54 6.347a1.125 1.125 0 0 1-1.667-.986V5.653Z',
     warn: 'M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z',
+    undo: 'M9 15 3 9m0 0 6-6M3 9h12a6 6 0 0 1 0 12h-3',
+    redo: 'm15 15 6-6m0 0-6-6m6 6H9a6 6 0 0 0 0 12h3',
+    row_add: 'M3.75 6.75h16.5M3.75 12h16.5M12 15.75v6m3-3H9',
+    row_del: 'M3.75 6.75h16.5M3.75 12h16.5M9 18.75h6',
+    col_add: 'M6.75 3.75v16.5M12 3.75v16.5M15.75 12h6m-3-3v6',
+    col_del: 'M6.75 3.75v16.5M12 3.75v16.5M15.75 12h6',
     chart: 'M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 0 1 3 19.875v-6.75ZM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 0 1-1.125-1.125V8.625ZM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 0 1-1.125-1.125V4.125Z'
   };
   const svgIcon = name => {
@@ -835,6 +861,30 @@ LOADER_SCRIPT = r"""
       return new Date(ms).toLocaleDateString(lang, {dateStyle: 'medium'});
     } catch { return new Date(ms).toLocaleString(); }
   };
+
+  /* ---- explicit state machines ---- */
+  // Each piece of changing state is a machine: named states, the events each state accepts, and where they lead. An event
+  // a state doesn't accept is ignored, so impossible combinations can't arise. Each machine's state is written on <html>
+  // as data-ar-<name>, for inspection and for the browser tests.
+  function machine(name, initial, table, onEnter) {
+    let current = initial;
+    const attr = 'ar' + name.charAt(0).toUpperCase() + name.slice(1);
+    const write = () => { try { document.documentElement.dataset[attr] = current; } catch {} };
+    write();
+    return {
+      get state() { return current; },
+      is: (...states) => states.includes(current),
+      send(event, data) {
+        const rule = table[current]?.[event] ?? table['*']?.[event];
+        if (rule === undefined) return false;
+        const next = typeof rule === 'function' ? rule(data, current) : rule;
+        if (!next) return false;
+        const from = current; current = next; write();
+        onEnter?.(next, from, event, data);
+        return true;
+      }
+    };
+  }
 
   /* ---- talking to Open WebUI ---- */
   const token = () => { try { return localStorage.token || ''; } catch { return ''; } };
@@ -1248,28 +1298,31 @@ try{mermaid.initialize({startOnLoad:false,securityLevel:'strict',htmlLabels:fals
   }
   // Diagrams inside documents and slides: drawn by Mermaid in a hidden sandboxed frame, then shown as a picture.
   // Each diagram is drawn once and kept, so slides, thumbnails and downloads share it.
+  // Each entry is {status: 'pending' | 'ready' | 'failed', svg, promise}
   const diagrams = new Map();
   let diagramQueue = Promise.resolve();
   function diagramPromise(code) {
-    if (diagrams.has(code)) return Promise.resolve(diagrams.get(code));
-    const promise = new Promise(resolve => {
+    const known = diagrams.get(code);
+    if (known) return known.promise;
+    const entry = {status: 'pending', svg: null, promise: null};
+    diagrams.set(code, entry);
+    entry.promise = new Promise(resolve => {
       diagramQueue = diagramQueue.then(() => new Promise(next => {
         let settled = false, frame = null, timer = 0;
-        const finish = svg => { if (settled) return; settled = true; clearTimeout(timer); frame?.remove(); dropFrames(); diagrams.set(code, svg || null); resolve(svg || null); next(); };
+        const finish = svg => { if (settled) return; settled = true; clearTimeout(timer); frame?.remove(); dropFrames(); entry.status = svg ? 'ready' : 'failed'; entry.svg = svg || null; resolve(entry.svg); next(); };
         frame = makeFrame('diagram', code, {key: 'figure', type: 'diagram', title: 'Diagram', versions: [{text: code}]}, event => { if (event.type === 'svg') finish(event.svg); else if (event.type === 'error' || event.type === 'lib') finish(null); }, false);
         frame.className = 'ar-hiddenframe'; frame.setAttribute('aria-hidden', 'true'); frame.tabIndex = -1;
         document.body.append(frame);
         timer = setTimeout(() => finish(null), 20000);
       }));
     });
-    diagrams.set(code, promise);
-    return promise;
+    return entry.promise;
   }
   function diagramNode(code) {
     const box = el('figure', 'ar-figure ar-diagram');
     const show = svg => { box.dataset.state = svg ? 'ready' : 'failed'; box.replaceChildren(svg ? svgPicture(svg, t('t_diagram')) : Object.assign(el('pre', 'ar-pre'), {textContent: code})); };
     const known = diagrams.get(code);
-    if (typeof known === 'string' || known === null) show(known);
+    if (known && known.status !== 'pending') show(known.svg);
     else { box.dataset.state = 'loading'; box.append(el('span', 'ar-muted ar-small', t('drawing'))); diagramPromise(code).then(show); }
     return box;
   }
@@ -1293,7 +1346,7 @@ try{mermaid.initialize({startOnLoad:false,securityLevel:'strict',htmlLabels:fals
   });
 
   /* ---- what artifacts may ask for ---- */
-  const aiAllowed = new Set();
+  const aiConsent = new Map();
   const aiTimes = [];
   async function aiCall(record, payload) {
     if (!CONFIG.allowAi || !token()) throw new Error(t('ai_off'));
@@ -1301,12 +1354,16 @@ try{mermaid.initialize({startOnLoad:false,securityLevel:'strict',htmlLabels:fals
     if (!prompt.trim()) throw new Error('Empty prompt');
     const model = state.modelId;
     if (!model) throw new Error(t('ai_no_model'));
+    // Per artifact: unknown -> asking -> allowed or denied, until the page is reloaded. Requests that arrive while the
+    // person is being asked wait for that one answer instead of opening a second dialog.
     const key = record.artifact.key;
-    if (!aiAllowed.has(key)) {
-      const ok = await confirmBox(t('ai_title'), t('ai_text', {title: displayTitle(record.artifact), model}), t('ai_allow'), false, t('ai_deny'));
-      if (!ok) throw new Error('Not allowed');
-      aiAllowed.add(key);
+    let consent = aiConsent.get(key);
+    if (!consent) {
+      consent = {state: 'asking', answer: confirmBox(t('ai_title'), t('ai_text', {title: displayTitle(record.artifact), model}), t('ai_allow'), false, t('ai_deny'))};
+      aiConsent.set(key, consent);
+      consent.answer.then(ok => { consent.state = ok ? 'allowed' : 'denied'; });
     }
+    if (consent.state === 'denied' || !(await consent.answer)) throw new Error('Not allowed');
     const now = Date.now();
     while (aiTimes.length && now - aiTimes[0] > 60000) aiTimes.shift();
     if (aiTimes.length >= CONFIG.aiPerMinute) throw new Error(t('ai_limit'));
@@ -1471,13 +1528,23 @@ try{mermaid.initialize({startOnLoad:false,securityLevel:'strict',htmlLabels:fals
   }
 
   /* ---- slides ---- */
+  // A deck is its first lines (the artifact marker, a Marp front matter block), then slides separated by ---. Editing
+  // one slide rewrites only its own part, so the rest of the deck stays exactly as the model wrote it.
+  function deckParts(text) {
+    const lines = text.replace(/\r\n?/g, '\n').split('\n');
+    let prefix = '';
+    const first = lines.findIndex(line => line.trim());
+    if (first >= 0 && MARKER_RE.test(lines[first])) prefix = lines.splice(0, first + 1).join('\n') + '\n';
+    let body = lines.join('\n');
+    const front = /^\s*---\s*\n(?:[a-zA-Z_]+\s*:.*\n)+---\s*\n/.exec(body);
+    if (front) { prefix += front[0]; body = body.slice(front[0].length); }
+    return {prefix, chunks: body.split(/\n\s*---\s*\n/)};
+  }
+  const deckText = parts => parts.prefix + parts.chunks.map(chunk => chunk.trim()).join('\n\n---\n\n') + '\n';
   function slidesOf(text) {
-    let body = withoutMarker(text).replace(/\r\n?/g, '\n');
-    // A Marp front matter block isn't a slide
-    body = body.replace(/^\s*---\s*\n(?:[a-zA-Z_]+\s*:.*\n)+---\s*\n/, '');
-    return body.split(/\n\s*---\s*\n/).map(chunk => {
+    return deckParts(text).chunks.map((chunk, index) => {
       const split = chunk.split(/^\s*(?:Note|Notes|Speaker notes|Notes de l’orateur)\s*:\s*/im);
-      return {body: split[0].trim(), notes: split.slice(1).join('\n').trim()};
+      return {body: split[0].trim(), notes: split.slice(1).join('\n').trim(), index, raw: chunk};
     }).filter(slide => slide.body || slide.notes);
   }
   function slideNode(slide, small) {
@@ -1502,7 +1569,7 @@ try{mermaid.initialize({startOnLoad:false,securityLevel:'strict',htmlLabels:fals
     node.append(inner);
     return node;
   }
-  function slidesView(text, ctx) {
+  function slidesView(text, ctx, editable = false, commit = null) {
     const slides = slidesOf(text);
     const wrap = el('div', 'ar-deck');
     if (!slides.length) { wrap.append(el('p', 'ar-muted', t('untitled'))); return wrap; }
@@ -1517,7 +1584,24 @@ try{mermaid.initialize({startOnLoad:false,securityLevel:'strict',htmlLabels:fals
     notesButton.setAttribute('aria-pressed', 'false');
     const present = textButton(t('present'), () => { stage.requestFullscreen?.().catch(() => {}); stage.focus(); });
     present.prepend(svgIcon('play'));
-    const bar = el('div', 'ar-subbar'); bar.append(prev, counter, next, el('span', 'ar-spacer'), notesButton, present);
+    const bar = el('div', 'ar-subbar'); bar.append(prev, counter, next, el('span', 'ar-spacer'));
+    // One slide can be edited, added after the current one, or deleted, as your edit
+    const editor = el('div', 'ar-slideedit'); editor.hidden = true;
+    const rewrite = apply => { const parts = deckParts(text); apply(parts.chunks); commit(deckText(parts)); };
+    if (editable && commit) {
+      const edit = iconButton(t('edit_slide'), 'pencil', () => {
+        const area = el('textarea', 'ar-input ar-slidearea'); area.value = slides[at].raw.trim(); area.rows = Math.min(16, Math.max(6, countLines(area.value) + 1)); area.dir = 'auto'; setLabel(area, t('edit_slide'));
+        const keep = textButton(t('save_slide'), () => { const index = slides[at].index; rewrite(chunks => { chunks[index] = area.value; }); toast(t('slide_saved')); }, 'ar-btn ar-primary');
+        const cancel = textButton(t('cancel'), () => { editor.hidden = true; editor.replaceChildren(); });
+        area.addEventListener('keydown', event => { if (event.key === 'Enter' && (event.ctrlKey || event.metaKey)) { event.preventDefault(); keep.click(); } else if (event.key === 'Escape') { event.preventDefault(); event.stopPropagation(); cancel.click(); } });
+        editor.replaceChildren(area, actionsRow(cancel, keep)); editor.hidden = false; area.focus();
+      });
+      const add = iconButton(t('add_slide'), 'plus', () => { const index = slides[at].index; ctx.slide = at + 1; rewrite(chunks => chunks.splice(index + 1, 0, '# ' + t('untitled') + '\n\n- ')); });
+      const remove = iconButton(t('del_slide'), 'row_del', () => { if (slides.length < 2) return; const index = slides[at].index; ctx.slide = Math.max(0, at - 1); rewrite(chunks => chunks.splice(index, 1)); });
+      remove.disabled = slides.length < 2;
+      bar.append(edit, add, remove);
+    }
+    bar.append(notesButton, present);
     const thumbs = slides.map((slide, i) => { const b = el('button', 'ar-thumb'); b.type = 'button'; setLabel(b, t('slide', {n: i + 1, total: slides.length})); b.append(slideNode(slide, true)); b.addEventListener('click', () => go(i)); strip.append(b); return b; });
     function go(i) { at = clamp(i, 0, slides.length - 1); ctx.slide = at; paint(); }
     function paint() {
@@ -1537,10 +1621,11 @@ try{mermaid.initialize({startOnLoad:false,securityLevel:'strict',htmlLabels:fals
       else if (event.key === 'End') { event.preventDefault(); go(slides.length - 1); }
     });
     stage.addEventListener('click', event => { if (document.fullscreenElement === stage && !event.target.closest('a')) go(at + 1); });
-    wrap.append(bar, stage, notes, strip);
+    wrap.append(bar, stage, editor, notes, strip);
     paint();
     return wrap;
   }
+  const actionsRow = (...nodes) => { const row = el('div', 'ar-actions'); row.append(...nodes); return row; };
 
   /* ---- spreadsheets ---- */
   function parseDelimited(text, delimiter, maxRows) {
@@ -1633,6 +1718,8 @@ try{mermaid.initialize({startOnLoad:false,securityLevel:'strict',htmlLabels:fals
         for (let r = Math.min(r1, r2); r <= Math.max(r1, r2) && r < rows.length; r++) for (let c = Math.min(c1, c2); c <= Math.max(c1, c2); c++) { if (c >= (rows[0]?.length || 0)) throw new FormulaError('#REF!'); out.push(value(r, c)); }
         return out;
       }
+      // Moves past one argument, minding brackets, to the separator or bracket that ends it
+      function skipArg() { let depth = 0; while (p < tokens.length) { const tok = peek(); if (depth === 0 && (tok === ',' || tok === ';' || tok === ')')) return; if (tok === '(') depth++; if (tok === ')') depth--; p++; } }
       function primary() {
         const tok = take();
         if (tok == null) throw new FormulaError('#ERROR!');
@@ -1645,6 +1732,16 @@ try{mermaid.initialize({startOnLoad:false,securityLevel:'strict',htmlLabels:fals
         if (name === 'TRUE' || name === 'FALSE') return name === 'TRUE';
         if (peek() !== '(') throw new FormulaError('#NAME?');
         take();
+        // IFERROR(value, fallback): an error in the first argument, raised or held in a cell, gives the fallback
+        if (name === 'IFERROR') {
+          const start = p;
+          let v, failed = false;
+          try { v = scalar(cmp()); failed = typeof v === 'string' && /^#[A-Z/0]+[!?]$/.test(v); } catch (error) { if (!(error instanceof FormulaError)) throw error; failed = true; p = start; skipArg(); }
+          if (peek() !== ',' && peek() !== ';') throw new FormulaError('#ERROR!');
+          take();
+          const fallback = cmp(); expect(')');
+          return failed ? scalar(fallback) : v;
+        }
         const args = [];
         if (peek() !== ')') { do { args.push(cmp()); } while ((peek() === ',' || peek() === ';') && take()); }
         expect(')');
@@ -1677,8 +1774,23 @@ try{mermaid.initialize({startOnLoad:false,securityLevel:'strict',htmlLabels:fals
           case 'LEN': return String(scalar(args[0])).length;
           case 'UPPER': return String(scalar(args[0])).toUpperCase();
           case 'LOWER': return String(scalar(args[0])).toLowerCase();
+          case 'ROUNDUP': case 'ROUNDDOWN': { const d = args[1] == null ? 0 : num(args[1]); const f = Math.pow(10, d), x = num(args[0]) * f; return (name === 'ROUNDUP' ? Math.sign(x) * Math.ceil(Math.abs(x) - 1e-9) : Math.trunc(x)) / f; }
+          case 'COUNTIF': case 'SUMIF': case 'AVERAGEIF': {
+            const range = [].concat(args[0]), test = criterion(scalar(args[1])), values = args[2] == null ? range : [].concat(args[2]);
+            const hits = range.map((v, i) => test(v) ? values[i] : undefined).filter(v => v !== undefined);
+            if (name === 'COUNTIF') return hits.length;
+            const nums = hits.map(toNumber).filter(v => v != null);
+            if (name === 'SUMIF') return nums.reduce((a, b) => a + b, 0);
+            if (!nums.length) throw new FormulaError('#DIV/0!');
+            return nums.reduce((a, b) => a + b, 0) / nums.length;
+          }
           default: throw new FormulaError('#NAME?');
         }
+      }
+      // ">10", "<=5", "<>x", "=Paris" or a plain value, as COUNTIF and SUMIF read them
+      function criterion(c) {
+        const m = /^(<=|>=|<>|<|>|=)?(.*)$/s.exec(String(c ?? '')), op = m[1] || '=', want = m[2], wantN = toNumber(want);
+        return v => { const n = toNumber(v); if (wantN != null && n != null) return op === '=' ? n === wantN : op === '<>' ? n !== wantN : op === '<' ? n < wantN : op === '>' ? n > wantN : op === '<=' ? n <= wantN : n >= wantN; const a = String(v ?? '').toLowerCase(), b = want.toLowerCase(); return op === '=' ? a === b : op === '<>' ? a !== b : false; };
       }
       const result = cmp();
       if (p < tokens.length) throw new FormulaError('#ERROR!');
@@ -1687,94 +1799,214 @@ try{mermaid.initialize({startOnLoad:false,securityLevel:'strict',htmlLabels:fals
     return {value, reset: () => cache.clear()};
   }
   const shown = v => typeof v === 'number' ? (Number.isInteger(v) ? v.toLocaleString(lang) : v.toLocaleString(lang, {maximumFractionDigits: 6})) : typeof v === 'boolean' ? (v ? 'TRUE' : 'FALSE') : String(v ?? '');
-  function sheetView(text, lang0, ctx, editable, commit, displayTitleText = '') {
+  // A spreadsheet you work in as in Excel or Claude: click a cell and type to correct it, double-click or F2 to edit
+  // what is there, Enter and Tab to move on, arrows to move, Shift to select a range, Delete to clear, Ctrl+C / Ctrl+V
+  // to copy and paste blocks, Ctrl+Z / Ctrl+Y to undo and redo. Formulas recalculate at once.
+  function sheetView(text, lang0, ctx, editable, commit, displayTitleText = '', onAsk = null) {
     const grid = gridOf(text, lang0);
-    let rows = grid.rows;
-    const wrap = el('div', 'ar-sheet');
-    if (!rows.length) rows = [['']];
+    let rows = grid.rows.length ? grid.rows : [['']];
     let engine = sheetEngine(rows);
-    let sortCol = -1, sortDir = 1, filter = '', selected = {r: Math.min(1, rows.length - 1), c: 0}, mode = ctx.sheetMode || (lang0 === 'chart' ? 'chart' : 'table'), chartCol = -1, chartKind = ['bar', 'line', 'area', 'pie'].includes(String(chartSpec(text).spec.type).toLowerCase()) ? String(chartSpec(text).spec.type).toLowerCase() : 'bar';
-    const bar = el('div', 'ar-subbar');
+    let sortCol = -1, sortDir = 1, filter = '', chartCol = -1;
+    let mode = ctx.sheetMode || (lang0 === 'chart' ? 'chart' : 'table');
+    let chartKind = ['bar', 'line', 'area', 'pie'].includes(String(chartSpec(text).spec.type).toLowerCase()) ? String(chartSpec(text).spec.type).toLowerCase() : 'bar';
+    // Selection in display order: an anchor and a focus cell; the active cell is the focus
+    let anchor = {d: Math.min(1, rows.length - 1), c: 0}, focus = {...anchor};
+    const undo = [], redo = [];
+    // A cell is being looked at, or being edited
+    const cell = machine('cell', 'select', {select: {edit: 'edit'}, edit: {commit: 'select', cancel: 'select'}});
+    let editor = null;
+    const wrap = el('div', 'ar-sheet');
+    const bar = el('div', 'ar-subbar ar-sheetbar');
     const refBox = el('span', 'ar-ref');
-    const formula = el('input', 'ar-formula'); formula.type = 'text'; formula.setAttribute('aria-label', t('cell', {ref: 'A1'})); formula.placeholder = t('formula_hint'); formula.readOnly = !editable; formula.dir = 'auto';
+    const formula = el('input', 'ar-formula'); formula.type = 'text'; formula.placeholder = t('formula_hint'); formula.readOnly = !editable; formula.dir = 'auto'; setLabel(formula, t('cell', {ref: 'A1'}));
     const search = el('input', 'ar-search ar-filter'); search.type = 'search'; search.placeholder = t('filter_rows'); search.setAttribute('aria-label', t('filter_rows'));
-    const tableButton = textButton(t('table'), () => { mode = 'table'; ctx.sheetMode = mode; paint(); });
-    const chartButton = textButton(t('chart'), () => { mode = 'chart'; ctx.sheetMode = mode; paint(); });
+    const tableButton = textButton(t('table'), () => { mode = 'table'; ctx.sheetMode = mode; paint(); }, 'ar-btn ar-chip');
+    const chartButton = textButton(t('chart'), () => { mode = 'chart'; ctx.sheetMode = mode; paint(); }, 'ar-btn ar-chip');
     chartButton.prepend(svgIcon('chart'));
-    const addRow = iconButton(t('add_row'), 'plus', () => { rows.push(Array.from({length: rows[0].length}, () => '')); save(); });
-    addRow.append(el('span', 'ar-sr', t('add_row')));
-    const addCol = textButton('+ ' + colName(rows[0].length), () => { rows.forEach((r, i) => r.push(i === 0 ? colName(r.length) : '')); save(); });
-    setLabel(addCol, t('add_col'));
-    bar.append(refBox, formula, search, tableButton, chartButton);
-    if (editable) bar.append(addRow, addCol);
+    const tools = el('div', 'ar-sheettools');
+    const tool = (label, icon, action) => { const b = iconButton(label, icon, action, 'ar-icon ar-tool'); tools.append(b); return b; };
+    if (editable) {
+      tool(t('add_row'), 'row_add', () => change(() => { const r = rowAt(focus.d) ?? rows.length - 1; rows.splice(r + 1, 0, rows[0].map(() => '')); }, {d: focus.d + 1, c: focus.c}));
+      tool(t('del_row'), 'row_del', () => { const [d0, d1] = span('d'); if (d0 === 0 && d1 === 0) return; change(() => { const doomed = new Set(list().slice(Math.max(1, d0), d1 + 1)); rows = rows.filter((_, r) => !doomed.has(r)); if (rows.length < 2) rows.push(rows[0].map(() => '')); }); });
+      tool(t('add_col'), 'col_add', () => change(() => { const c = focus.c + 1; rows.forEach((row, r) => row.splice(c, 0, r === 0 ? colName(c) : '')); }, {d: focus.d, c: focus.c + 1}));
+      tool(t('del_col'), 'col_del', () => { const [c0, c1] = span('c'); if (rows[0].length <= c1 - c0 + 1) return; change(() => rows.forEach(row => row.splice(c0, c1 - c0 + 1))); });
+      tool(t('undo'), 'undo', () => history(undo, redo));
+      tool(t('redo'), 'redo', () => history(redo, undo));
+    }
+    const askButton = onAsk ? textButton(t('ask'), () => onAsk(rangeRef(), rangeText()), 'ar-btn ar-chip') : null;
+    if (askButton) { askButton.prepend(svgIcon('sparkle')); tools.append(askButton); }
+    bar.append(refBox, formula, tableButton, chartButton);
+    const bar2 = el('div', 'ar-subbar ar-sheetbar2'); bar2.append(search, tools);
     const body = el('div', 'ar-sheetbody');
     const foot = el('div', 'ar-sheetfoot'); foot.setAttribute('aria-live', 'polite');
-    wrap.append(bar, body, foot);
-    // A chart's own lines (type, title) are kept above its data
-    function save() { engine = sheetEngine(rows); const head = Object.entries(chartSpec(text).spec).map(([k, v]) => k + ': ' + v).join('\n'); commit((head ? head + '\n' : '') + toCsv(rows, grid.delimiter === '\t' ? '\t' : ',')); }
-    function order() {
+    wrap.append(bar, bar2, body, foot);
+    let table = null, box = null, dragging = false;
+    wrap.addEventListener('pointerup', () => { dragging = false; });
+    wrap.addEventListener('pointerleave', () => { dragging = false; });
+
+    // Display order: the header row, then the rows the filter keeps, sorted
+    function list() {
       let idx = rows.map((_, i) => i).slice(1);
       if (filter) { const f = filter.toLocaleLowerCase(); idx = idx.filter(r => rows[r].some((_, c) => shown(engine.value(r, c)).toLocaleLowerCase().includes(f))); }
-      // Empty cells stay at the bottom whichever way a column is sorted
       if (sortCol >= 0) idx.sort((a, b) => { const x = engine.value(a, sortCol), y = engine.value(b, sortCol); const ex = x === '' || x == null, ey = y === '' || y == null; if (ex || ey) return ex === ey ? 0 : ex ? 1 : -1; const nx = typeof x === 'number', ny = typeof y === 'number'; return (nx && ny ? x - y : nx ? -1 : ny ? 1 : String(x).localeCompare(String(y), lang, {numeric: true})) * sortDir; });
-      return idx;
+      return [0, ...idx.slice(0, 500)];
     }
-    function select(r, c) {
-      selected = {r, c};
-      const ref = colName(c) + (r + 1);
-      refBox.textContent = ref; formula.setAttribute('aria-label', t('cell', {ref}));
-      formula.value = rows[r]?.[c] ?? '';
-      body.querySelectorAll('[aria-selected="true"]').forEach(td => td.setAttribute('aria-selected', 'false'));
-      body.querySelector(`[data-r="${r}"][data-c="${c}"]`)?.setAttribute('aria-selected', 'true');
-      stats(c);
+    let shownRows = list();
+    const rowAt = d => shownRows[d];
+    const span = axis => axis === 'd' ? [Math.min(anchor.d, focus.d), Math.max(anchor.d, focus.d)] : [Math.min(anchor.c, focus.c), Math.max(anchor.c, focus.c)];
+    const refOf = (d, c) => colName(c) + (rowAt(d) + 1);
+    const rangeRef = () => { const [d0, d1] = span('d'), [c0, c1] = span('c'); return d0 === d1 && c0 === c1 ? refOf(d0, c0) : refOf(d0, c0) + ':' + refOf(d1, c1); };
+    const rangeCells = () => { const [d0, d1] = span('d'), [c0, c1] = span('c'), out = []; for (let d = d0; d <= d1; d++) { const row = []; for (let c = c0; c <= c1; c++) row.push(rowAt(d)); out.push(row.map((r, k) => ({r, c: c0 + k}))); } return out; };
+    const rangeText = () => rangeCells().map(row => row.map(({r, c}) => shown(engine.value(r, c))).join('\t')).join('\n');
+
+    // Every change goes through here: it can be undone, it recalculates, and it is kept as your edit
+    function change(apply, moveTo) {
+      undo.push(JSON.stringify(rows)); if (undo.length > 100) undo.shift(); redo.length = 0;
+      apply();
+      rows = rows.map(row => Array.from({length: Math.max(...rows.map(r => r.length))}, (_, c) => row[c] ?? ''));
+      save();
+      if (moveTo) { anchor = {...moveTo}; focus = {...moveTo}; }
+      paint();
     }
-    function stats(c) {
-      const values = rows.slice(1).map((_, i) => engine.value(i + 1, c)).filter(v => typeof v === 'number');
+    function history(from, to) {
+      if (!from.length) return;
+      to.push(JSON.stringify(rows)); rows = JSON.parse(from.pop()); save(); paint();
+    }
+    // A chart's own lines (type, title) are kept above its data
+    function save() { engine = sheetEngine(rows); const head = Object.entries(chartSpec(text).spec).map(([k, v]) => k + ': ' + v).join('\n'); commit((head ? head + '\n' : '') + toCsv(rows, grid.delimiter === '\t' ? '\t' : ',')); }
+
+    function paintSelection() {
+      if (!table) return;
+      const [d0, d1] = span('d'), [c0, c1] = span('c');
+      for (const td of table.querySelectorAll('td.ar-sel, td.ar-cur')) td.classList.remove('ar-sel', 'ar-cur');
+      for (const td of table.querySelectorAll('td[data-d]')) { const d = +td.dataset.d, c = +td.dataset.c; if (d >= d0 && d <= d1 && c >= c0 && c <= c1) td.classList.add('ar-sel'); if (d === focus.d && c === focus.c) { td.classList.add('ar-cur'); td.setAttribute('aria-selected', 'true'); } else td.setAttribute('aria-selected', String(td.classList.contains('ar-sel'))); }
+      const r = rowAt(focus.d);
+      refBox.textContent = rangeRef(); setLabel(formula, t('cell', {ref: refOf(focus.d, focus.c)}));
+      if (!cell.is('edit')) formula.value = rows[r]?.[focus.c] ?? '';
+      table.querySelector('td.ar-cur')?.scrollIntoView({block: 'nearest', inline: 'nearest'});
+      stats();
+    }
+    function stats() {
+      const [d0, d1] = span('d'), [c0, c1] = span('c'), single = d0 === d1 && c0 === c1;
+      const values = [];
+      if (single) rows.slice(1).forEach((_, i) => { const v = engine.value(i + 1, focus.c); if (typeof v === 'number') values.push(v); });
+      else for (const row of rangeCells()) for (const {r, c} of row) { const v = engine.value(r, c); if (typeof v === 'number') values.push(v); }
       foot.replaceChildren();
+      if (!single) foot.append(el('span', 'ar-stat ar-statref', rangeRef()));
       if (!values.length) return;
       const sum = values.reduce((a, b) => a + b, 0);
       for (const [label, v] of [[t('sum'), sum], [t('avg'), sum / values.length], [t('min'), Math.min(...values)], [t('max'), Math.max(...values)], [t('count'), values.length]]) { const item = el('span', 'ar-stat'); item.append(el('span', null, label + ' '), el('strong', null, shown(Math.round(v * 1e6) / 1e6))); foot.append(item); }
     }
+    function select(d, c, extend) {
+      d = clamp(d, 0, shownRows.length - 1); c = clamp(c, 0, rows[0].length - 1);
+      focus = {d, c}; if (!extend) anchor = {d, c};
+      paintSelection();
+    }
+    function startEdit(initial) {
+      if (!editable || !cell.send('edit')) return;
+      const td = table.querySelector('td.ar-cur'); if (!td) { cell.send('cancel'); return; }
+      const r = rowAt(focus.d);
+      editor = el('input', 'ar-celledit'); editor.type = 'text'; editor.dir = 'auto'; setLabel(editor, t('cell', {ref: refOf(focus.d, focus.c)}));
+      editor.value = initial ?? rows[r]?.[focus.c] ?? '';
+      td.classList.add('ar-editing'); td.append(editor);
+      editor.focus(); if (initial == null) editor.select(); else editor.setSelectionRange(editor.value.length, editor.value.length);
+      formula.value = editor.value;
+      editor.addEventListener('input', () => { formula.value = editor.value; });
+      editor.addEventListener('keydown', event => {
+        if (event.key === 'Enter') { event.preventDefault(); finishEdit(true, {d: focus.d + (event.shiftKey ? -1 : 1), c: focus.c}); }
+        else if (event.key === 'Tab') { event.preventDefault(); finishEdit(true, {d: focus.d, c: focus.c + (event.shiftKey ? -1 : 1)}); }
+        else if (event.key === 'Escape') { event.preventDefault(); event.stopPropagation(); finishEdit(false); }
+      });
+      editor.addEventListener('blur', () => { if (cell.is('edit')) finishEdit(true); });
+    }
+    function finishEdit(keep, moveTo) {
+      if (!cell.is('edit')) return;
+      const value = editor?.value ?? '', r = rowAt(focus.d), c = focus.c;
+      cell.send(keep ? 'commit' : 'cancel');
+      editor?.remove(); editor = null;
+      const target = moveTo ? {d: clamp(moveTo.d, 0, shownRows.length - 1), c: clamp(moveTo.c, 0, rows[0].length - 1)} : {...focus};
+      if (keep && value !== (rows[r]?.[c] ?? '')) change(() => { rows[r][c] = value; }, target);
+      else { paint(); select(target.d, target.c); }
+      box?.focus({preventScroll: true});
+    }
+    // Pasting a block of cells, from a spreadsheet or tab- or comma-separated text, grows the sheet as needed
+    function paste(textIn) {
+      if (!editable || !textIn) return;
+      const delim = textIn.includes('\t') ? '\t' : (textIn.includes(',') && textIn.includes('\n') ? ',' : '\t');
+      const block = parseDelimited(textIn.replace(/\r\n?/g, '\n').replace(/\n$/, ''), delim, 2000);
+      const startR = rowAt(focus.d), startC = focus.c;
+      change(() => {
+        block.forEach((line, i) => { const r = startR + i; while (r >= rows.length) rows.push(rows[0].map(() => '')); line.forEach((v, k) => { const c = startC + k; while (c >= rows[0].length) rows.forEach((row, j) => row.push(j === 0 ? colName(row.length) : '')); rows[r][c] = v; }); });
+      });
+    }
+    function clearRange() { if (!editable) return; const cells = rangeCells().flat(); if (cells.every(({r, c}) => !rows[r][c])) return; change(() => cells.forEach(({r, c}) => { rows[r][c] = ''; })); }
+
     function paintTable() {
-      const box = el('div', 'ar-tablebox ar-gridbox'); box.tabIndex = 0;
-      const table = el('table', 'ar-table ar-grid'); table.setAttribute('role', 'grid');
+      shownRows = list();
+      box = el('div', 'ar-tablebox ar-gridbox'); box.tabIndex = 0; box.setAttribute('role', 'application'); setLabel(box, t('sheet_keys'));
+      table = el('table', 'ar-table ar-grid'); table.setAttribute('role', 'grid');
       const head = table.createTHead(), letters = el('tr');
       letters.append(el('th', 'ar-corner'));
       rows[0].forEach((_, c) => {
         const th = el('th', 'ar-colhead');
-        const b = el('button', 'ar-sortbtn', colName(c)); b.type = 'button';
-        const dir = sortCol === c ? (sortDir > 0 ? ' ↑' : ' ↓') : '';
-        b.textContent = colName(c) + dir; setLabel(b, (sortCol === c && sortDir > 0 ? t('sort_desc') : t('sort_asc')) + ' · ' + (shown(engine.value(0, c)) || colName(c)));
+        const b = el('button', 'ar-sortbtn', colName(c) + (sortCol === c ? (sortDir > 0 ? ' ↑' : ' ↓') : '')); b.type = 'button'; b.tabIndex = -1;
+        setLabel(b, (sortCol === c && sortDir > 0 ? t('sort_desc') : t('sort_asc')) + ' · ' + (shown(engine.value(0, c)) || colName(c)));
         b.addEventListener('click', () => { if (sortCol === c) sortDir = -sortDir; else { sortCol = c; sortDir = 1; } paint(); });
         if (sortCol === c) th.setAttribute('aria-sort', sortDir > 0 ? 'ascending' : 'descending');
         th.append(b); letters.append(th);
       });
       head.append(letters);
       const tbody = table.createTBody();
-      const list = [0, ...order()];
-      const limit = 500;
-      for (const r of list.slice(0, limit + 1)) {
+      shownRows.forEach((r, d) => {
         const tr = el('tr'); if (r === 0) tr.className = 'ar-headrow';
         tr.append(el('th', 'ar-rownum', String(r + 1)));
-        rows[r].forEach((rawValue, c) => {
+        rows[r].forEach((raw, c) => {
           const v = engine.value(r, c);
-          const td = el('td', null, shown(v)); td.dir = 'auto'; td.dataset.r = r; td.dataset.c = c; td.setAttribute('role', 'gridcell'); td.setAttribute('aria-selected', String(r === selected.r && c === selected.c));
+          const td = el('td', null, shown(v)); td.dir = 'auto'; td.dataset.d = d; td.dataset.c = c; td.dataset.r = r; td.setAttribute('role', 'gridcell');
           if (typeof v === 'number') td.classList.add('ar-num');
-          if (typeof v === 'string' && /^#[A-Z/0!?]+!?$/.test(v)) td.classList.add('ar-errcell');
-          if (String(rawValue).startsWith('=')) td.classList.add('ar-fx');
-          td.addEventListener('click', () => select(r, c));
-          td.addEventListener('dblclick', () => { if (editable) { select(r, c); formula.focus(); formula.select(); } });
+          if (typeof v === 'string' && /^#[A-Z/0]+[!?]$/.test(v)) td.classList.add('ar-errcell');
+          if (String(raw).startsWith('=')) { td.classList.add('ar-fx'); td.title = raw; }
           tr.append(td);
         });
         tbody.append(tr);
-      }
+      });
+      // Pointer: click selects, Shift-click and dragging select a range, double-click edits
+      table.addEventListener('pointerdown', event => {
+        const td = event.target.closest('td[data-d]'); if (!td || event.button !== 0) return;
+        if (cell.is('edit')) finishEdit(true);
+        select(+td.dataset.d, +td.dataset.c, event.shiftKey); dragging = true; box.focus({preventScroll: true});
+      });
+      table.addEventListener('pointerover', event => { if (!dragging) return; const td = event.target.closest('td[data-d]'); if (td) select(+td.dataset.d, +td.dataset.c, true); });
+      table.addEventListener('dblclick', event => { if (event.target.closest('td[data-d]')) startEdit(); });
+      box.addEventListener('keydown', event => {
+        if (cell.is('edit') || event.target !== box) return;
+        const mod = event.ctrlKey || event.metaKey, k = event.key;
+        const move = (dd, dc) => { event.preventDefault(); select(focus.d + dd, focus.c + dc, event.shiftKey); };
+        if (k === 'ArrowUp') move(-1, 0); else if (k === 'ArrowDown') move(1, 0); else if (k === 'ArrowLeft') move(0, -1); else if (k === 'ArrowRight') move(0, 1);
+        else if (k === 'Tab') move(0, event.shiftKey ? -1 : 1);
+        else if (k === 'Enter') { event.preventDefault(); editable ? startEdit() : select(focus.d + 1, focus.c); }
+        else if (k === 'F2') { event.preventDefault(); startEdit(); }
+        else if (k === 'Home') { event.preventDefault(); select(mod ? 0 : focus.d, 0, event.shiftKey); }
+        else if (k === 'End') { event.preventDefault(); select(mod ? shownRows.length - 1 : focus.d, rows[0].length - 1, event.shiftKey); }
+        else if (k === 'Delete' || k === 'Backspace') { event.preventDefault(); clearRange(); }
+        else if (mod && k.toLowerCase() === 'a') { event.preventDefault(); anchor = {d: 0, c: 0}; focus = {d: shownRows.length - 1, c: rows[0].length - 1}; paintSelection(); }
+        else if (mod && k.toLowerCase() === 'z') { event.preventDefault(); event.shiftKey ? history(redo, undo) : history(undo, redo); }
+        else if (mod && k.toLowerCase() === 'y') { event.preventDefault(); history(redo, undo); }
+        else if (k === 'Escape' && (anchor.d !== focus.d || anchor.c !== focus.c)) { event.preventDefault(); event.stopPropagation(); select(focus.d, focus.c); }
+        else if (!mod && !event.altKey && k.length === 1 && editable) { event.preventDefault(); startEdit(k); }
+      });
+      box.addEventListener('copy', event => { if (cell.is('edit')) return; event.preventDefault(); event.clipboardData.setData('text/plain', rangeText()); toast(t('copied')); });
+      box.addEventListener('cut', event => { if (cell.is('edit') || !editable) return; event.preventDefault(); event.clipboardData.setData('text/plain', rangeText()); clearRange(); });
+      box.addEventListener('paste', event => { if (cell.is('edit')) return; event.preventDefault(); paste(event.clipboardData.getData('text/plain')); });
       box.append(table);
       body.replaceChildren(box);
       const total = rows.length - 1;
-      if (list.length - 1 < total || list.length > limit + 1) body.append(el('p', 'ar-muted ar-small', t('rows_shown', {n: n(Math.min(limit, list.length - 1)), total: n(total)})));
+      if (shownRows.length - 1 < total) body.append(el('p', 'ar-muted ar-small', t('rows_shown', {n: n(shownRows.length - 1), total: n(total)})));
       if (grid.cut) body.append(el('p', 'ar-muted ar-small', t('rows_cols', {rows: n(SHEET_ROWS), cols: SHEET_COLS}) + ' max'));
     }
     function paintChart() {
+      table = null; box = null;
+      shownRows = list();
       const numeric = rows[0].map((_, c) => c).filter(c => { const vals = rows.slice(1).map((_, r) => engine.value(r + 1, c)).filter(v => v !== ''); return vals.length && vals.filter(v => typeof v === 'number').length / vals.length >= 0.8; });
       body.replaceChildren();
       if (!numeric.length) { body.append(el('p', 'ar-muted', t('no_numbers'))); return; }
@@ -1791,23 +2023,31 @@ try{mermaid.initialize({startOnLoad:false,securityLevel:'strict',htmlLabels:fals
       kind.value = chartKind; kind.addEventListener('change', () => { chartKind = kind.value; paintChart(); });
       controls.append(pick, kind);
       const cols = chartCol === 'all' ? numeric : [chartCol];
-      const list = order().slice(0, 80);
-      const data = {labels: list.map(r => labelCol >= 0 ? shown(engine.value(r, labelCol)) : String(r + 1)), series: cols.map(c => ({name: shown(engine.value(0, c)) || colName(c), values: list.map(r => typeof engine.value(r, c) === 'number' ? engine.value(r, c) : 0)}))};
+      const order = shownRows.slice(1, 81);
+      const data = {labels: order.map(r => labelCol >= 0 ? shown(engine.value(r, labelCol)) : String(r + 1)), series: cols.map(c => ({name: shown(engine.value(0, c)) || colName(c), values: order.map(r => typeof engine.value(r, c) === 'number' ? engine.value(r, c) : 0)}))};
       const title = chartSpec(text).spec.title || (cols.length === 1 ? t('chart_of', {col: data.series[0].name, by: labelCol >= 0 ? shown(engine.value(0, labelCol)) : '#'}) : displayTitleText);
       const svgNode = chartSvg(data, chartKind, title);
       body.append(controls, svgNode);
       ctx.chartSvg = svgNode;
     }
     function paint() {
+      // The grid is drawn again after a change; the keyboard stays with it
+      const hadFocus = !!box && (document.activeElement === box || box.contains(document.activeElement));
       tableButton.setAttribute('aria-pressed', String(mode === 'table')); chartButton.setAttribute('aria-pressed', String(mode === 'chart'));
-      mode === 'chart' ? paintChart() : paintTable();
-      select(Math.min(selected.r, rows.length - 1), Math.min(selected.c, rows[0].length - 1));
+      bar2.hidden = mode !== 'table'; formula.disabled = mode !== 'table';
+      if (mode === 'chart') { paintChart(); foot.replaceChildren(); return; }
+      paintTable();
+      focus = {d: clamp(focus.d, 0, shownRows.length - 1), c: clamp(focus.c, 0, rows[0].length - 1)};
+      anchor = {d: clamp(anchor.d, 0, shownRows.length - 1), c: clamp(anchor.c, 0, rows[0].length - 1)};
+      paintSelection();
+      if (hadFocus) box?.focus({preventScroll: true});
     }
-    search.addEventListener('input', () => { filter = search.value.trim(); paint(); });
+    search.addEventListener('input', () => { filter = search.value.trim(); anchor = focus = {d: Math.min(1, focus.d), c: focus.c}; paint(); });
     formula.addEventListener('keydown', event => {
-      if (event.key === 'Enter' && editable) { event.preventDefault(); rows[selected.r][selected.c] = formula.value; save(); }
-      else if (event.key === 'Escape') { formula.value = rows[selected.r]?.[selected.c] ?? ''; formula.blur(); }
+      if (event.key === 'Enter' && editable) { event.preventDefault(); const r = rowAt(focus.d), c = focus.c; if (formula.value !== (rows[r]?.[c] ?? '')) change(() => { rows[r][c] = formula.value; }); box?.focus({preventScroll: true}); }
+      else if (event.key === 'Escape') { formula.value = rows[rowAt(focus.d)]?.[focus.c] ?? ''; box?.focus({preventScroll: true}); }
     });
+    formula.addEventListener('input', () => { if (cell.is('edit') && editor) editor.value = formula.value; });
     paint();
     ctx.rowsNow = () => rows; ctx.valueOf = (r, c) => engine.value(r, c);
     return wrap;
@@ -2015,7 +2255,21 @@ try{mermaid.initialize({startOnLoad:false,securityLevel:'strict',htmlLabels:fals
   }
 
   /* ---- the panel ---- */
-  const state = {route: route(), chat: null, artifacts: [], loading: false, failure: '', key: null, version: -1, mode: 'preview', modelId: '', shareId: null, streaming: false, query: '', loadedFor: null, loadedAt: 0, errors: new Map(), ctx: new Map()};
+  const state = {route: route(), chat: null, artifacts: [], key: null, version: -1, mode: 'preview', modelId: '', query: '', loadedFor: null, loadedAt: 0, errors: new Map(), ctx: new Map()};
+  // The panel: closed, showing the list, or showing one artifact. Leaving the viewer forgets which artifact it was.
+  const view = machine('view', 'closed', {
+    closed: {list: 'list', artifact: 'viewer'},
+    list: {list: 'list', artifact: 'viewer', close: 'closed'},
+    viewer: {artifact: 'viewer', back: 'list', list: 'list', gone: 'list', close: 'closed'}
+  }, next => { if (next !== 'viewer') state.key = null; });
+  // Reading the chat: a newer read always wins, and its outcome is one of these states
+  const loader = machine('load', 'idle', {
+    '*': {start: 'loading', none: 'idle'},
+    loading: {done: 'ready', fail: 'failed', deny: 'denied'}
+  });
+  // Full screen is separate from what is shown
+  const size = machine('size', 'normal', {normal: {toggle: 'full'}, full: {toggle: 'normal', reset: 'normal'}});
+  const isLoading = () => loader.is('loading');
   let panel = null, toastEl = null, controller = null, bodyEl = null, headEl = null, footEl = null;
   const ctxOf = key => { if (!state.ctx.has(key)) state.ctx.set(key, {}); return state.ctx.get(key); };
   const current = () => state.artifacts.find(a => a.key === state.key) || null;
@@ -2076,7 +2330,7 @@ try{mermaid.initialize({startOnLoad:false,securityLevel:'strict',htmlLabels:fals
       if (event.key !== 'Escape' || event.defaultPrevented || document.fullscreenElement) return;
       if (event.target.closest?.('textarea, input, .ar-menu, dialog')) return;
       event.preventDefault();
-      if (state.key && !panelOnly()) { state.key = null; render(); } else closePanel();
+      if (view.is('viewer')) { view.send('back'); updateUrl(null); render(); } else closePanel();
     });
     // Drag the edge, or use the arrow keys on it, to change the width
     let drag = null;
@@ -2087,7 +2341,6 @@ try{mermaid.initialize({startOnLoad:false,securityLevel:'strict',htmlLabels:fals
     resizer.addEventListener('keydown', event => { if (event.key === 'ArrowLeft' || event.key === 'ArrowRight') { event.preventDefault(); setWidth(panelWidth + (event.key === 'ArrowLeft' ? 40 : -40)); end(); } });
     document.body.append(panel);
   }
-  const panelOnly = () => false;
 
   /* ---- reading the chat ---- */
   async function load(quiet) {
@@ -2096,9 +2349,9 @@ try{mermaid.initialize({startOnLoad:false,securityLevel:'strict',htmlLabels:fals
     state.route = route();
     const r = state.route;
     if (state.loadedFor !== r.kind + ':' + r.id) { state.chat = null; state.artifacts = []; quiet = false; }
-    state.loading = true; state.failure = '';
+    if (!r.id || (r.kind !== 'chat' && r.kind !== 'shared')) { loader.send('none'); state.loadedFor = null; render(); return; }
+    loader.send('start');
     if (!quiet) render();
-    if (!r.id || (r.kind !== 'chat' && r.kind !== 'shared')) { state.loading = false; state.loadedFor = null; render(); return; }
     try {
       await whoAmI();
       const chat = await api(r.kind === 'chat' ? '/api/v1/chats/' + encodeURIComponent(r.id) : '/api/v1/chats/share/' + encodeURIComponent(r.id), signal);
@@ -2107,7 +2360,6 @@ try{mermaid.initialize({startOnLoad:false,securityLevel:'strict',htmlLabels:fals
       state.shareId = chat?.share_id || null;
       const branch = branchOf(chat);
       state.modelId = [...branch].reverse().find(m => m.role === 'assistant' && typeof m.model === 'string')?.model || (Array.isArray(chat?.chat?.models) ? chat.chat.models[0] : '') || '';
-      state.streaming = branch.some(m => m.role === 'assistant' && m.done === false);
       const found = artifactsOf(chat);
       const locals = r.kind === 'chat' ? readStore(r.id).locals.map(x => ({key: 'l' + x.id, type: x.type, lang: x.lang, title: x.title, named: true, local: true, versions: [{text: x.text, at: x.at / 1000, local: true, answerNo: 0, messageId: null}]})) : [];
       // Someone looking at the latest version follows a new one, as Claude does
@@ -2115,21 +2367,23 @@ try{mermaid.initialize({startOnLoad:false,securityLevel:'strict',htmlLabels:fals
       state.artifacts = [...found, ...locals];
       const now = current();
       if (now && wasLatest && now.versions.length > open.versions.length) state.version = now.versions.length - 1;
+      if (controller === mine) loader.send('done');
     } catch (error) {
-      if (signal.aborted) return;
-      state.failure = error.status === 401 || error.status === 403 ? 'denied' : 'failed';
+      if (signal.aborted || controller !== mine) return;
+      loader.send(error.status === 401 || error.status === 403 ? 'deny' : 'fail');
       if (!quiet) state.artifacts = [];
     }
-    if (controller === mine) { state.loading = false; render(); syncChat(); }
+    if (controller === mine) { render(); syncChat(); }
   }
 
   /* ---- drawing ---- */
   function render() {
-    if (!panel || panel.hidden) return;
-    panel.dataset.state = state.loading ? 'loading' : 'ready';
+    if (!panel || view.is('closed')) return;
+    panel.dataset.state = isLoading() ? 'loading' : 'ready';
     panel.dataset.chat = state.loadedFor || '';
-    const artifact = current();
-    if (state.key && !artifact && !state.loading) state.key = null;
+    const artifact = view.is('viewer') ? current() : null;
+    // An artifact that is no longer there (another branch, a deleted draft) gives way to the list
+    if (view.is('viewer') && !artifact && !isLoading()) view.send('gone');
     artifact ? paintViewer(artifact) : paintList();
   }
   function paintList() {
@@ -2144,8 +2398,8 @@ try{mermaid.initialize({startOnLoad:false,securityLevel:'strict',htmlLabels:fals
     bodyEl.replaceChildren();
     const r = state.route;
     if (!r.id || (r.kind !== 'chat' && r.kind !== 'shared')) { bodyEl.append(notice(t('no_chat'))); return; }
-    if (state.loading && !state.artifacts.length) { bodyEl.append(notice(t('loading'))); return; }
-    if (state.failure && !state.artifacts.length) { bodyEl.append(notice(state.failure === 'denied' ? t('denied') : t('failed'), null, state.failure === 'failed' ? textButton(t('retry'), () => load()) : null)); return; }
+    if (isLoading() && !state.artifacts.length) { bodyEl.append(notice(t('loading'))); return; }
+    if (loader.is('failed', 'denied') && !state.artifacts.length) { bodyEl.append(notice(loader.is('denied') ? t('denied') : t('failed'), null, loader.is('failed') ? textButton(t('retry'), () => load()) : null)); return; }
     if (!state.artifacts.length) { bodyEl.append(notice(t('empty_title'), t('empty_hint'), newButton ? textButton(t('new'), () => openNew(newButton)) : null)); return; }
     const search = el('input', 'ar-search'); search.type = 'search'; search.placeholder = t('search'); search.setAttribute('aria-label', t('search')); search.value = state.query;
     const list = el('ul', 'ar-list'); list.setAttribute('aria-labelledby', 'ar-heading');
@@ -2161,7 +2415,7 @@ try{mermaid.initialize({startOnLoad:false,securityLevel:'strict',htmlLabels:fals
         const last = a.versions[a.versions.length - 1];
         const meta = [t('t_' + a.type) + (a.type === 'code' ? ' · ' + labelOf(a.lang) : ''), a.versions.length > 1 ? t('versions_n', {n: a.versions.length}) : '', a.local ? t('v_local') : last.answerNo ? t('from_answer', {n: last.answerNo}) : ''].filter(Boolean).join(' · ');
         text.append(nameSpan('ar-itemtitle', displayTitle(a)), el('span', 'ar-itemmeta', meta));
-        if (last.unfinished && state.streaming) text.append(el('span', 'ar-badge', t('writing')));
+        if (last.unfinished && streaming()) text.append(el('span', 'ar-badge', t('writing')));
         b.append(icon, text);
         b.addEventListener('click', () => openArtifact(a.key));
         li.append(b); list.append(li);
@@ -2185,14 +2439,17 @@ try{mermaid.initialize({startOnLoad:false,securityLevel:'strict',htmlLabels:fals
   }
   const isEdited = (a, index) => !a.local && !readOnly() && editOf(state.route.id, a, index) != null && editOf(state.route.id, a, index).text !== a.versions[index].text;
   function openArtifact(key, version, mode) {
+    const a = state.artifacts.find(x => x.key === key);
+    if (!a) return;
+    const wasClosed = view.is('closed');
+    view.send('artifact');
     state.key = key;
-    const a = current();
     state.version = a ? (version != null && version >= 0 && version < a.versions.length ? version : a.versions.length - 1) : -1;
     if (mode) state.mode = mode;
     else if (a && !hasPreview(a)) state.mode = 'code';
     else if (state.mode === 'changes' && (!a || a.versions.length < 2)) state.mode = 'preview';
-    if (!panel || panel.hidden) openPanel(); else render();
-    if (a) updateUrl(a.key);
+    wasClosed ? openPanel() : render();
+    updateUrl(a.key);
   }
   const hasPreview = a => a.type !== 'code';
   function paintViewer(a) {
@@ -2202,7 +2459,7 @@ try{mermaid.initialize({startOnLoad:false,securityLevel:'strict',htmlLabels:fals
     const v = a.versions[index], text = versionText(a, index), edited = isEdited(a, index);
     const ctx = ctxOf(a.key);
     // Header: back, title and version, the views, and what can be done with it
-    const back = iconButton(t('back'), 'back', () => { state.key = null; updateUrl(null); render(); });
+    const back = iconButton(t('back'), 'back', () => { view.send('back'); updateUrl(null); render(); });
     const titleBox = el('div', 'ar-titlebox');
     const title = nameSpan('ar-title', displayTitle(a)); title.id = 'ar-heading'; title.setAttribute('role', 'heading'); title.setAttribute('aria-level', '2');
     const meta = el('span', 'ar-meta', t('t_' + a.type) + (a.type === 'code' ? ' · ' + labelOf(a.lang) : ''));
@@ -2221,12 +2478,13 @@ try{mermaid.initialize({startOnLoad:false,securityLevel:'strict',htmlLabels:fals
     const modeList = [hasPreview(a) && ['preview', t('preview')], ['code', t('code')], (a.versions.length > 1 || edited) && ['changes', t('changes')]].filter(Boolean);
     if (!modeList.some(([m]) => m === state.mode)) state.mode = modeList[0][0];
     for (const [m, label] of modeList) { const b = el('button', 'ar-mode', label); b.type = 'button'; b.setAttribute('role', 'tab'); b.setAttribute('aria-selected', String(state.mode === m)); b.addEventListener('click', () => { state.mode = m; render(); }); modes.append(b); }
-    const copy = iconButton(t('copy'), 'copy', () => copyText(text));
+    // What is copied, downloaded or sent is the version as it is now, edits made since it was drawn included
+    const copy = iconButton(t('copy'), 'copy', () => copyText(versionText(a, index)));
     const download = iconButton(t('download'), 'download', null); download.setAttribute('aria-haspopup', 'menu');
-    download.addEventListener('click', () => menu(download, downloadItems(a, text, ctx)));
+    download.addEventListener('click', () => menu(download, downloadItems(a, versionText(a, index), ctx)));
     const more = iconButton(t('more'), 'more', null); more.setAttribute('aria-haspopup', 'menu');
-    more.addEventListener('click', () => menu(more, moreItems(a, index, text, edited)));
-    const full = narrow() ? null : iconButton(panel.classList.contains('ar-full') ? t('exit_fullscreen') : t('fullscreen'), 'expand', toggleFull);
+    more.addEventListener('click', () => menu(more, moreItems(a, index, versionText(a, index), isEdited(a, index))));
+    const full = narrow() ? null : iconButton(size.is('full') ? t('exit_fullscreen') : t('fullscreen'), 'expand', toggleFull);
     // Two rows: what it is and what can be done with it, then its versions and views
     const top = el('div', 'ar-hrow'), tools = el('div', 'ar-hrow ar-headtools');
     const actions = el('div', 'ar-actionsrow'); actions.append(copy, download, more, ...(full ? [full] : []), iconButton(t('close'), 'close', closePanel));
@@ -2236,16 +2494,16 @@ try{mermaid.initialize({startOnLoad:false,securityLevel:'strict',htmlLabels:fals
     // Body
     dropFrames(bodyEl);
     bodyEl.replaceChildren();
-    const view = el('div', 'ar-view'); view.dataset.mode = state.mode;
+    const viewEl = el('div', 'ar-view'); viewEl.dataset.mode = state.mode;
     const commit = value => saveEdit(a, index, value);
-    if (state.mode === 'code') view.append(codeView(text, !readOnly(), ctx, commit));
+    if (state.mode === 'code') viewEl.append(codeView(text, !readOnly(), ctx, commit));
     else if (state.mode === 'changes') {
       const before = edited ? a.versions[index].text : versionText(a, index - 1);
-      view.append(diffView(before, text, edited ? t('version') + ' ' + (index + 1) : t('previous')));
-    } else view.append(previewOf(a, text, ctx, commit));
-    bodyEl.append(view);
+      viewEl.append(diffView(before, text, edited ? t('version') + ' ' + (index + 1) : t('previous')));
+    } else viewEl.append(previewOf(a, text, ctx, commit));
+    bodyEl.append(viewEl);
     paintFoot(a, index, text);
-    selectionWatch(view, a, text);
+    selectionWatch(viewEl, a, text);
   }
   // Footer: where it comes from, whether it is edited, and any error
   function paintFoot(a, index, text) {
@@ -2258,7 +2516,7 @@ try{mermaid.initialize({startOnLoad:false,securityLevel:'strict',htmlLabels:fals
     bits.push(statsOf(a, text));
     info.textContent = bits.filter(Boolean).join(' · ');
     footEl.append(info);
-    if (v.unfinished) footEl.append(el('span', 'ar-badge', state.streaming ? t('writing') : t('unfinished')));
+    if (v.unfinished) footEl.append(el('span', 'ar-badge', streaming() ? t('writing') : t('unfinished')));
     if (edited) {
       const row = el('div', 'ar-draft');
       row.append(el('span', null, t('edited_by_you') + ' ' + t(canStore() ? 'edits_kept' : 'edits_session')));
@@ -2300,8 +2558,8 @@ try{mermaid.initialize({startOnLoad:false,securityLevel:'strict',htmlLabels:fals
     };
     state.errors.delete(errorKey);
     if (a.type === 'document') return documentView(text);
-    if (a.type === 'slides') return slidesView(text, ctx);
-    if (a.type === 'sheet') return sheetView(text, a.lang, ctx, !readOnly(), commit, displayTitle(a));
+    if (a.type === 'slides') return slidesView(text, ctx, !readOnly(), commit);
+    if (a.type === 'sheet') return sheetView(text, a.lang, ctx, !readOnly(), commit, displayTitle(a), state.route.kind === 'chat' && !a.local ? (ref, cells) => askAbout(a, text, ref + '\n' + cells) : null);
     if (a.type === 'data') return dataView(text, ctx);
     if (a.type === 'svg') {
       const box = el('div', 'ar-svgbox');
@@ -2333,13 +2591,15 @@ try{mermaid.initialize({startOnLoad:false,securityLevel:'strict',htmlLabels:fals
       const data = readStore(state.route.id), item = data.locals.find(x => 'l' + x.id === a.key);
       if (item) { item.text = value; item.at = Date.now(); a.versions[0].text = value; }
       clearTimeout(saveTimer); saveTimer = setTimeout(() => writeStore(state.route.id), 400);
-      if (state.mode === 'preview') render();
+      if (state.mode === 'preview' && a.type !== 'sheet') render();
       return;
     }
     const result = setEdit(state.route.id, a, index, value === a.versions[index].text ? null : value);
     if (result === 'big') toast(t('edit_too_big'));
     // The spreadsheet's own edits redraw at once; typing in the code view redraws the footer only
-    if (state.mode === 'preview') render();
+    // The spreadsheet redraws itself and keeps its selection; other previews are drawn again
+    if (state.mode === 'preview' && a.type !== 'sheet') render();
+    else if (state.mode === 'preview') { paintFoot(a, index, value); syncVersionLabels(a); }
     else { clearTimeout(saveTimer); saveTimer = setTimeout(() => { if (current() === a && state.version === index) { paintFoot(a, index, value); syncVersionLabels(a); } }, 500); }
   }
   function syncVersionLabels(a) {
@@ -2446,7 +2706,7 @@ try{mermaid.initialize({startOnLoad:false,securityLevel:'strict',htmlLabels:fals
     switch (a.type) {
       // Diagrams are drawn before a document or deck is written out, so they are in the file
       case 'document': return [item('Markdown (.md)', file('md', text, 'text/markdown;charset=utf-8')), item('HTML (.html)', later(() => file('html', standalone(displayTitle(a), rendered(text)), 'text/html;charset=utf-8')())), item('Word (.doc)', later(() => file('doc', wordHtml(a, text), 'application/msword')())), {label: t('print'), action: later(() => printHtml(standalone(displayTitle(a), rendered(text))))}];
-      case 'slides': return [item('Markdown (.md)', file('md', text, 'text/markdown;charset=utf-8')), item(t('t_slides') + ' (.html)', later(() => file('html', slidesHtml(a, text), 'text/html;charset=utf-8')())), {label: t('print'), action: later(() => printHtml(slidesHtml(a, text)))}];
+      case 'slides': return [item('Markdown (.md)', file('md', text, 'text/markdown;charset=utf-8')), item('PowerPoint (.pptx)', () => { toast(t('exporting')); pptxOf(a, text).then(blob => save(blob, name + '.pptx'), () => toast(t('save_failed'))); }), item(t('t_slides') + ' (.html)', later(() => file('html', slidesHtml(a, text), 'text/html;charset=utf-8')())), {label: t('print'), action: later(() => printHtml(slidesHtml(a, text)))}];
       case 'sheet': return [item('CSV (.csv)', file('csv', withoutMarker(text), 'text/csv;charset=utf-8')), item('Excel (.xlsx)', () => save(xlsxOf(text, a.lang), name + '.xlsx')), ctx.chartSvg && state.mode === 'preview' && ctx.sheetMode === 'chart' ? item(t('chart') + ' (.svg)', () => save(new Blob([chartText(ctx)], {type: 'image/svg+xml'}), name + '-chart.svg')) : null, ctx.chartSvg && ctx.sheetMode === 'chart' ? item(t('chart') + ' (.png)', () => pngOf(chartText(ctx), name + '-chart.png')) : null, {label: t('print'), action: () => { const g = gridOf(text, a.lang), e = sheetEngine(g.rows); printHtml(standalone(displayTitle(a), '<table>' + g.rows.map((row, r) => '<tr>' + row.map((_, c) => (r ? '<td>' : '<th>') + escapeHtml(shown(e.value(r, c))) + (r ? '</td>' : '</th>')).join('') + '</tr>').join('') + '</table>')); }}].filter(Boolean);
       case 'diagram': return [item('Mermaid (.mmd)', file('mmd', text, plain)), ctx.svg ? item('SVG (.svg)', file('svg', ctx.svg, 'image/svg+xml')) : null, ctx.svg ? item('PNG (.png)', () => pngOf(ctx.svg, name + '.png')) : null].filter(Boolean);
       case 'svg': return [item('SVG (.svg)', file('svg', text, 'image/svg+xml')), item('PNG (.png)', () => pngOf(text, name + '.png'))];
@@ -2513,7 +2773,7 @@ try{mermaid.initialize({startOnLoad:false,securityLevel:'strict',htmlLabels:fals
     const data = readStore(state.route.id);
     data.locals = data.locals.filter(x => 'l' + x.id !== a.key);
     writeStore(state.route.id);
-    state.artifacts = state.artifacts.filter(x => x !== a); state.key = null; render();
+    state.artifacts = state.artifacts.filter(x => x !== a); view.send('back'); updateUrl(null); render();
   }
 
   /* ---- handing work to the chat ---- */
@@ -2525,7 +2785,7 @@ try{mermaid.initialize({startOnLoad:false,securityLevel:'strict',htmlLabels:fals
     while (parent && parent !== document.body) { const file = parent.querySelector('input[type="file"][multiple]'); if (file) return file; parent = parent.parentElement; }
     return null;
   }
-  const busy = () => state.streaming || !!document.querySelector('#messages-container [id^="message-"]:last-child .animate-pulse, button[aria-label="Stop"], #stop-response-button');
+  const busy = () => streaming() || !!document.querySelector('#messages-container [id^="message-"]:last-child .animate-pulse, button[aria-label="Stop"], #stop-response-button');
   // Fills the message box, or sends at once; Open WebUI fills {{...}} in text it is given, so such text travels as a file
   async function toChat(text, submit, attachment) {
     if (state.route.kind !== 'chat' || !document.getElementById('chat-input')) { toast(t('no_composer')); return false; }
@@ -2555,14 +2815,14 @@ try{mermaid.initialize({startOnLoad:false,securityLevel:'strict',htmlLabels:fals
   }
   // Selecting part of an artifact offers to ask about it
   let askButton = null;
-  function selectionWatch(view, a, text) {
+  function selectionWatch(viewEl, a, text) {
     askButton?.remove(); askButton = null;
     if (state.route.kind !== 'chat' || a.local) return;
     const check = () => {
       let picked = '', rect = null;
-      const area = view.querySelector('textarea');
+      const area = viewEl.querySelector('textarea');
       if (area && document.activeElement === area && area.selectionEnd > area.selectionStart) { picked = area.value.slice(area.selectionStart, area.selectionEnd); rect = area.getBoundingClientRect(); rect = {left: rect.left + 24, top: rect.top + 8, bottom: rect.top + 8}; }
-      else { const sel = getSelection(); if (sel && sel.rangeCount && !sel.isCollapsed && view.contains(sel.anchorNode)) { picked = sel.toString(); rect = sel.getRangeAt(0).getBoundingClientRect(); } }
+      else { const sel = getSelection(); if (sel && sel.rangeCount && !sel.isCollapsed && viewEl.contains(sel.anchorNode)) { picked = sel.toString(); rect = sel.getRangeAt(0).getBoundingClientRect(); } }
       askButton?.remove(); askButton = null;
       if (!picked.trim() || picked.length > 6000 || !rect) return;
       askButton = textButton(t('ask'), () => askAbout(a, text, picked), 'ar-btn ar-primary ar-askbtn');
@@ -2572,9 +2832,9 @@ try{mermaid.initialize({startOnLoad:false,securityLevel:'strict',htmlLabels:fals
       askButton.style.top = clamp(rect.bottom - p.top + 6, 48, p.height - 48) + 'px';
       askButton.style.left = clamp(rect.left - p.left, 8, p.width - 180) + 'px';
     };
-    view.addEventListener('mouseup', () => setTimeout(check, 250));
-    view.addEventListener('keyup', event => { if (event.shiftKey || event.key === 'Shift') check(); });
-    view.addEventListener('scroll', hideAsk, true);
+    viewEl.addEventListener('mouseup', () => setTimeout(check, 250));
+    viewEl.addEventListener('keyup', event => { if (event.shiftKey || event.key === 'Shift') check(); });
+    viewEl.addEventListener('scroll', hideAsk, true);
   }
   // Copying a selection is the usual reason to make one: the offer to ask steps aside
   const hideAsk = () => { askButton?.remove(); askButton = null; };
@@ -2647,7 +2907,151 @@ try{mermaid.initialize({startOnLoad:false,securityLevel:'strict',htmlLabels:fals
     box.append(form); panel.append(box); box.showModal(); name.select();
   }
 
+  /* ---- PowerPoint ---- */
+  // A real .pptx, written in the browser: each slide's title, text, bullets, highlights and columns as PowerPoint text,
+  // and its diagrams, charts, drawings and pictures as images. Speaker notes are not carried over.
+  const EMU = 914400, SLIDE_W = 12192000, SLIDE_H = 6858000;
+  const NS_A = 'http://schemas.openxmlformats.org/drawingml/2006/main', NS_R = 'http://schemas.openxmlformats.org/officeDocument/2006/relationships', NS_P = 'http://schemas.openxmlformats.org/presentationml/2006/main';
+  const XML_HEAD = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>';
+  const GROUP = '<p:nvGrpSpPr><p:cNvPr id="1" name=""/><p:cNvGrpSpPr/><p:nvPr/></p:nvGrpSpPr><p:grpSpPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="0" cy="0"/><a:chOff x="0" y="0"/><a:chExt cx="0" cy="0"/></a:xfrm></p:grpSpPr>';
+  // An image, SVG or not, drawn into a PNG through an <img>, where scripts can't run
+  async function rasterize(src, maxWidth = 1600) {
+    const img = new Image(); img.decoding = 'async'; img.src = src;
+    await img.decode();
+    const w0 = img.naturalWidth || 800, h0 = img.naturalHeight || 600, scale = Math.min(3, Math.max(1, maxWidth / w0));
+    const canvas = document.createElement('canvas'); canvas.width = Math.round(w0 * scale); canvas.height = Math.round(h0 * scale);
+    const g = canvas.getContext('2d'); g.fillStyle = '#fff'; g.fillRect(0, 0, canvas.width, canvas.height); g.drawImage(img, 0, 0, canvas.width, canvas.height);
+    const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
+    if (!blob) throw new Error('png');
+    return {bytes: new Uint8Array(await blob.arrayBuffer()), w: canvas.width, h: canvas.height};
+  }
+  const svgElementData = node => svgData(new XMLSerializer().serializeToString(node).replace('<svg', '<svg style="background:#fff;font-family:Arial,sans-serif"'));
+  // What a slide holds, read from the same rendering the panel shows
+  function slideModel(slide) {
+    const node = slideNode(slide), inner = node.querySelector('.ar-slide-inner');
+    const model = {title: '', layout: node.classList.contains('ar-slide-section') ? 'section' : node.classList.contains('ar-slide-title') || node.classList.contains('ar-slide-center') ? 'title' : 'content', columns: [], figures: []};
+    const runsOf = element => {
+      const runs = [];
+      const walk = (n, style) => {
+        for (const child of n.childNodes) {
+          if (child.nodeType === 3) { if (child.textContent) runs.push({text: child.textContent, ...style}); continue; }
+          if (child.nodeType !== 1 || child.matches('ul,ol,figure,.ar-figure,img,svg,.ar-img')) continue;
+          const tag = child.tagName;
+          walk(child, {...style, bold: style.bold || tag === 'STRONG' || /^H\d$/.test(tag), italic: style.italic || tag === 'EM', mark: style.mark || tag === 'MARK', code: style.code || tag === 'CODE'});
+        }
+      };
+      walk(element, {});
+      return runs;
+    };
+    const blocksOf = container => {
+      const blocks = [];
+      for (const child of container.children) {
+        if (/^H[1-6]$/.test(child.tagName) && !model.title) { model.title = child.textContent.trim(); continue; }
+        if (child.matches('.ar-figure, figure')) { const img = child.querySelector('img'), svg = child.querySelector('svg'); if (img) model.figures.push({src: img.src, alt: img.alt}); else if (svg) model.figures.push({src: svgElementData(svg), alt: svg.getAttribute('aria-label') || ''}); continue; }
+        if (child.matches('img.ar-pic')) { model.figures.push({src: child.src, alt: child.alt}); continue; }
+        if (child.tagName === 'P') { for (const pic of child.querySelectorAll('img.ar-pic')) model.figures.push({src: pic.src, alt: pic.alt}); const runs = runsOf(child); if (runs.some(r => r.text.trim())) blocks.push({runs, bullet: false, level: 0}); continue; }
+        if (child.tagName === 'UL' || child.tagName === 'OL') { [...child.children].forEach((li, k) => blocks.push({runs: runsOf(li), bullet: child.tagName === 'UL' ? '•' : (k + 1) + '.', level: Math.round(parseFloat(li.style.marginInlineStart || '0') / 1.25)})); continue; }
+        if (child.matches('.ar-tablebox')) { for (const tr of child.querySelectorAll('tr')) blocks.push({runs: [{text: [...tr.children].map(cell => cell.textContent.trim()).join('   |   '), bold: !!tr.querySelector('th')}], bullet: false, level: 0}); continue; }
+        if (child.matches('.ar-callout, blockquote')) { const title = child.querySelector('.ar-callout-title')?.textContent; const text = [...child.children].filter(x => !x.matches('.ar-callout-title')).map(x => x.textContent.trim()).join(' '); blocks.push({runs: [...(title ? [{text: title + ': ', bold: true}] : []), {text}], bullet: false, level: 0, accent: true}); continue; }
+        if (child.tagName === 'PRE') { for (const line of child.textContent.split('\n').slice(0, 14)) blocks.push({runs: [{text: line || ' ', code: true}], bullet: false, level: 0}); continue; }
+        if (child.matches('.ar-cols')) { for (const col of child.children) model.columns.push(blocksOf(col)); continue; }
+        if (child.textContent.trim()) blocks.push({runs: [{text: child.textContent.trim()}], bullet: false, level: 0});
+      }
+      return blocks;
+    };
+    model.body = blocksOf(inner);
+    return model;
+  }
+  const runXml = (run, size, color) => {
+    const props = `lang="${xmlEscape(lang)}" sz="${size}"${run.bold ? ' b="1"' : ''}${run.italic ? ' i="1"' : ''} dirty="0"`;
+    const font = run.code ? '<a:latin typeface="Consolas"/><a:cs typeface="Consolas"/>' : '';
+    return `<a:r><a:rPr ${props}><a:solidFill><a:srgbClr val="${color}"/></a:solidFill>${run.mark ? '<a:highlight><a:srgbClr val="FDE68A"/></a:highlight>' : ''}${font}</a:rPr><a:t>${xmlEscape(run.text)}</a:t></a:r>`;
+  };
+  const paragraphXml = (block, size, color, align) => {
+    const indent = 342900 + block.level * 342900;
+    const ppr = block.bullet ? `<a:pPr marL="${indent}" indent="-342900"${align ? ` algn="${align}"` : ''}><a:buFont typeface="Arial"/><a:buChar char="${xmlEscape(block.bullet.length > 1 ? '•' : block.bullet)}"/></a:pPr>` : `<a:pPr${align ? ` algn="${align}"` : ''}><a:buNone/></a:pPr>`;
+    const runs = block.runs.filter(r => r.text).map(r => runXml(r, size, block.accent ? '1D4ED8' : color)).join('');
+    return `<a:p>${ppr}${runs || `<a:endParaRPr lang="${xmlEscape(lang)}" sz="${size}" dirty="0"/>`}</a:p>`;
+  };
+  const textBox = (id, x, y, w, h, paragraphs, anchor = 't') => `<p:sp><p:nvSpPr><p:cNvPr id="${id}" name="Text ${id}"/><p:cNvSpPr txBox="1"/><p:nvPr/></p:nvSpPr><p:spPr><a:xfrm><a:off x="${Math.round(x)}" y="${Math.round(y)}"/><a:ext cx="${Math.round(w)}" cy="${Math.round(h)}"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom><a:noFill/></p:spPr><p:txBody><a:bodyPr wrap="square" lIns="91440" tIns="45720" rIns="91440" bIns="45720" anchor="${anchor}"><a:normAutofit/></a:bodyPr><a:lstStyle/>${paragraphs}</p:txBody></p:sp>`;
+  const pictureXml = (id, rel, x, y, w, h, alt) => `<p:pic><p:nvPicPr><p:cNvPr id="${id}" name="Picture ${id}" descr="${xmlEscape(alt || '')}"/><p:cNvPicPr><a:picLocks noChangeAspect="1"/></p:cNvPicPr><p:nvPr/></p:nvPicPr><p:blipFill><a:blip r:embed="${rel}"/><a:stretch><a:fillRect/></a:stretch></p:blipFill><p:spPr><a:xfrm><a:off x="${Math.round(x)}" y="${Math.round(y)}"/><a:ext cx="${Math.round(w)}" cy="${Math.round(h)}"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></p:spPr></p:pic>`;
+  // Fits a picture in its box without enlarging a small one past three times its own size
+  const fit = (w, h, boxW, boxH) => { const s = Math.min(boxW / w, boxH / h, 3 * 9525); return [w * s, h * s]; };
+  const bodySize = blocks => { const lines = blocks.reduce((sum, b) => sum + Math.max(1, Math.ceil(b.runs.reduce((n, r) => n + r.text.length, 0) / 70)), 0); return lines > 14 ? 1400 : lines > 10 ? 1600 : lines > 7 ? 1800 : 2000; };
+  async function pptxOf(a, text) {
+    await diagramsReady(text);
+    const slides = slidesOf(withoutMarker(text).trim() ? text : '# ' + displayTitle(a));
+    const files = [], media = [], enc = new TextEncoder();
+    const slideXml = [];
+    for (const [k, slide] of slides.entries()) {
+      const m = slideModel(slide), rels = [`<Relationship Id="rId1" Type="${NS_R}/slideLayout" Target="../slideLayouts/slideLayout1.xml"/>`];
+      const dark = m.layout === 'section', ink = dark ? 'FFFFFF' : '111111';
+      let id = 2, shapes = '';
+      const margin = 0.6 * EMU, top = 0.45 * EMU, titleH = 1.0 * EMU, contentY = top + titleH + 0.15 * EMU, contentH = SLIDE_H - contentY - 0.45 * EMU, width = SLIDE_W - 2 * margin;
+      const images = [];
+      for (const figure of m.figures.slice(0, 4)) { try { images.push({...(await rasterize(figure.src)), alt: figure.alt}); } catch {} }
+      if (m.layout === 'title' || m.layout === 'section') {
+        const sub = m.body.map(b => paragraphXml(b, 2400, dark ? 'E2E8F0' : '444444', 'ctr')).join('');
+        shapes += textBox(id++, margin, SLIDE_H * 0.3, width, 1.5 * EMU, paragraphXml({runs: [{text: m.title || displayTitle(a), bold: true}], bullet: false, level: 0}, 4800, ink, m.layout === 'section' ? 'l' : 'ctr'), m.layout === 'section' ? 'b' : 'ctr');
+        if (sub) shapes += textBox(id++, margin, SLIDE_H * 0.3 + 1.6 * EMU, width, 1.6 * EMU, sub);
+      } else {
+        if (m.title) shapes += textBox(id++, margin, top, width, titleH, paragraphXml({runs: [{text: m.title, bold: true}], bullet: false, level: 0}, 3600, ink), 'b');
+        const hasText = m.body.length || m.columns.length;
+        const textW = images.length && hasText ? width * 0.5 : width;
+        if (m.columns.length) {
+          const gap = 0.3 * EMU, colW = (textW - gap * (m.columns.length - 1)) / m.columns.length;
+          let y = contentY;
+          if (m.body.length) { shapes += textBox(id++, margin, y, textW, 0.9 * EMU, m.body.map(b => paragraphXml(b, bodySize(m.body), ink)).join('')); y += 0.95 * EMU; }
+          m.columns.forEach((col, i) => { shapes += textBox(id++, margin + i * (colW + gap), y, colW, contentY + contentH - y, col.map(b => paragraphXml(b, bodySize(col), ink)).join('')); });
+        } else if (m.body.length) shapes += textBox(id++, margin, contentY, textW, contentH, m.body.map(b => paragraphXml(b, bodySize(m.body), ink)).join(''));
+        if (images.length) {
+          const areaX = hasText ? margin + textW + 0.3 * EMU : margin, areaW = hasText ? width - textW - 0.3 * EMU : width;
+          const each = (contentH - 0.15 * EMU * (images.length - 1)) / images.length;
+          images.forEach((img, i) => {
+            const [w, h] = fit(img.w, img.h, areaW, each);
+            const name = 'image' + (media.length + 1) + '.png';
+            media.push({name, data: img.bytes});
+            const rel = 'rId' + (rels.length + 1);
+            rels.push(`<Relationship Id="${rel}" Type="${NS_R}/image" Target="../media/${name}"/>`);
+            shapes += pictureXml(id++, rel, areaX + (areaW - w) / 2, contentY + i * (each + 0.15 * EMU) + (each - h) / 2, w, h, img.alt);
+          });
+        }
+      }
+      const bg = dark ? '<p:bg><p:bgPr><a:solidFill><a:srgbClr val="1E293B"/></a:solidFill><a:effectLst/></p:bgPr></p:bg>' : '';
+      slideXml.push(`${XML_HEAD}<p:sld xmlns:a="${NS_A}" xmlns:r="${NS_R}" xmlns:p="${NS_P}"><p:cSld>${bg}<p:spTree>${GROUP}${shapes}</p:spTree></p:cSld><p:clrMapOvr><a:masterClrMapping/></p:clrMapOvr></p:sld>`);
+      files.push([`ppt/slides/_rels/slide${k + 1}.xml.rels`, `${XML_HEAD}<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">${rels.join('')}</Relationships>`]);
+    }
+    const n2 = slideXml.length;
+    const scheme = ['111111', 'FFFFFF', '1E293B', 'F3F4F6', '2563EB', '16A34A', 'D97706', 'DB2777', '7C3AED', '0891B2', '2563EB', '7C3AED'];
+    const names = ['dk1', 'lt1', 'dk2', 'lt2', 'accent1', 'accent2', 'accent3', 'accent4', 'accent5', 'accent6', 'hlink', 'folHlink'];
+    const three = x => x + x + x;
+    const theme = `${XML_HEAD}<a:theme xmlns:a="${NS_A}" name="Artifacts"><a:themeElements><a:clrScheme name="Artifacts">${names.map((nm, i) => `<a:${nm}><a:srgbClr val="${scheme[i]}"/></a:${nm}>`).join('')}</a:clrScheme><a:fontScheme name="Artifacts"><a:majorFont><a:latin typeface="Calibri"/><a:ea typeface=""/><a:cs typeface=""/></a:majorFont><a:minorFont><a:latin typeface="Calibri"/><a:ea typeface=""/><a:cs typeface=""/></a:minorFont></a:fontScheme><a:fmtScheme name="Artifacts"><a:fillStyleLst>${three('<a:solidFill><a:schemeClr val="phClr"/></a:solidFill>')}</a:fillStyleLst><a:lnStyleLst>${three('<a:ln w="6350"><a:solidFill><a:schemeClr val="phClr"/></a:solidFill></a:ln>')}</a:lnStyleLst><a:effectStyleLst>${three('<a:effectStyle><a:effectLst/></a:effectStyle>')}</a:effectStyleLst><a:bgFillStyleLst>${three('<a:solidFill><a:schemeClr val="phClr"/></a:solidFill>')}</a:bgFillStyleLst></a:fmtScheme></a:themeElements><a:objectDefaults/><a:extraClrSchemeLst/></a:theme>`;
+    const master = `${XML_HEAD}<p:sldMaster xmlns:a="${NS_A}" xmlns:r="${NS_R}" xmlns:p="${NS_P}"><p:cSld><p:bg><p:bgRef idx="1001"><a:schemeClr val="bg1"/></p:bgRef></p:bg><p:spTree>${GROUP}</p:spTree></p:cSld><p:clrMap bg1="lt1" tx1="dk1" bg2="lt2" tx2="dk2" accent1="accent1" accent2="accent2" accent3="accent3" accent4="accent4" accent5="accent5" accent6="accent6" hlink="hlink" folHlink="folHlink"/><p:sldLayoutIdLst><p:sldLayoutId id="2147483649" r:id="rId1"/></p:sldLayoutIdLst><p:txStyles><p:titleStyle><a:lvl1pPr><a:defRPr sz="3600"/></a:lvl1pPr></p:titleStyle><p:bodyStyle><a:lvl1pPr><a:defRPr sz="2000"/></a:lvl1pPr></p:bodyStyle><p:otherStyle><a:lvl1pPr><a:defRPr sz="1800"/></a:lvl1pPr></p:otherStyle></p:txStyles></p:sldMaster>`;
+    const layout = `${XML_HEAD}<p:sldLayout xmlns:a="${NS_A}" xmlns:r="${NS_R}" xmlns:p="${NS_P}" type="blank" preserve="1"><p:cSld name="Blank"><p:spTree>${GROUP}</p:spTree></p:cSld><p:clrMapOvr><a:masterClrMapping/></p:clrMapOvr></p:sldLayout>`;
+    const now = new Date().toISOString().replace(/\.\d+Z$/, 'Z');
+    files.push(
+      ['[Content_Types].xml', `${XML_HEAD}<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Default Extension="png" ContentType="image/png"/><Override PartName="/ppt/presentation.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.presentation.main+xml"/><Override PartName="/ppt/slideMasters/slideMaster1.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.slideMaster+xml"/><Override PartName="/ppt/slideLayouts/slideLayout1.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.slideLayout+xml"/><Override PartName="/ppt/theme/theme1.xml" ContentType="application/vnd.openxmlformats-officedocument.theme+xml"/>${slideXml.map((_, i) => `<Override PartName="/ppt/slides/slide${i + 1}.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.slide+xml"/>`).join('')}<Override PartName="/docProps/core.xml" ContentType="application/vnd.openxmlformats-package.core-properties+xml"/><Override PartName="/docProps/app.xml" ContentType="application/vnd.openxmlformats-officedocument.extended-properties+xml"/></Types>`],
+      ['_rels/.rels', `${XML_HEAD}<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="${NS_R}/officeDocument" Target="ppt/presentation.xml"/><Relationship Id="rId2" Type="http://schemas.openxmlformats.org/package/2006/relationships/metadata/core-properties" Target="docProps/core.xml"/><Relationship Id="rId3" Type="${NS_R}/extended-properties" Target="docProps/app.xml"/></Relationships>`],
+      ['docProps/core.xml', `${XML_HEAD}<cp:coreProperties xmlns:cp="http://schemas.openxmlformats.org/package/2006/metadata/core-properties" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"><dc:title>${xmlEscape(displayTitle(a))}</dc:title><dcterms:created xsi:type="dcterms:W3CDTF">${now}</dcterms:created><dcterms:modified xsi:type="dcterms:W3CDTF">${now}</dcterms:modified></cp:coreProperties>`],
+      ['docProps/app.xml', `${XML_HEAD}<Properties xmlns="http://schemas.openxmlformats.org/officeDocument/2006/extended-properties"><Application>${xmlEscape(appName)} Artifacts</Application><Slides>${n2}</Slides></Properties>`],
+      ['ppt/presentation.xml', `${XML_HEAD}<p:presentation xmlns:a="${NS_A}" xmlns:r="${NS_R}" xmlns:p="${NS_P}" saveSubsetFonts="1"><p:sldMasterIdLst><p:sldMasterId id="2147483648" r:id="rId1"/></p:sldMasterIdLst><p:sldIdLst>${slideXml.map((_, i) => `<p:sldId id="${256 + i}" r:id="rId${i + 3}"/>`).join('')}</p:sldIdLst><p:sldSz cx="${SLIDE_W}" cy="${SLIDE_H}"/><p:notesSz cx="6858000" cy="9144000"/></p:presentation>`],
+      ['ppt/_rels/presentation.xml.rels', `${XML_HEAD}<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="${NS_R}/slideMaster" Target="slideMasters/slideMaster1.xml"/><Relationship Id="rId2" Type="${NS_R}/theme" Target="theme/theme1.xml"/>${slideXml.map((_, i) => `<Relationship Id="rId${i + 3}" Type="${NS_R}/slide" Target="slides/slide${i + 1}.xml"/>`).join('')}</Relationships>`],
+      ['ppt/slideMasters/slideMaster1.xml', master],
+      ['ppt/slideMasters/_rels/slideMaster1.xml.rels', `${XML_HEAD}<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="${NS_R}/slideLayout" Target="../slideLayouts/slideLayout1.xml"/><Relationship Id="rId2" Type="${NS_R}/theme" Target="../theme/theme1.xml"/></Relationships>`],
+      ['ppt/slideLayouts/slideLayout1.xml', layout],
+      ['ppt/slideLayouts/_rels/slideLayout1.xml.rels', `${XML_HEAD}<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="${NS_R}/slideMaster" Target="../slideMasters/slideMaster1.xml"/></Relationships>`],
+      ['ppt/theme/theme1.xml', theme]
+    );
+    slideXml.forEach((xml, i) => files.push([`ppt/slides/slide${i + 1}.xml`, xml]));
+    const entries = files.map(([name, body]) => ({name, data: enc.encode(body)}));
+    for (const item of media) entries.push({name: 'ppt/media/' + item.name, data: item.data});
+    // [Content_Types].xml first, as Office expects
+    entries.sort((x, y) => (x.name === '[Content_Types].xml' ? -1 : y.name === '[Content_Types].xml' ? 1 : 0));
+    return makeZip(entries, 'application/vnd.openxmlformats-officedocument.presentationml.presentation');
+  }
+
   /* ---- the panel beside the chat ---- */
+  const streaming = () => stream.is('writing', 'finishing');
   // Open WebUI lays its chat out itself; room is made by padding the chat's container, so everything inside it shrinks
   const narrow = () => innerWidth < 900;
   let panelWidth = (() => { try { return Number(localStorage.getItem(PREFIX + 'width')) || 0; } catch { return 0; } })();
@@ -2659,21 +3063,23 @@ try{mermaid.initialize({startOnLoad:false,securityLevel:'strict',htmlLabels:fals
     place();
   }
   function place() {
-    if (!panel || panel.hidden) return;
+    if (!panel || view.is('closed')) return;
     const next = hostOf();
     if (host && host !== next) host.classList.remove('ar-docked');
     host = next;
-    const overlay = narrow() || panel.classList.contains('ar-full') || !host;
+    const overlay = narrow() || size.is('full') || !host;
+    panel.classList.toggle('ar-full', size.is('full'));
     panel.classList.toggle('ar-overlay', overlay);
     host?.classList.toggle('ar-docked', !overlay);
     if (!overlay) { const r = host.getBoundingClientRect(); panel.style.top = Math.max(0, r.top) + 'px'; panel.style.height = Math.min(innerHeight, r.height || innerHeight) + 'px'; }
     else { panel.style.top = ''; panel.style.height = ''; }
   }
-  addEventListener('resize', () => { if (panel && !panel.hidden) setWidth(panelWidth); });
+  addEventListener('resize', () => { if (!view.is('closed')) setWidth(panelWidth); });
   function openPanel(from) {
     if (!panel) build();
     opener = from || (document.activeElement instanceof HTMLElement && !panel.contains(document.activeElement) ? document.activeElement : null);
     const wasHidden = panel.hidden;
+    if (view.is('closed')) view.send('list');
     panel.hidden = false; panel.lang = lang = language();
     setWidth(panelWidth);
     syncHeaderButton();
@@ -2682,8 +3088,9 @@ try{mermaid.initialize({startOnLoad:false,securityLevel:'strict',htmlLabels:fals
     requestAnimationFrame(() => headEl.querySelector('button')?.focus({preventScroll: true}));
   }
   function closePanel() {
-    if (!panel || panel.hidden) return;
+    if (!panel || view.is('closed')) return;
     if (document.fullscreenElement && panel.contains(document.fullscreenElement)) document.exitFullscreen?.().catch(() => {});
+    view.send('close'); size.send('reset');
     panel.hidden = true; panel.classList.remove('ar-full');
     dropFrames(panel); bodyEl.replaceChildren(); askButton?.remove();
     host?.classList.remove('ar-docked');
@@ -2691,7 +3098,7 @@ try{mermaid.initialize({startOnLoad:false,securityLevel:'strict',htmlLabels:fals
     syncHeaderButton();
     if (opener?.isConnected) opener.focus({preventScroll: true});
   }
-  function toggleFull() { panel.classList.toggle('ar-full'); place(); render(); }
+  function toggleFull() { size.send('toggle'); place(); render(); }
   // ?artifact=<key>&v=<n> opens an artifact, also from a shared link
   function updateUrl(key) {
     try {
@@ -2725,7 +3132,7 @@ try{mermaid.initialize({startOnLoad:false,securityLevel:'strict',htmlLabels:fals
       menuItem.type = 'button'; menuItem.id = MENU_ITEM;
       const icon = svgIcon('artifacts'); icon.setAttribute('class', 'size-4');
       menuItem.append(icon, el('div', 'flex items-center', t('artifacts')));
-      menuItem.addEventListener('click', () => { state.key = null; openPanel(trigger); });
+      menuItem.addEventListener('click', () => { view.send('list'); openPanel(trigger); render(); });
     }
     if (menuItem.parentElement !== target) {
       const after = target.querySelector(':scope > #owui-chat-inspector-menu-item') || target.querySelector(':scope > button[aria-haspopup="dialog"]:not(#' + MENU_ITEM + ')');
@@ -2740,9 +3147,9 @@ try{mermaid.initialize({startOnLoad:false,securityLevel:'strict',htmlLabels:fals
     if (!headerButton) {
       headerButton = el('button'); headerButton.type = 'button'; headerButton.id = HEADER;
       setLabel(headerButton, t('open_artifacts')); headerButton.append(svgIcon('artifacts'));
-      headerButton.addEventListener('click', () => { if (panel && !panel.hidden) closePanel(); else { state.key = null; openPanel(headerButton); } });
+      headerButton.addEventListener('click', () => { if (!view.is('closed')) closePanel(); else openPanel(headerButton); });
     }
-    headerButton.setAttribute('aria-pressed', String(!!panel && !panel.hidden));
+    headerButton.setAttribute('aria-pressed', String(!view.is('closed')));
     headerButton.setAttribute('aria-controls', 'owui-chat-artifacts');
     const count = state.artifacts.length;
     headerButton.dataset.count = count > 0 ? String(Math.min(99, count)) : '';
@@ -2817,7 +3224,7 @@ try{mermaid.initialize({startOnLoad:false,securityLevel:'strict',htmlLabels:fals
     for (const message of document.querySelectorAll('[id^="message-"]')) {
       const id = message.id.slice(8);
       // Once the answer is finished, its "being written" cards give way to the real ones
-      if (!state.streaming) message.querySelectorAll('.ar-writing').forEach(node => node.remove());
+      if (!streaming()) message.querySelectorAll('.ar-writing').forEach(node => node.remove());
       const found = versionsIn(id);
       const content = message.querySelector('#response-content-container') || message.querySelector('.chat-assistant');
       let cards = message.querySelector(':scope .ar-cards');
@@ -2850,7 +3257,16 @@ try{mermaid.initialize({startOnLoad:false,securityLevel:'strict',htmlLabels:fals
 
   /* ---- keeping up with the chat ---- */
   // Watches the page, not the server: once the newest answer has stopped changing, the chat is read once
-  let lastPath = null, watchSig = '', stable = 0, chatWatch = 0, settleUntil = 0;
+  let lastPath = null, watchSig = '', quietTicks = 0, chatWatch = 0, settleTimer = 0;
+  // Following the newest answer. 'settling': a chat was just opened and is being drawn, which isn't an answer being
+  // written. 'writing': the last answer keeps changing. 'finishing': it has been still, and the chat is being read.
+  const stream = machine('stream', 'idle', {
+    '*': {navigate: 'settling'},
+    settling: {settled: 'idle'},
+    idle: {change: 'writing'},
+    writing: {change: 'writing', quiet: 'finishing'},
+    finishing: {change: 'writing', loaded: 'idle'}
+  }, next => { quietTicks = 0; if (next === 'settling') { clearTimeout(settleTimer); settleTimer = setTimeout(() => stream.send('settled'), 2500); } });
   const seenVersions = new Set();
   let seenFor = null;
   // While an answer is being written, each code block that will be an artifact is folded away behind a small card
@@ -2895,8 +3311,8 @@ try{mermaid.initialize({startOnLoad:false,securityLevel:'strict',htmlLabels:fals
     const path = location.pathname;
     if (path !== lastPath) {
       const moved = lastPath !== null;
-      lastPath = path; watchSig = ''; settleUntil = Date.now() + 2500;
-      if (moved) { state.key = null; state.errors.clear(); if (panel && !panel.hidden && r.kind !== 'chat' && r.kind !== 'shared') closePanel(); }
+      lastPath = path; watchSig = ''; stream.send('navigate');
+      if (moved) { state.errors.clear(); if (!view.is('closed') && r.kind !== 'chat' && r.kind !== 'shared') closePanel(); else if (view.is('viewer')) { view.send('list'); render(); } }
       if (r.kind === 'chat' || r.kind === 'shared') load(true).then(() => { rememberAll(); deepLink(); }); else { state.artifacts = []; state.loadedFor = null; syncHeaderButton(); }
       return;
     }
@@ -2905,27 +3321,23 @@ try{mermaid.initialize({startOnLoad:false,securityLevel:'strict',htmlLabels:fals
     if (r.kind === 'chat') syncHeaderButton();
     if (state.loadedFor === r.kind + ':' + r.id && ++chatWatch % 2 === 0) syncChat();
     if (CONFIG.replaceBuiltin) document.querySelector('[data-panel-tab="artifacts"] button[aria-label^="Close"], [data-panel-tab="artifacts"] button[title^="Close"]')?.click();
-    if (panel && !panel.hidden) place();
-    if (document.hidden || state.loading) return;
+    if (!view.is('closed')) place();
+    if (document.hidden || isLoading()) return;
     const messages = document.querySelectorAll('#messages-container [id^="message-"]');
     const last = messages[messages.length - 1];
     // Our own cards and buttons don't count as the answer changing
     const ours = last ? [...last.querySelectorAll('.ar-cards, .ar-openbtn')].reduce((sum, node) => sum + node.textContent.length, 0) : 0;
     const sig = messages.length + ':' + (last ? last.id + ':' + (last.textContent.length - ours) : '');
     if (sig !== watchSig) {
-      const first = !watchSig; watchSig = sig; stable = 0;
-      // A chat being drawn after it opens isn't an answer being written: an answer the chat already has, finished, can't be
+      const first = !watchSig; watchSig = sig; quietTicks = 0;
+      // An answer the chat already has, finished, isn't being written: it is only being drawn
       const known = last && state.chat?.chat?.history?.messages?.[last.id.slice(8)];
-      const writing = !first && Date.now() > settleUntil && !(known && known.done !== false && state.loadedFor === r.kind + ':' + r.id);
-      if (writing && r.kind === 'chat') { state.streaming = true; markWriting(); }
+      const finished = known && known.done !== false && state.loadedFor === r.kind + ':' + r.id;
+      if (!first && !finished && r.kind === 'chat' && stream.send('change')) markWriting();
       return;
     }
-    if (stable >= 0 && ++stable === 2) {
-      stable = -1;
-      if (state.streaming && r.kind === 'chat') {
-        state.streaming = false;
-        load(true).then(() => { if (seenFor !== state.loadedFor) rememberAll(); else openMade(); syncChat(); });
-      }
+    if (stream.is('writing') && ++quietTicks >= 2 && stream.send('quiet')) {
+      load(true).then(() => { stream.send('loaded'); if (seenFor !== state.loadedFor) rememberAll(); else openMade(); syncChat(); });
     }
   }, 700);
   /* ---- start ---- */
@@ -2937,7 +3349,7 @@ try{mermaid.initialize({startOnLoad:false,securityLevel:'strict',htmlLabels:fals
   }
   // Escape closes the panel when nothing of Open WebUI's is open and nobody is typing
   addEventListener('keydown', event => {
-    if (event.key !== 'Escape' || event.defaultPrevented || !panel || panel.hidden || document.fullscreenElement) return;
+    if (event.key !== 'Escape' || event.defaultPrevented || !panel || view.is('closed') || document.fullscreenElement) return;
     if (panel.contains(event.target)) return;
     if (document.querySelector('body > [role="menu"], dialog[open], .modal') || event.target.closest?.('textarea, input, [contenteditable="true"]')) return;
     event.preventDefault(); closePanel();
@@ -2949,7 +3361,17 @@ try{mermaid.initialize({startOnLoad:false,securityLevel:'strict',htmlLabels:fals
     framePending = true;
     requestAnimationFrame(() => { framePending = false; const kind = route().kind; if (kind === 'chat' || kind === 'shared') syncHeaderButton(); syncMenu(); });
   }).observe(document.documentElement, {childList: true, subtree: true});
-  document.addEventListener('fullscreenchange', () => { if (panel && !panel.hidden && !document.fullscreenElement) render(); });
+  // Switching Open WebUI's language switches this one too, without a reload
+  new MutationObserver(() => {
+    const next = language();
+    if (next === lang) return;
+    lang = next;
+    if (menuItem) { menuItem.remove(); menuItem = null; }
+    if (headerButton) setLabel(headerButton, t('open_artifacts'));
+    if (panel) { panel.lang = lang; panel.setAttribute('aria-label', t('artifacts')); render(); }
+    syncChat();
+  }).observe(document.documentElement, {attributes: true, attributeFilter: ['lang']});
+  document.addEventListener('fullscreenchange', () => { if (!view.is('closed') && !document.fullscreenElement) render(); });
   start();
 })();
 """

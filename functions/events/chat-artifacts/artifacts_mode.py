@@ -2,7 +2,7 @@
 title: Artifacts mode
 description: A switch in the message box. When it is on, the model makes artifacts (documents, slides, spreadsheets, diagrams, web pages, apps, drawings) for the Artifacts panel when you ask for something to create, and answers normally otherwise.
 author: Muhammad Sohail
-version: 1.0.0
+version: 1.2.0
 license: MIT
 required_open_webui_version: 0.13.0
 """
@@ -22,6 +22,8 @@ When to make one
 - Only when the user asks you to create, draft, build or change something they will keep or reuse: a document, report, letter, plan, slide deck, spreadsheet or table of data, chart, diagram, web page, interface design, interactive app or game, drawing, data set, or a program longer than about 15 lines.
 - Never for greetings, small talk, questions, explanations, advice, summaries in a few sentences, or short code snippets. Answer those normally, without any artifact.
 - If unsure, answer normally.
+- When the user asks for a presentation, a document, a spreadsheet, a chart or a diagram, write the artifact itself in your answer. Do not write a script, run code, use the code interpreter, a terminal or any other tool to produce .pptx, .docx, .xlsx, .pdf or image files, and do not describe the slides in prose: the panel shows the artifact and downloads it as PowerPoint, Word, Excel, PDF or PNG.
+- Use tools only to gather what the artifact needs (a web search for facts, for example), then write the artifact.
 
 How to write one
 - Put the artifact in one fenced code block. Its first line names it: <!-- artifact: Title --> for Markdown, slides, HTML and SVG; // artifact: Title for JSX and JavaScript; %% artifact: Title for Mermaid; # artifact: Title for CSV, JSON, Python and other code.

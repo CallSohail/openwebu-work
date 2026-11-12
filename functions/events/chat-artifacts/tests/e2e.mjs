@@ -300,6 +300,93 @@ console.log('Every kind of artifact');
   await s.context.close();
 }
 
+/* ---- working in a spreadsheet and a deck ---- */
+console.log('Correcting cells and slides');
+{
+  const s = await session(U, { extra: { permissions: ['clipboard-read', 'clipboard-write'] } }), { page } = s;
+  await s.open('/c/' + U.sheet); await s.openCard(-1);
+  const td = (r, c) => page.locator(`#owui-chat-artifacts td[data-r="${r}"][data-c="${c}"]`);
+  const cells = () => page.$$eval('#owui-chat-artifacts .ar-grid tbody tr', rows => rows.map(r => [...r.querySelectorAll('td')].map(x => x.textContent)));
+  const cur = () => page.$eval('#owui-chat-artifacts td.ar-cur', x => x.dataset.r + ',' + x.dataset.c).catch(() => '');
+  await td(2, 1).click(); await page.keyboard.type('3.5'); await page.keyboard.press('Enter');
+  let g = await cells();
+  check('click a cell and type: it is corrected and everything that depends on it recalculates', g[2][1] === '3.5' && g[2][3] === '35' && g[4][3] === '90' && await cur() === '3,1', JSON.stringify(g) + ' ' + await cur());
+  check('the correction is your edit, kept in the footer and the version list', /Your edit/.test(await foot(page)) && /Your edit/.test(await page.locator('#owui-chat-artifacts .ar-vselect').innerText().catch(() => 'Your edit')));
+  await td(1, 2).dblclick(); await page.keyboard.press('End'); await page.keyboard.type('0'); await page.keyboard.press('Tab');
+  g = await cells();
+  check('double-click edits what is there; Tab moves right', g[1][2] === '20' && g[1][3] === '250' && await cur() === '1,3', JSON.stringify(g[1]) + ' ' + await cur());
+  await td(4, 1).click(); await page.keyboard.type('=SUMIF(C2:C4,">1",B2:B4)'); await page.keyboard.press('Enter');
+  check('formulas typed in a cell work, SUMIF included', (await cells())[4][1] === '16');
+  await td(3, 0).click(); await page.keyboard.type('Nothing'); await page.keyboard.press('Escape');
+  check('Escape cancels an edit', (await cells())[3][0] === 'Bag');
+  await td(1, 1).click(); await td(3, 2).click({ modifiers: ['Shift'] });
+  check('Shift-click selects a range, and the footer adds it up', await page.locator('#owui-chat-artifacts td.ar-sel').count() === 6 && /B2:C4/.test(await page.locator('#owui-chat-artifacts .ar-sheetfoot').innerText()) && /Sum 77/.test(await page.locator('#owui-chat-artifacts .ar-sheetfoot').innerText()), await page.locator('#owui-chat-artifacts .ar-sheetfoot').innerText());
+  await shot(page, 'sheet-edit-light');
+  await page.keyboard.press('Control+c');
+  const copied = await page.evaluate(() => navigator.clipboard.readText()).catch(() => '');
+  check('Ctrl+C copies the range as a table', copied === '12.5\t20\n3.5\t10\n30\t1', JSON.stringify(copied));
+  await td(4, 0).click();
+  await page.evaluate(() => { const dt = new DataTransfer(); dt.setData('text/plain', 'Lamp\t40\t1\nDesk\t120\t1'); document.querySelector('#owui-chat-artifacts .ar-gridbox').dispatchEvent(new ClipboardEvent('paste', { clipboardData: dt, bubbles: true, cancelable: true })); });
+  g = await cells();
+  check('pasting a block fills the cells and grows the sheet', g.length === 6 && g[4][0] === 'Lamp' && g[5][0] === 'Desk' && g[5][1] === '120', JSON.stringify(g));
+  await page.keyboard.press('Control+z');
+  check('Ctrl+Z undoes it', (await cells()).length === 5 && (await cells())[4][0] === 'Sum');
+  await page.keyboard.press('Control+y');
+  check('and Ctrl+Y does it again', (await cells())[5][0] === 'Desk');
+  await page.keyboard.press('Control+z');
+  await td(3, 0).click(); await page.keyboard.press('Delete');
+  check('Delete clears the selected cell', (await cells())[3][0] === '');
+  await page.keyboard.press('Control+z');
+  await page.locator('#owui-chat-artifacts [aria-label="Insert a row below"]').click();
+  check('a row can be inserted below the current one', (await cells()).length === 6 && (await cells())[4].every(x => x === ''));
+  await page.locator('#owui-chat-artifacts [aria-label="Delete the selected rows"]').click();
+  check('and deleted again', (await cells()).length === 5);
+  await page.keyboard.press('ArrowDown'); await page.keyboard.press('ArrowRight');
+  check('arrow keys move the selection', /^\d,\d$/.test(await cur()));
+  const book = await download(page, 'Download', 'Excel');
+  const read = execFileSync('python3', ['-c', 'import sys,openpyxl;w=openpyxl.load_workbook(sys.argv[1]).active;v=openpyxl.load_workbook(sys.argv[1],data_only=True).active;print(w["D3"].value,v["D3"].value,w["B5"].value,v["B5"].value,w["A3"].value)', book.file]).toString().trim();
+  check('the Excel file has the corrections, its formulas and their results', read === '=B3*C3 35 =SUMIF(C2:C4,">1",B2:B4) 16 Pens', read);
+  await page.locator('#owui-chat-artifacts .ar-draft button', { hasText: 'Discard my edit' }).click(); await page.locator('dialog.ar-dialog .ar-danger').click();
+  // Slides: edit one, add one, delete one, download for PowerPoint
+  await s.open('/c/' + U.deck); await s.openCard(-1);
+  await page.locator('#owui-chat-artifacts [aria-label="Edit this slide"]').click();
+  await page.locator('#owui-chat-artifacts .ar-slidearea').fill('# Study skills\nA ==longer== talk');
+  await page.locator('#owui-chat-artifacts .ar-slideedit button', { hasText: 'Save the slide' }).click();
+  await page.waitForTimeout(400);
+  check('one slide can be edited, as your edit, the rest of the deck untouched', /longer/.test(await page.locator('#owui-chat-artifacts .ar-stage').innerText()) && /Your edit/.test(await foot(page)) && await page.locator('#owui-chat-artifacts .ar-thumb').count() === 4);
+  await page.locator('#owui-chat-artifacts [aria-label="Add a slide after this one"]').click(); await page.waitForTimeout(300);
+  check('a slide can be added after the current one', await page.locator('#owui-chat-artifacts .ar-thumb').count() === 5 && /2 \/ 5/.test(await panelText(page)));
+  await page.locator('#owui-chat-artifacts [aria-label="Delete this slide"]').click(); await page.waitForTimeout(300);
+  check('and deleted', await page.locator('#owui-chat-artifacts .ar-thumb').count() === 4);
+  const ppt = await download(page, 'Download', 'PowerPoint');
+  const slides = execFileSync('python3', ['-c', 'import sys;from pptx import Presentation;p=Presentation(sys.argv[1]);print(len(p.slides));print("|".join(sh.text_frame.text.replace(chr(10)," / ") for s in p.slides for sh in s.shapes if sh.has_text_frame))', ppt.file]).toString().trim().split('\n');
+  check('slides download as a PowerPoint file that opens, with the edit', ppt.name === 'Study skills.pptx' && slides[0] === '4' && /longer/.test(slides[1]) && /Plan your week/.test(slides[1]) && /Block study time/.test(slides[1]), slides.join(' ## '));
+  await s.open('/c/' + U.rich); await s.openCard(-1);
+  const richPpt = await download(page, 'Download', 'PowerPoint');
+  const pics = execFileSync('python3', ['-c', 'import sys;from pptx import Presentation;p=Presentation(sys.argv[1]);print(len(p.slides), sum(1 for s in p.slides for sh in s.shapes if sh.shape_type==13))', richPpt.file]).toString().trim();
+  check('a PowerPoint keeps diagrams, charts and drawings as pictures', pics === '6 4', pics);
+  // It looks like Open WebUI, opens its dialogs in the middle and speaks the platform's language
+  const looks = await page.evaluate(() => { const b = document.querySelector('#owui-chat-artifacts .ar-btn, #owui-chat-artifacts .ar-cardopen'); return getComputedStyle(document.querySelector('#owui-chat-artifacts .ar-btn') || b).backgroundColor; });
+  check('buttons use Open WebUI’s greys, not blue', !/37, 99, 235|59, 130, 246/.test(looks), looks);
+  await page.locator('#owui-chat-artifacts .ar-head [aria-label="All artifacts"]').click();
+  await page.locator('#owui-chat-artifacts .ar-head button', { hasText: 'New' }).click();
+  const dialog = await page.locator('dialog.ar-newdialog').boundingBox(), vp = page.viewportSize();
+  check('dialogs open in the middle of the screen', dialog && Math.abs(dialog.x + dialog.width / 2 - vp.width / 2) < 4 && Math.abs(dialog.y + dialog.height / 2 - vp.height / 2) < 4, JSON.stringify(dialog));
+  await page.keyboard.press('Escape');
+  await page.evaluate(() => document.documentElement.setAttribute('lang', 'fr-FR'));
+  await page.waitForTimeout(300);
+  check('switching the platform to French switches the panel at once', /Artefacts/.test(await head(page)) && /Nouveau/.test(await head(page)), await head(page));
+  await page.evaluate(() => document.documentElement.setAttribute('lang', 'en-US'));
+  await page.waitForTimeout(300);
+  check('and back', /Artifacts/.test(await head(page)));
+  const machines = await page.evaluate(() => ({ view: document.documentElement.dataset.arView, load: document.documentElement.dataset.arLoad, stream: document.documentElement.dataset.arStream, size: document.documentElement.dataset.arSize }));
+  check('the panel’s state machines say where they are', machines.view === 'list' && machines.load === 'ready' && ['idle', 'settling'].includes(machines.stream) && machines.size === 'normal', JSON.stringify(machines));
+  await page.locator('#owui-chat-artifacts .ar-head [aria-label="Close"]').click();
+  check('closing the panel is the closed state', await page.evaluate(() => document.documentElement.dataset.arView) === 'closed');
+  check('no page errors', s.state.errors.length === 0, s.state.errors.slice(0, 3).join(' | '));
+  await s.context.close();
+}
+
 /* ---- the sandbox ---- */
 console.log('Security');
 {
@@ -323,6 +410,18 @@ console.log('Security');
   check('an artifact that wants AI has to ask first', /Let this artifact use AI\?/.test(await page.locator('dialog.ar-dialog').innerText().catch(() => '')) && /fake-artist/.test(await page.locator('dialog.ar-dialog').innerText().catch(() => '')));
   await page.locator('dialog.ar-dialog .ar-primary').click();
   check('once allowed, it gets the model’s answer and nothing else', /answer:Answer from the fake model: Say hello AIPING/.test(await s.waitFrame(/answer:/, 20000)), await s.frameText());
+  {
+    const d = await session(A), dp = d.page;
+    await d.open('/c/' + A.ai); await d.openCard(-1);
+    await dp.frameLocator('#owui-chat-artifacts iframe.ar-frame').locator('#ask').click();
+    await dp.waitForSelector('dialog.ar-dialog', { timeout: 5000 }).catch(() => {});
+    await dp.locator('dialog.ar-dialog button', { hasText: 'Don’t allow' }).click();
+    const refused = await d.waitFrame(/error:/, 8000);
+    await dp.frameLocator('#owui-chat-artifacts iframe.ar-frame').locator('#ask').click();
+    await dp.waitForTimeout(800);
+    check('“Don’t allow” is remembered: the artifact isn’t asked about again', /error:Not allowed/.test(refused) && !(await dp.locator('dialog.ar-dialog').count()), refused);
+    await d.context.close();
+  }
   check('the request didn’t become part of any chat', (await api(U, 'GET', '/api/v1/chats/' + U.ai)).json.chat.history.messages && Object.keys((await api(U, 'GET', '/api/v1/chats/' + U.ai)).json.chat.history.messages).length === 2);
   check('the sign-in token never left the site', s.state.leaks.length === 0, s.state.leaks.join());
   check('no page errors', s.state.errors.length === 0, s.state.errors.slice(0, 3).join(' | '));
@@ -437,7 +536,7 @@ console.log('New artifacts');
   check('it is kept on this device, and the address reopens it', await page.locator('#owui-chat-artifacts').isVisible() && /My budget/.test(await head(page)), await head(page));
   await page.locator('#owui-chat-artifacts .ar-head [aria-label="More"]').click();
   await page.locator('#owui-chat-artifacts .ar-menuitem', { hasText: 'Delete' }).click();
-  await page.locator('dialog.ar-dialog .ar-danger').click();
+  await page.locator('dialog.ar-dialog .ar-danger').click(); await page.waitForTimeout(300);
   check('and can be deleted', !/My budget/.test(await panelText(page)));
   check('no page errors', s.state.errors.length === 0, s.state.errors.slice(0, 3).join(' | '));
   await s.context.close();

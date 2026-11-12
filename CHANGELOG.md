@@ -4,6 +4,10 @@ This repository contains independently versioned Open WebUI extensions. Plugin-s
 
 ## 2026-11-12
 
+### Artifacts 1.2.0
+
+Spreadsheets can be corrected as in Excel: click a cell and type, move with Enter, Tab and the arrows, select ranges and see their sum, copy and paste with Excel, undo and redo, insert and delete rows and columns; new formulas (IFERROR, COUNTIF, SUMIF, AVERAGEIF, ROUNDUP, ROUNDDOWN) recalculate as you type, and the Excel download keeps them. Slides can be edited, added and deleted one at a time and download as PowerPoint, with diagrams and charts as pictures. The panel now uses Open WebUI's greys and centred dialogs, follows the platform's language (French included) the moment it changes, and runs its panel, loading, streaming and editing states as explicit state machines. Artifacts mode tells the model to write presentations as artifacts rather than scripts that make files. The browser suite passed 153 of 153 checks on Open WebUI 0.13.0 and 0.13.3, alone and with the other event functions.
+
 ### Artifacts 1.1.0
 
 Artifacts now stays out of ordinary conversation: a companion toggle Filter, Artifacts mode, tells the model when and how to make artifacts, and by default only marked blocks and kinds that need a viewer (whole pages, apps, drawings, diagrams, slides, CSV) become artifacts. While one is written, its code is folded behind a card that says so, and the panel opens only on the finished artifact. Documents and slides can hold Mermaid diagrams, multi-series bar, line, area and pie charts, drawings, pictures, highlights and callouts, and slides columns and title or section layouts, all kept in downloads. Sharing was removed from the panel; the copy note and the ask-about-a-selection chip are smaller. The browser suite passed 125 of 125 checks on Open WebUI 0.13.0 and 0.13.3, alone and with the other event functions.

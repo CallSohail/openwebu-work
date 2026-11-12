@@ -261,6 +261,7 @@ const CONFIG = {detect: 'all', minCodeLines: 12, minDocumentChars: 600, tablesAs
 let lang = 'en';
 const t = (k, v) => k;
 const FENCE = '```';
+const document = {documentElement: {dataset: {}}};
 """ + "\n"
 
 
@@ -271,6 +272,8 @@ def logic(script):
         + "\n".join(line for line in script.split("\n") if line.lstrip().startswith(("const countLines =", "const decodeEntities =", "const clamp =", "const toMs =")))
         + "\n" + take("  /* ---- finding artifacts in a chat ---- */", "  /* ---- what is kept in this browser")
         + "\n" + take("  function parseDelimited(", "  function sheetView(")
+        + "\n" + take("  function deckParts(", "  function slidesOf(")
+        + "\n" + take("  function machine(", "\n  }\n") + "\n  }\n"
     )
 
 
@@ -352,6 +355,27 @@ assert.deepStrictEqual(kinds(FENCE + 'chart\ntype: pie\nA,B\nx,1\ny,2\n' + FENCE
 CONFIG.detect = 'marked';
 assert.deepStrictEqual(kinds(page('T', 'x')), [], 'only marked blocks');
 assert.deepStrictEqual(kinds(FENCE + 'html\n<!-- artifact: T -->\n<!doctype html>\n<html></html>\n' + FENCE), ['html']);
+// More formulas: errors caught, conditions over ranges, rounding away from or towards zero
+const more = sheetEngine([['Item', 'Cost', 'N'], ['a', '2', '3'], ['b', '4', '5'], ['c', '8', '1'],
+  ['=IFERROR(1/0,"none")', '=IFERROR(B2*2,0)', '=SUMIF(C2:C4,">1",B2:B4)'], ['=COUNTIF(B2:B4,">=4")', '=AVERAGEIF(C2:C4,"<5",B2:B4)', '=ROUNDUP(2.21,1)'], ['=ROUNDDOWN(-2.29,1)', '=SUM(B2:B4,A5)', '=IFERROR(A9,"gone")']]);
+assert.strictEqual(more.value(4, 0), 'none'); assert.strictEqual(more.value(4, 1), 4); assert.strictEqual(more.value(4, 2), 6);
+assert.strictEqual(more.value(5, 0), 2); assert.strictEqual(more.value(5, 1), 5); assert.strictEqual(more.value(5, 2), 2.3);
+assert.strictEqual(more.value(6, 0), -2.2); assert.strictEqual(more.value(6, 2), 'gone', 'a reference outside the sheet is caught too');
+// Editing one slide keeps the marker, the front matter and the other slides as they were
+const deck = '<!-- artifact: Deck -->\n---\ntheme: x\n---\n# One\n- a\n\n---\n\n# Two\nNote: say it\n\n---\n\n# Three\n';
+const parts = deckParts(deck);
+assert.strictEqual(parts.prefix, '<!-- artifact: Deck -->\n---\ntheme: x\n---\n'); assert.strictEqual(parts.chunks.length, 3);
+parts.chunks[1] = '# Two, longer\nNote: say it';
+assert.strictEqual(deckText(parts), '<!-- artifact: Deck -->\n---\ntheme: x\n---\n# One\n- a\n\n---\n\n# Two, longer\nNote: say it\n\n---\n\n# Three\n');
+// State machines: only the moves in the table happen, '*' applies from any state, and the state is shown on <html>
+const seen = [];
+const m = machine('test', 'closed', {'*': {reset: 'closed'}, closed: {open: 'list'}, list: {pick: 'viewer', close: 'closed'}, viewer: {back: 'list', pick: (data) => data ? 'viewer' : null}}, (next, from, event) => seen.push(from + '>' + next + ':' + event));
+assert.strictEqual(m.send('back'), false); assert.strictEqual(m.state, 'closed');
+assert.ok(m.send('open') && m.send('pick')); assert.ok(m.is('viewer', 'list'));
+assert.strictEqual(m.send('pick', null), false, 'a rule may refuse a move'); assert.ok(m.send('pick', 1));
+assert.ok(m.send('reset')); assert.strictEqual(m.state, 'closed');
+assert.deepStrictEqual(seen, ['closed>list:open', 'list>viewer:pick', 'viewer>viewer:pick', 'viewer>closed:reset']);
+assert.strictEqual(document.documentElement.dataset.arTest, 'closed');
 // Charts
 const spec = chartSpec('# artifact: C\ntype: line\ntitle: Sales\nMonth,A,B\nJan,1,2\n');
 assert.deepStrictEqual(spec.spec, {type: 'line', title: 'Sales'}); assert.strictEqual(spec.body.split('\n')[0], 'Month,A,B');
@@ -412,4 +436,6 @@ def test_mode_formats_match_what_the_panel_reads(plugin):
         assert fence in instructions, fence
     for marker in ("<!-- artifact:", "// artifact:", "%% artifact:", "# artifact:"):
         assert marker in instructions
+    # A request for slides, a document or a sheet is answered with the artifact, not a script that makes a file
+    assert "Do not write a script" in instructions and ".pptx" in instructions and "PowerPoint" in instructions
     assert "MARKER_RE" in script and "layout\\s*:\\s*(title|section|center)" in script and "\\|\\|\\|" in script

@@ -5,6 +5,29 @@ This project follows [Semantic Versioning](https://semver.org/).
 
 Released as `chat-artifacts-v<version>`. See [RELEASING.md](../../../RELEASING.md) for the release process.
 
+## [1.2.0] - 2026-11-12
+
+### Added
+
+- Spreadsheets you correct as in Excel: click a cell and type, double-click or F2 to edit, Enter and Tab to move, ranges by dragging or Shift-click with their sum, average and count, copy, cut and paste (tab-separated, so to and from Excel and Google Sheets), Delete, undo and redo, inserting and deleting rows and columns, and *Ask about this* for a selected range.
+- Formulas: IFERROR, COUNTIF, SUMIF, AVERAGEIF, ROUNDUP, ROUNDDOWN.
+- Slides: edit the current slide, add one after it, delete it.
+- PowerPoint (`.pptx`) download of slides, with diagrams, charts, drawings and pictures as images.
+
+### Changed
+
+- The panel looks like Open WebUI: its greys for buttons and menus, its rounded dialogs, centred over a dimmed page.
+- The panel follows the language chosen in Open WebUI and switches the moment it changes.
+- The panel, loading, full screen, streaming and cell editing are explicit state machines, so a stray event can no longer leave the panel half closed or reopen a deleted artifact.
+- Artifacts mode tells the model to write presentations, documents and spreadsheets as artifacts, never as a script or a terminal command that makes a file.
+- Copy, download and *More* act on the version as it is now, your latest edit included.
+
+### Fixed
+
+- The *New* dialog opened in the top-left corner.
+- *All artifacts* did nothing in some views.
+- Deleting a blank artifact left its address in the page.
+
 ## [1.1.0] - 2026-11-12
 
 ### Added
