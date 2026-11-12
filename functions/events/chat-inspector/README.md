@@ -1,14 +1,16 @@
 # Chat Inspector for Open WebUI
 
-How full is this chat? Chat Inspector adds a **Context** tab to the Tabs panel's **+** menu that shows how much of the model's context window the chat uses, the way Claude does: a grid of squares, one per percent, coloured by what fills them, and a breakdown of each part.
+How full is this chat? Chat Inspector adds **Context** to the chat's **⋯** menu. It opens a pop-up that shows how much of the model's context window the chat uses, the way Claude does: a grid of squares, one per percent, coloured by what fills them, and a breakdown of each part.
 
-Version v1.0.0. Event Function. Requires Open WebUI v0.13.0 or later, the release that added the Tabs panel; tested in a browser on v0.13.0 and v0.13.3.
+Version v1.1.0. Event Function. Requires Open WebUI v0.13.0 or later, the release that added the Tabs panel; tested in a browser on v0.13.0 and v0.13.3.
 
 It is a companion to [Chat Gallery](../chat-gallery/), [Chat Files](../chat-files/) and [Chat Canvas](../chat-canvas/), built the same way.
 
-| A chat the model counted | Over the window, dark | Phone |
+| The pop-up, from the ⋯ menu | Phone: a sheet from the bottom | Full view, over the window |
 | --- | --- | --- |
-| ![The Context tab: 1,371 of 8,192 tokens, 17% full, a grid with 17 coloured squares, and a breakdown into system prompt, tools and instructions Open WebUI added, messages, latest answer and free space.](screenshots/counted-light.png) | ![A chat at 121%, every square filled, with a red warning that the model can't see everything any more.](screenshots/over-dark.png) | ![The Context tab on a 390 pixel wide phone in dark mode, with a ten-column grid.](screenshots/phone-dark.png) |
+| ![The Context pop-up under the chat's ⋯ button, beside the conversation and above the message box: 917 of 4,000 tokens, 23% full, a grid and a breakdown.](screenshots/popup-light.png) | ![Context as a sheet over the lower part of a phone screen in dark mode, with a ten-column grid and the platform's name, EveGPT, in the breakdown.](screenshots/phone-dark.png) | ![The full view of a chat at 121%, every square filled, with a red warning that the model can't see everything any more.](screenshots/over-dark.png) |
+
+The wording uses your platform's own name. These screenshots come from a server named EveGPT.
 
 ## What it shows
 
@@ -59,11 +61,19 @@ When none of these is known, Context shows the tokens in use without a percentag
 
 ## Opening it
 
-In a chat, select **+** in the Tabs panel's tab row and choose **Context**. It opens as a tab like the built-in ones: choose another tab and it steps aside; its × closes it. On v0.13.0, or a narrow screen, select the Tabs button at the top first.
+In any saved chat, open the chat's **⋯** menu (beside the chat's name, in the tab row or the top bar) and choose **Context**, just under **Overview**. Every account has that menu, plain users included.
 
-The + menu only appears for accounts that can open something there. By default plain users can't open a side chat, and often have no + menu at all. Either turn on **Allow Side Chat** for users in the admin settings, or turn on the `header_button` valve to add a Context button next to the tabs. On a phone the button opens Context over the chat.
+Context opens as a **pop-up** under the ⋯ button. The conversation stays visible and usable beside it: you can keep typing and sending, and the pop-up updates when each answer finishes. It stops above the message box rather than covering it. Close it with its **×** or **Escape**, and focus goes back to the ⋯ button. If you move to another chat while it is open, it shows that chat.
 
-Context reads the chat when you open it, when you return to its tab, and once an answer has finished: it watches the page, not the server, and doesn't poll. While an answer is being written it says so.
+On a **phone** it opens as a sheet from the bottom of the screen; tap outside it to close it.
+
+Context reads the chat when it opens and once an answer has finished. It watches the page, not the server, and doesn't poll. While an answer is being written, it says so.
+
+Prefer the full view? Set `open_as` to `tab` and Context fills the chat's pane like the Tabs panel's own tabs. Two more ways in are optional: the Tabs panel's **+** menu (`show_in_plus_menu`) and a button beside the tabs (`header_button`).
+
+## Its name for the platform
+
+Wherever Context names the platform ("tools and instructions EveGPT added", "summarised by EveGPT"), it uses the name your administrator gave Open WebUI with `WEBUI_NAME`, read from the server. Without a custom name it says "Open WebUI". The `platform_name` valve sets it explicitly.
 
 ## Light, dark and themes
 
@@ -75,7 +85,7 @@ Context takes its colours from Open WebUI's palette and follows light, dark, OLE
 2. Create a function with the id `chat_inspector`, or open the existing Chat Inspector, and paste [`chat_inspector.py`](chat_inspector.py). Review the code first, as with any function: it runs on your server.
 3. Enable it, then hard-refresh open Open WebUI tabs (`Ctrl+Shift+R`, or `Cmd+Shift+R` on a Mac).
 
-Upgrading from 0.2.0 keeps the same function id; the old floating pop-up and its ⓘ button are gone.
+Upgrading from 0.2.0 or 1.0.0 keeps the same function id. In 1.1.0 Context moved to the chat's ⋯ menu and opens as a pop-up; the + menu entry is off unless you turn on `show_in_plus_menu`.
 
 ## Settings
 
@@ -84,7 +94,11 @@ Upgrading from 0.2.0 keeps the same function id; the old floating pop-up and its
 | `context_windows` | empty | Context windows for models whose provider doesn't report one, or to correct one. One rule per line or comma, pattern `=` size: `gpt-4o* = 128000, llama3.1* = 128k, campus-model = 32768`. `k` and `m` mean thousand and million. The first matching rule wins, and a rule beats what the provider says. |
 | `warn_percent` | 80 | How full the window is before Context says it is getting full. |
 | `show_capabilities` | on | Show what the model is set up to do. |
-| `header_button` | off | Also add a Context button beside the tabs, for accounts with no + menu. |
+| `platform_name` | empty | The name Context uses for the platform, such as `EveGPT`. Empty uses the server's `WEBUI_NAME`. |
+| `open_as` | `popup` | `popup`: a pop-up under the ⋯ button, with the chat still in view. `tab`: the full view, like the Tabs panel's tabs. |
+| `show_in_chat_menu` | on | Add Context to the chat's ⋯ menu, under Overview. |
+| `show_in_plus_menu` | off | Also add it to the Tabs panel's + menu, where it opens as a tab. |
+| `header_button` | off | Also add a Context button beside the tabs. It opens the way `open_as` says. |
 | `language` | `auto` | `auto` follows each person's Open WebUI language: French where it is French, English elsewhere. |
 
 ## What it reads
@@ -94,7 +108,8 @@ Chat Inspector runs in the browser with the signed-in person's own access and on
 - the open chat, from `GET /api/v1/chats/{id}`, including Open WebUI's compaction threshold when compaction is on;
 - the models the person can use, from `GET /api/models`, at most every five minutes;
 - the person's settings, from `GET /api/v1/users/user/settings`, for their system prompt and context size;
-- the chat's folder, from `GET /api/v1/folders/{id}`, for its system prompt.
+- the chat's folder, from `GET /api/v1/folders/{id}`, for its system prompt;
+- the platform's name, from `GET /api/config`.
 
 It changes nothing, stores nothing, adds no server routes and sends nothing anywhere else. The server half only serves the script through `/static/loader.js`.
 
@@ -133,10 +148,10 @@ node tests/e2e.mjs seed.json
 
 | Open WebUI | With Canvas, Files and Gallery | Checks |
 | --- | --- | --- |
-| v0.13.3 | yes | 61 of 61 passed |
-| v0.13.3 | no | 56 of 56 passed |
-| v0.13.0 | yes | 61 of 61 passed |
+| v0.13.3 | yes | 76 of 76 passed |
+| v0.13.3 | no | 71 of 71 passed |
+| v0.13.0 | yes | 76 of 76 passed |
 
-They cover: opening from the + menu; no button outside it by default; the breakdown summing to the model's count; the grid; the last answer and totals; no polling; an estimated chat with French, Arabic, Chinese and an image; the administrator's window; nearly full and over the window; two models and the picker; a summarised chat; a model that no longer exists; an empty chat; **a real answer streamed through Open WebUI**, with Context saying it is being written and then updating by itself, and the fake model's 300 extra tokens showing up as the worked-out share; taking turns with the other three tabs; a plain user with no + menu and the optional button; contrast in four themes; a phone; and every valve.
+They cover: Context in the chat's ⋯ menu right after Overview, styled like its items, for a plain user with no + menu; the pop-up opening on screen, clear of the message box and without covering the chat; typing and sending with it open, and it following the answer; Escape and × closing it with focus back on the ⋯ button; it following a change of chat; the platform's name, EveGPT, in its wording and the `platform_name` override; the phone sheet and closing it by tapping outside; `open_as = tab`; turning the menu entry off; opening from the + menu when it is turned on; the breakdown summing to the model's count; the grid; the last answer and totals; no polling; an estimated chat with French, Arabic, Chinese and an image; the administrator's window; nearly full and over the window; two models and the picker; a summarised chat; a model that no longer exists; an empty chat; **a real answer streamed through Open WebUI**, with Context saying it is being written and then updating by itself, and the fake model's 300 extra tokens showing up as the worked-out share; taking turns with the other three tabs; a plain user with no + menu and the optional button; contrast in four themes; a phone; and every valve.
 
 Not tested in a browser: a real provider other than the fake model, Ollama's own usage fields, split screen, and Chat Tabs.

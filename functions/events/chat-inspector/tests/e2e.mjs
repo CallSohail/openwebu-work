@@ -22,7 +22,7 @@ const api = async (account, method, path, body) => {
   const response = await fetch(seed.base + path, { method, headers: { Authorization: 'Bearer ' + account.token, 'Content-Type': 'application/json' }, body: body ? JSON.stringify(body) : undefined });
   return { status: response.status, json: await response.json().catch(() => null) };
 };
-const defaults = { context_windows: 'fake-mini = 4000', warn_percent: 80, show_capabilities: true, header_button: false, language: 'auto' };
+const defaults = { context_windows: 'fake-mini = 4000', warn_percent: 80, show_capabilities: true, header_button: false, language: 'auto', platform_name: '', open_as: 'popup', show_in_chat_menu: true, show_in_plus_menu: false };
 const setValves = valves => api(seed.admin, 'POST', '/api/v1/functions/id/chat_inspector/valves/update', { ...defaults, ...valves });
 const A = seed.admin, U = seed.user;
 const SYSTEM = 'You are a helpful assistant for students at a French university. Answer clearly and cite sources when you can.';
@@ -61,8 +61,15 @@ async function session(account, { viewport = { width: 1400, height: 900 }, theme
     await ready();
   };
   // Ready when the panel shows the chat in the address bar and has finished reading it
+  // The way in every account has: the chat's ⋯ menu
+  const openFromMenu = async () => {
+    await page.locator('#chat-context-menu-button').filter({ visible: true }).first().click();
+    await page.waitForSelector('#owui-chat-inspector-menu-item', { timeout: 8000 });
+    await page.click('#owui-chat-inspector-menu-item');
+    await ready();
+  };
   const ready = () => page.waitForFunction(() => { const d = document.getElementById('owui-chat-inspector'), id = (/^\/c\/([^/?#]+)/.exec(location.pathname) || [])[1] || ''; return d && !d.hidden && d.dataset.state === 'ready' && (d.dataset.chat === id || !d.dataset.chat && d.querySelector('.ci-notice')); }, null, { timeout: 20000 }).then(() => true, () => false);
-  return { context, page, state, open, openContext, ready };
+  return { context, page, state, open, openContext, openFromMenu, ready };
 }
 const shot = (page, name) => shots ? page.screenshot({ path: `${shots}/${name}.png` }) : null;
 const panelText = page => page.locator('#owui-chat-inspector .ci-body').innerText().catch(() => '');
@@ -110,7 +117,14 @@ console.log('Administrator, wide screen' + (others ? ', with Canvas, Files and G
   const { context, page, state, open, openContext, ready } = await session(A, { extra: { permissions: ['clipboard-read', 'clipboard-write'] } });
   await open('/c/' + A.usage);
   await page.waitForTimeout(1500);
-  check('by default there is no button outside the + menu', await page.locator('#owui-chat-inspector-header').count() === 0);
+  check('by default there is no button beside the tabs', await page.locator('#owui-chat-inspector-header').count() === 0);
+  const plusButton = page.locator('#controls-container button[aria-label="New tab"]').first();
+  if (!(await plusButton.isVisible().catch(() => false))) await page.click('nav button[aria-label="Tabs"]', { timeout: 3000 }).catch(() => {});
+  await plusButton.click(); await page.waitForTimeout(600);
+  check('by default Context is not in the + menu', await page.locator('#owui-chat-inspector-button').count() === 0);
+  await page.keyboard.press('Escape');
+  await setValves({ show_in_plus_menu: true });
+  await open('/c/' + A.usage);
   await openContext();
   check('Context opens from the + menu as a tab in the panel', await page.locator('#controls-container #owui-chat-inspector-tab[aria-selected="true"]').count() === 1 && await page.locator('#owui-chat-inspector').isVisible());
   check('the chat under it is hidden and unreachable', await page.evaluate(() => [...document.querySelectorAll('[data-ci-covered]')].length > 0 && [...document.querySelectorAll('[data-ci-covered]')].every(node => node.inert)));
@@ -159,7 +173,7 @@ console.log('Administrator, wide screen' + (others ? ', with Canvas, Files and G
   // Summarised history, unknown model
   await goChat(page, ready, A.summary); await ready();
   const summary = await legend(page);
-  check('a summarised chat counts the summary, not the old messages', summary.summary?.tokens > 5 && summary.messages.tokens < 200 && /Summarised by Open WebUI/.test(await panelText(page)), JSON.stringify(summary));
+  check('a summarised chat counts the summary, not the old messages', summary.summary?.tokens > 5 && summary.messages.tokens < 200 && /Summarised by EveGPT/.test(await panelText(page)), JSON.stringify(summary));
   await goChat(page, ready, A.unknown); await ready();
   check('a model that is gone: no window, no %, and it says so', !/ of [\d,]+ tokens/.test(await big(page)) && /tokens in use/.test(await big(page)) && /isn’t known/.test(await panelText(page)) && /isn’t in the list of models/.test(await panelText(page)) && (await cells(page)).free === undefined);
 
@@ -211,15 +225,57 @@ console.log('Administrator, wide screen' + (others ? ', with Canvas, Files and G
   await context.close();
 }
 
-/* ---- a plain user: no + menu, so the optional button ---- */
-console.log('Plain user');
+/* ---- a plain user: the chat's ⋯ menu and the pop-up ---- */
+console.log('Plain user, the ⋯ menu and the pop-up');
 {
+  await setValves({});
   const first = await session(U);
+  const { page } = first;
   await first.open('/c/' + U.usage);
-  await first.page.waitForTimeout(2000);
-  const hasPlus = await first.page.locator('#controls-container button[aria-label="New tab"]').count();
-  check('by default a plain user has no + menu and no Context button', !hasPlus && !(await first.page.locator('#owui-chat-inspector-header').count()));
+  await page.waitForTimeout(2000);
+  const hasPlus = await page.locator('#controls-container button[aria-label="New tab"]').count();
+  check('a plain user has no + menu and, by default, no Context button beside the tabs', !hasPlus && !(await page.locator('#owui-chat-inspector-header').count()));
+  await page.locator('#chat-context-menu-button').filter({ visible: true }).first().click();
+  await page.waitForSelector('#owui-chat-inspector-menu-item', { timeout: 8000 }).catch(() => {});
+  const items = await page.$$eval('body > [role="menu"] .app-dropdown-menu > button', buttons => buttons.map(b => b.id === 'owui-chat-inspector-menu-item' ? '[Context]' : b.textContent.trim()));
+  check('Context is in the chat’s ⋯ menu, right after Overview', items[items.indexOf('Overview') + 1] === '[Context]', items.join(' | '));
+  check('it looks like the menu’s own items', await page.evaluate(() => { const ours = document.getElementById('owui-chat-inspector-menu-item'), theirs = ours.previousElementSibling; const a = getComputedStyle(ours), b = getComputedStyle(theirs); return a.height === b.height && a.fontSize === b.fontSize && a.paddingLeft === b.paddingLeft && a.gap === b.gap; }));
+  await page.click('#owui-chat-inspector-menu-item');
+  await first.ready();
+  // Open WebUI's menu fades out after a choice
+  await page.waitForFunction(() => !document.querySelector('body > [role="menu"]'), null, { timeout: 3000 }).catch(() => {});
+  const pop = await page.evaluate(() => { const d = document.getElementById('owui-chat-inspector'), r = d.getBoundingClientRect(), form = document.getElementById('chat-input')?.closest('form')?.getBoundingClientRect(); return { role: d.getAttribute('role'), modal: d.getAttribute('aria-modal'), pop: d.classList.contains('ci-pop'), menuClosed: !document.querySelector('body > [role="menu"]'), covered: document.querySelectorAll('[data-ci-covered]').length, onScreen: r.left >= 0 && r.top >= 0 && r.right <= innerWidth && r.bottom <= innerHeight, clearOfInput: !form || r.bottom <= form.top || r.right <= form.left || r.left >= form.right, width: Math.round(r.width), bg: getComputedStyle(d).backgroundColor, focus: document.activeElement?.getAttribute('aria-label') }; });
+  check('choosing it opens a pop-up, not a tab, and the menu closes', pop.role === 'dialog' && pop.modal === 'false' && pop.pop && pop.menuClosed && pop.covered === 0 && await page.locator('#owui-chat-inspector-tab').count() === 0, JSON.stringify(pop));
+  check('the pop-up is on screen, clear of the message box, solid, with focus on its close button', pop.onScreen && pop.clearOfInput && pop.width > 300 && pop.bg !== 'rgba(0, 0, 0, 0)' && pop.focus === 'Close Context', JSON.stringify(pop));
+  check('it shows this chat’s numbers', /1,371 of 8,192 tokens/.test(await big(page)));
+  const text = await panelText(page);
+  check('the wording uses the platform’s own name, EveGPT, not Open WebUI', /EveGPT/.test(text) && !/Open WebUI/.test(text) && /instructions EveGPT added/.test(text), text.match(/[^\n]*(EveGPT|Open WebUI)[^\n]*/g)?.join(' | '));
+  await shot(page, 'popup-light');
+  // The chat stays usable with the pop-up open, and the pop-up follows the answer
+  await page.locator('#chat-input').click();
+  await page.keyboard.type('Tell me more SLOW');
+  check('the message box can be typed in with the pop-up open', /Tell me more SLOW/.test(await page.locator('#chat-input').innerText().catch(() => '')) && await page.locator('#owui-chat-inspector').isVisible());
+  await page.keyboard.press('Enter');
+  await page.waitForFunction(() => /being written/.test(document.querySelector('.ci-updated')?.textContent || ''), null, { timeout: 10000 }).catch(() => {});
+  const during = await page.locator('.ci-updated').innerText().catch(() => '');
+  await page.waitForFunction(() => /3 \/ 3/.test(document.querySelector('#owui-chat-inspector .ci-body')?.textContent || ''), null, { timeout: 30000 }).catch(() => {});
+  check('while the answer streams the pop-up says so, then updates by itself', /being written/.test(during) && (await facts(page))['Answers the model counted'] === '3 / 3', during + ' ' + JSON.stringify(await facts(page)));
+  await page.keyboard.press('Escape');
+  await page.locator('#owui-chat-inspector').waitFor({ state: 'hidden', timeout: 3000 }).catch(() => {});
+  check('Escape closes it and gives focus back to the ⋯ button', await page.locator('#owui-chat-inspector').isHidden() && await page.evaluate(() => document.activeElement?.id === 'chat-context-menu-button'));
+  await first.openFromMenu();
+  await page.click('#owui-chat-inspector .ci-head [aria-label="Close Context"]');
+  check('its close button closes it too', await page.locator('#owui-chat-inspector').isHidden());
+  await first.openFromMenu();
+  await goChat(page, first.ready, U.over); await first.ready();
+  check('moving to another chat keeps the pop-up open and shows that chat', await page.locator('#owui-chat-inspector').isVisible() && /9,902 of 8,192|of 8,192 tokens/.test(await big(page)) && /Over the window/.test(await panelText(page)), await big(page));
+  check('no page errors', first.state.errors.length === 0, first.state.errors.slice(0, 3).join(' | '));
   await first.context.close();
+}
+
+/* ---- the optional button beside the tabs ---- */
+console.log('Plain user, with the button beside the tabs');
+{
   await setValves({ header_button: true });
   const { context, page, state, open, openContext } = await session(U);
   await open('/c/' + U.usage);
@@ -241,11 +297,11 @@ console.log('Plain user');
 /* ---- light, dark, OLED black and Her ---- */
 console.log('Themes');
 for (const theme of ['light', 'dark', 'oled-dark', 'her']) {
-  const { context, page, state, open, openContext, ready } = await session(A, { theme });
+  const { context, page, state, open, openFromMenu, ready } = await session(A, { theme });
   await open('/c/' + A.usage);
-  await openContext();
+  await openFromMenu();
   const scores = {};
-  for (const [label, selector] of Object.entries({ heading: '.ci-heading', big: '.ci-big strong', badge: '.ci-state', sub: '.ci-summary .ci-sub', updated: '.ci-updated', legend: '.ci-lname', values: '.ci-lvalue', shares: '.ci-lshare', tags: '.ci-tag', titles: '.ci-section h3', facts: '.ci-facts dt' })) scores[label] = await contrastOf(page, selector);
+  for (const [label, selector] of Object.entries({ close: '.ci-head [aria-label="Close Context"]', heading: '.ci-heading', big: '.ci-big strong', badge: '.ci-state', sub: '.ci-summary .ci-sub', updated: '.ci-updated', legend: '.ci-lname', values: '.ci-lvalue', shares: '.ci-lshare', tags: '.ci-tag', titles: '.ci-section h3', facts: '.ci-facts dt' })) scores[label] = await contrastOf(page, selector);
   check(`${theme}: every text reaches 4.5:1 contrast`, Object.values(scores).every(score => score >= 4.5), JSON.stringify(scores));
   await shot(page, `counted-${theme}`);
   await goChat(page, ready, A.full); await ready();
@@ -259,22 +315,20 @@ for (const theme of ['light', 'dark', 'oled-dark', 'her']) {
   await context.close();
 }
 
-/* ---- a phone ---- */
+/* ---- a phone: a sheet from the bottom ---- */
 console.log('Phone, dark');
 {
-  await setValves({ header_button: true });
-  const { context, page, state, open, openContext } = await session(U, { viewport: { width: 390, height: 844 }, theme: 'dark', extra: { hasTouch: true, isMobile: true } });
+  await setValves({});
+  const { context, page, state, open, openFromMenu } = await session(U, { viewport: { width: 390, height: 844 }, theme: 'dark', extra: { hasTouch: true, isMobile: true } });
   await open('/c/' + U.usage);
-  await page.waitForSelector('#owui-chat-inspector-header', { timeout: 10000 }).catch(() => {});
-  await page.tap('#owui-chat-inspector-header');
-  await page.locator('#owui-chat-inspector').waitFor({ state: 'visible', timeout: 8000 }).catch(() => {});
-  check('Context opens over the chat on a phone', await page.locator('#owui-chat-inspector').isVisible());
-  await page.waitForTimeout(1500);
-  const layout = await page.evaluate(() => { const box = document.getElementById('owui-chat-inspector').getBoundingClientRect(), grid = document.querySelector('.ci-grid'); return { width: Math.round(box.width), below: box.top >= document.querySelector('#chat-container nav').getBoundingClientRect().bottom - 1, overflow: document.documentElement.scrollWidth > innerWidth + 1 || document.querySelector('.ci-body').scrollWidth > document.querySelector('.ci-body').clientWidth + 1, columns: getComputedStyle(grid).gridTemplateColumns.split(' ').length }; });
-  check('it fills the width below the top bar, with a 10-column grid and no sideways scrolling', layout.width >= 380 && layout.below && !layout.overflow && layout.columns === 10, JSON.stringify(layout));
+  await openFromMenu();
+  const sheet = await page.evaluate(() => { const d = document.getElementById('owui-chat-inspector'), r = d.getBoundingClientRect(), grid = document.querySelector('.ci-grid'); return { sheet: d.classList.contains('ci-sheet'), backdrop: !document.querySelector('.ci-backdrop').hidden, width: Math.round(r.width), bottom: Math.round(innerHeight - r.bottom), top: Math.round(r.top), overflow: document.documentElement.scrollWidth > innerWidth + 1 || document.querySelector('.ci-body').scrollWidth > document.querySelector('.ci-body').clientWidth + 1, columns: getComputedStyle(grid).gridTemplateColumns.split(' ').length }; });
+  check('on a phone it opens as a sheet from the bottom, full width, with a 10-column grid', sheet.sheet && sheet.backdrop && sheet.width >= 385 && sheet.bottom <= 1 && sheet.top > 80 && !sheet.overflow && sheet.columns === 10, JSON.stringify(sheet));
+  await page.waitForTimeout(500);
   await shot(page, 'phone-dark');
-  await page.locator('.ci-head [aria-label="Close Context"]').tap();
-  check('its close button closes it', await page.locator('#owui-chat-inspector').isHidden());
+  await page.mouse.click(195, 40);
+  await page.locator('#owui-chat-inspector').waitFor({ state: 'hidden', timeout: 3000 }).catch(() => {});
+  check('a tap outside the sheet closes it', await page.locator('#owui-chat-inspector').isHidden() && await page.locator('.ci-backdrop').isHidden());
   check('no page errors', state.errors.length === 0, state.errors.slice(0, 3).join(' | '));
   await context.close();
 }
@@ -283,15 +337,38 @@ console.log('Phone, dark');
 console.log('Valves');
 {
   await setValves({ language: 'fr', context_windows: 'fake-gpt-4o = 2k, fake-mini = 4000', warn_percent: 50, show_capabilities: false });
-  const { context, page, open, openContext } = await session(A);
+  const { context, page, open, openFromMenu } = await session(A);
   await open('/c/' + A.usage);
-  await openContext();
+  await openFromMenu();
   const text = await panelText(page);
   check('an administrator’s window overrides the provider’s, with k for thousands', /sur 2\s000 jetons/.test(await big(page)) && /définie par votre administrateur/.test(text), await big(page));
-  check('Context speaks French', /Ce qui occupe le contexte/i.test(text) && /Dernière réponse/i.test(text) && (await page.locator('#owui-chat-inspector-tab').innerText()).trim() === 'Contexte');
+  check('Context speaks French', /Ce qui occupe le contexte/i.test(text) && /Dernière réponse/i.test(text) && (await page.locator('#owui-chat-inspector .ci-heading').innerText()).trim() === 'Contexte' && (await page.locator('#owui-chat-inspector-menu-item').count()) === 0);
   check('the warning level follows the valve', (await page.locator('.ci-state').getAttribute('data-state')) !== 'ok');
   check('the model’s set-up can be hidden', !/Lit les images/.test(text));
   await context.close();
+
+  await setValves({ platform_name: 'Campus AI' });
+  const named = await session(A);
+  await named.open('/c/' + A.usage);
+  await named.openFromMenu();
+  check('platform_name overrides the server’s name', /instructions Campus AI added/.test(await panelText(named.page)) && !/EveGPT/.test(await panelText(named.page)));
+  await named.context.close();
+
+  await setValves({ open_as: 'tab' });
+  const tabbed = await session(A);
+  await tabbed.open('/c/' + A.usage);
+  await tabbed.openFromMenu();
+  // A tab in the panel, or, where no panel is open (as on 0.13.0 at first), the full view over the chat
+  check('open_as = tab makes the ⋯ menu open the full view instead', !(await tabbed.page.locator('#owui-chat-inspector.ci-pop').count()) && (await tabbed.page.locator('#owui-chat-inspector-tab[aria-selected="true"]').count() === 1 || await tabbed.page.locator('#owui-chat-inspector.ci-solo').isVisible()));
+  await tabbed.context.close();
+
+  await setValves({ show_in_chat_menu: false });
+  const hidden = await session(U);
+  await hidden.open('/c/' + U.usage);
+  await hidden.page.locator('#chat-context-menu-button').filter({ visible: true }).first().click();
+  await hidden.page.waitForTimeout(800);
+  check('show_in_chat_menu = off keeps it out of the ⋯ menu', !(await hidden.page.locator('#owui-chat-inspector-menu-item').count()) && await hidden.page.locator('body > [role="menu"]').count() > 0);
+  await hidden.context.close();
   await setValves({});
 }
 

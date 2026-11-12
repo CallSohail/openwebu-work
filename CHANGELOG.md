@@ -2,6 +2,12 @@
 
 This repository contains independently versioned Open WebUI extensions. Plugin-specific release notes live next to each implementation when they need more detail.
 
+## 2026-11-12
+
+### Chat Inspector 1.1.0
+
+Context moved to the chat's ⋯ menu, under Overview, which every account has, and opens as a pop-up beside the chat instead of a full tab: clear of the message box, so people can keep chatting while it updates, and a sheet from the bottom on phones. Its wording now uses the platform's own name from `WEBUI_NAME`, such as EveGPT. New valves choose the name, the pop-up or the full view, and each way in. The browser suite passed 76 of 76 checks on Open WebUI 0.13.0 and 0.13.3.
+
 ## 2026-11-10
 
 ### Chat Inspector 1.0.0

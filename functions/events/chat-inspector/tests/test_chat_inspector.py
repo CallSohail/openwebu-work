@@ -114,6 +114,10 @@ def test_script_is_served_with_the_default_settings(served):
         "warnPercent": 80,
         "showCapabilities": True,
         "headerButton": False,
+        "platformName": "",
+        "openAs": "popup",
+        "chatMenu": True,
+        "plusMenu": False,
         "language": "auto",
     }
 
@@ -159,6 +163,7 @@ def test_registering_twice_keeps_one_route(served):
         {"warn_percent": 10},
         {"warn_percent": 100},
         {"language": "de"},
+        {"open_as": "window"},
     ],
 )
 def test_out_of_range_valves_are_refused(plugin, bad):
@@ -215,10 +220,28 @@ def test_a_valve_cannot_end_the_script(served):
     assert "</script>" not in text and "<\\/script>" in text
 
 
-def test_lives_in_the_plus_menu_by_default(plugin):
-    # Off by default: Context opens from the Tabs panel's + menu, like the built-in tabs
-    assert plugin.Event.Valves().header_button is False
-    assert "'owui-chat-inspector-button'" in plugin.LOADER_SCRIPT
+def test_opens_from_the_chat_menu_as_a_popup_by_default(plugin):
+    # Every account has the chat's ⋯ menu; the + menu and the button beside the tabs are opt-in
+    valves = plugin.Event.Valves()
+    assert valves.show_in_chat_menu is True and valves.open_as == "popup"
+    assert valves.show_in_plus_menu is False and valves.header_button is False
+    script = plugin.LOADER_SCRIPT
+    assert "'owui-chat-inspector-menu-item'" in script and "#chat-context-menu-button[aria-expanded=\"true\"]" in script
+
+
+def test_wording_uses_the_platform_name(plugin):
+    # The words come from the server's own name (WEBUI_NAME), so EveGPT reads "EveGPT", not "Open WebUI"
+    script = plugin.LOADER_SCRIPT
+    strings = script[script.index("  const STRINGS = {") : script.index("  const icons = {")]
+    assert "Open WebUI" not in strings and strings.count("{app}") >= 10
+    assert "api('/api/config')" in script and r"\(Open WebUI\)" in script
+
+
+def test_platform_name_valve_is_trimmed_and_bounded(served):
+    _, event, _, client = served
+    event.valves = event.Valves(platform_name="  EveGPT  ")
+    config = json.loads(re.search(r"const CONFIG = (\{.*?\});", client.get("/static/loader.js").text).group(1))
+    assert config["platformName"] == "EveGPT"
 
 
 def test_reads_only(plugin):

@@ -5,6 +5,19 @@ This project follows [Semantic Versioning](https://semver.org/).
 
 Released as `chat-inspector-v<version>`. See [RELEASING.md](../../../RELEASING.md) for the release process.
 
+## [1.1.0] - 2026-11-12
+
+### Added
+
+- **Context in the chat's ⋯ menu**, under Overview. Every account has that menu, so plain users without a + menu can open it.
+- **A pop-up** in place of the full view: anchored under the ⋯ button, clear of the message box, non-modal so the chat can be read, typed in and sent while it updates; Escape or × closes it and returns focus. On a phone it is a sheet from the bottom, closed by tapping outside.
+- **The platform's own name** in the wording, read from the server's `WEBUI_NAME` (for example "EveGPT" in place of "Open WebUI").
+- Valves: `platform_name`, `open_as` (`popup` or `tab`), `show_in_chat_menu`, `show_in_plus_menu`.
+
+### Changed
+
+- The + menu entry is now off by default; `show_in_plus_menu` turns it back on. The button beside the tabs opens the way `open_as` says.
+
 ## [1.0.0] - 2026-11-10
 
 A rewrite. The function id, `chat_inspector`, is unchanged, so pasting the new file over 0.2.0 upgrades it in place.

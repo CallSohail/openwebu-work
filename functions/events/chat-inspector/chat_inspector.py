@@ -1,8 +1,8 @@
 """
 title: Chat Inspector
-description: A Context tab that shows how much of the model's context window a chat uses, Claude-style: a grid of what fills it, the model's own token counts, the last answer's numbers and when the chat will need summarising.
+description: Context, in the chat's ⋯ menu: a pop-up showing how much of the model's context window the chat uses, Claude-style, with a grid of what fills it, the model's own token counts, the last answer's numbers and a warning before it overflows.
 author: Muhammad Sohail
-version: 1.0.0
+version: 1.1.0
 license: MIT
 required_open_webui_version: 0.13.0
 """
@@ -501,6 +501,17 @@ INSPECTOR_CSS = r"""
 .ci-notice strong{color:var(--ci-text);font-weight:500}
 .ci-notice .ci-btn{margin-top:.5rem;color:var(--ci-text)}
 .ci-sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.ci-dialog.ci-pop{z-index:60;background:var(--ci-surface);border:1px solid var(--ci-line);border-radius:1rem;box-shadow:0 24px 48px -16px rgb(0 0 0/.35),0 2px 8px rgb(0 0 0/.08)}
+.dark .ci-dialog.ci-pop{box-shadow:0 24px 48px -16px rgb(0 0 0/.75),0 0 0 1px rgb(255 255 255/.04)}
+.ci-pop .ci-head{padding:.625rem .5rem .5rem 1rem;border-bottom:1px solid var(--ci-line)}
+.ci-pop .ci-updated{order:10;flex-basis:100%}
+.ci-pop .ci-close{order:9!important;margin-inline-start:0!important}
+.ci-pop .ci-body{flex:1 1 auto;padding:.75rem 1rem 1rem;gap:1rem}
+.ci-pop .ci-notice{min-height:8rem;padding:1.25rem}
+.ci-dialog.ci-sheet{border-radius:1rem 1rem 0 0;border-bottom:0}
+.ci-backdrop{position:fixed;inset:0;z-index:59;background:rgb(0 0 0/.35)}
+.ci-backdrop[hidden]{display:none}
+@media(prefers-reduced-motion:no-preference){.ci-dialog.ci-pop:not([hidden]){animation:ci-in .14s ease-out}@keyframes ci-in{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:none}}.ci-dialog.ci-sheet:not([hidden]){animation:ci-up .18s ease-out}@keyframes ci-up{from{transform:translateY(16px);opacity:.4}to{transform:none;opacity:1}}}
 @media(forced-colors:active){.ci-cell,.ci-swatch{forced-color-adjust:none}.ci-btn,.ci-select{border:1px solid CanvasText}}
 @container ci (max-width:520px){
 .ci-head{padding:.75rem .75rem .5rem}
@@ -531,24 +542,24 @@ LOADER_SCRIPT = r"""
       window_admin: 'Context window set by your administrator', window_model: 'Context window from the model’s settings', window_chat: 'Context window from this chat’s settings', window_user: 'Context window from your settings', window_provider: 'Context window reported by the provider',
       window_unknown: 'This model’s context window isn’t known, so only the tokens in use are shown.', window_unknown_admin: 'An administrator can set it in the Chat Inspector valves.',
       st_ok: 'Plenty of room', st_warn: 'Getting full', st_full: 'Over the window', st_warn_hint: 'Long chats lose their oldest messages, or have them summarised, once the window is full. Starting a new chat keeps answers sharp.', st_full_hint: 'The model can’t see everything any more. The oldest messages are cut or summarised before each answer.',
-      compaction_at: 'Open WebUI summarises older messages at {n} tokens', compaction_left: '{n} until it summarises', compaction_past: 'Past the point where Open WebUI summarises older messages',
+      compaction_at: '{app} summarises older messages at {n} tokens', compaction_left: '{n} until it summarises', compaction_past: 'Past the point where {app} summarises older messages',
       exchanges: 'About {n} more exchanges like the recent ones fit.', exchanges_one: 'About one more exchange like the recent ones fits.', exchanges_none: 'Not even one more exchange like the recent ones fits.',
       grid_label: 'Each square is one percent of the context window.', grid_share: 'The window isn’t known: each square is one percent of what the chat uses.',
-      c_system: 'System prompt', c_extras: 'Tools, documents and instructions Open WebUI added', c_summary: 'Summary of earlier messages', c_messages: 'Messages', c_latest: 'Latest answer', c_newer: 'Since the last count', c_free: 'Free space', c_reserve: 'Reserved before summarising',
+      c_system: 'System prompt', c_extras: 'Tools, documents and instructions {app} added', c_summary: 'Summary of earlier messages', c_messages: 'Messages', c_latest: 'Latest answer', c_newer: 'Since the last count', c_free: 'Free space', c_reserve: 'Reserved before summarising',
       k_reported: 'reported', k_estimated: 'estimated', k_inferred: 'worked out', k_reported_hint: 'Counted by the model itself', k_estimated_hint: 'Estimated from the text', k_inferred_hint: 'The model’s own count, minus what could be estimated',
       breakdown: 'What is using the context', last: 'Last answer', branch: 'This conversation', capabilities: 'This model', notes: 'How these numbers are made',
       f_model: 'Model', f_input: 'Read by the model', f_output: 'Written', f_reasoning: 'of which reasoning', f_cached: 'Read from cache', f_total: 'Total', f_speed: 'Speed', f_time: 'Time',
       tokens: '{n} tokens', per_sec: '{n} tokens/s', seconds: '{n} s', not_reported: 'Not reported',
-      b_messages: 'Messages on this branch', b_answers: 'Answers', b_reported: 'Answers the model counted', b_read: 'Tokens read in all', b_written: 'Tokens written in all', b_summarised: 'Older messages', b_summarised_yes: 'Summarised by Open WebUI',
+      b_messages: 'Messages on this branch', b_answers: 'Answers', b_reported: 'Answers the model counted', b_read: 'Tokens read in all', b_written: 'Tokens written in all', b_summarised: 'Older messages', b_summarised_yes: 'Summarised by {app}',
       cap_vision: 'Reads images', cap_file_upload: 'Takes files', cap_web_search: 'Searches the web', cap_image_generation: 'Makes images', cap_code_interpreter: 'Runs code', cap_citations: 'Cites sources', cap_builtin_tools: 'Built-in tools', cap_memory: 'Memory',
       tools_n: '{n} tools attached', knowledge_n: '{n} knowledge bases attached', no_caps: 'No features are set on this model.', model_missing: 'This model isn’t in the list of models you can use.',
       n_reported: 'The model counted its own prompt for the last answer ({n} tokens). Everything above is fitted to that count.',
-      n_estimated: 'The model hasn’t reported its own count, so these are estimates from the text. Tools, retrieved documents and other instructions Open WebUI adds aren’t included.',
+      n_estimated: 'The model hasn’t reported its own count, so these are estimates from the text. Tools, retrieved documents and other instructions {app} adds aren’t included.',
       n_family: 'Estimates are tuned for {family} models.', n_family_default: 'Estimates use general tuning, as this model’s family isn’t recognised.',
       n_images: '{n} images in this chat aren’t counted in the estimates.', n_sources: 'The last answer used {n} retrieved sources; their text is in the worked-out share.',
       n_reasoning: 'Reasoning is usually not sent back to the model, so it isn’t counted as context.',
       n_multi: 'This chat asks several models at once; each has its own context. Pick one above.',
-      n_compaction: 'Open WebUI’s summary threshold is about when it compacts the chat; it is not the model’s window.'
+      n_compaction: '{app}’s summary threshold is about when it compacts the chat; it is not the model’s window.'
     },
     fr: {
       context: 'Contexte', close_context: 'Fermer le contexte', refresh: 'Actualiser', model: 'Modèle', updated: 'Mis à jour à {time}', updating: 'Une réponse est en cours ; les chiffres se mettent à jour à la fin',
@@ -560,24 +571,24 @@ LOADER_SCRIPT = r"""
       window_admin: 'Fenêtre de contexte définie par votre administrateur', window_model: 'Fenêtre de contexte issue des réglages du modèle', window_chat: 'Fenêtre de contexte issue des réglages de cette conversation', window_user: 'Fenêtre de contexte issue de vos réglages', window_provider: 'Fenêtre de contexte indiquée par le fournisseur',
       window_unknown: 'La fenêtre de contexte de ce modèle n’est pas connue : seuls les jetons utilisés sont affichés.', window_unknown_admin: 'Un administrateur peut la définir dans les valves de Chat Inspector.',
       st_ok: 'Beaucoup de place', st_warn: 'Bientôt plein', st_full: 'Au-delà de la fenêtre', st_warn_hint: 'Une fois la fenêtre pleine, les messages les plus anciens sont coupés ou résumés. Une nouvelle conversation garde des réponses précises.', st_full_hint: 'Le modèle ne voit plus tout. Les messages les plus anciens sont coupés ou résumés avant chaque réponse.',
-      compaction_at: 'Open WebUI résume les anciens messages à partir de {n} jetons', compaction_left: '{n} avant le résumé', compaction_past: 'Au-delà du seuil où Open WebUI résume les anciens messages',
+      compaction_at: '{app} résume les anciens messages à partir de {n} jetons', compaction_left: '{n} avant le résumé', compaction_past: 'Au-delà du seuil où {app} résume les anciens messages',
       exchanges: 'Environ {n} échanges de plus comme les derniers tiennent encore.', exchanges_one: 'Environ un échange de plus comme les derniers tient encore.', exchanges_none: 'Plus aucun échange comme les derniers ne tient.',
       grid_label: 'Chaque carré représente un pour cent de la fenêtre de contexte.', grid_share: 'La fenêtre n’est pas connue : chaque carré représente un pour cent de ce que la conversation utilise.',
-      c_system: 'Prompt système', c_extras: 'Outils, documents et instructions ajoutés par Open WebUI', c_summary: 'Résumé des messages précédents', c_messages: 'Messages', c_latest: 'Dernière réponse', c_newer: 'Depuis le dernier comptage', c_free: 'Espace libre', c_reserve: 'Réservé avant le résumé',
+      c_system: 'Prompt système', c_extras: 'Outils, documents et instructions ajoutés par {app}', c_summary: 'Résumé des messages précédents', c_messages: 'Messages', c_latest: 'Dernière réponse', c_newer: 'Depuis le dernier comptage', c_free: 'Espace libre', c_reserve: 'Réservé avant le résumé',
       k_reported: 'compté', k_estimated: 'estimé', k_inferred: 'déduit', k_reported_hint: 'Compté par le modèle lui-même', k_estimated_hint: 'Estimé à partir du texte', k_inferred_hint: 'Le comptage du modèle, moins ce qui a pu être estimé',
       breakdown: 'Ce qui occupe le contexte', last: 'Dernière réponse', branch: 'Cette conversation', capabilities: 'Ce modèle', notes: 'Comment ces chiffres sont obtenus',
       f_model: 'Modèle', f_input: 'Lu par le modèle', f_output: 'Écrit', f_reasoning: 'dont raisonnement', f_cached: 'Lu depuis le cache', f_total: 'Total', f_speed: 'Vitesse', f_time: 'Durée',
       tokens: '{n} jetons', per_sec: '{n} jetons/s', seconds: '{n} s', not_reported: 'Non indiqué',
-      b_messages: 'Messages sur cette branche', b_answers: 'Réponses', b_reported: 'Réponses comptées par le modèle', b_read: 'Jetons lus au total', b_written: 'Jetons écrits au total', b_summarised: 'Anciens messages', b_summarised_yes: 'Résumés par Open WebUI',
+      b_messages: 'Messages sur cette branche', b_answers: 'Réponses', b_reported: 'Réponses comptées par le modèle', b_read: 'Jetons lus au total', b_written: 'Jetons écrits au total', b_summarised: 'Anciens messages', b_summarised_yes: 'Résumés par {app}',
       cap_vision: 'Lit les images', cap_file_upload: 'Accepte des fichiers', cap_web_search: 'Cherche sur le web', cap_image_generation: 'Crée des images', cap_code_interpreter: 'Exécute du code', cap_citations: 'Cite ses sources', cap_builtin_tools: 'Outils intégrés', cap_memory: 'Mémoire',
       tools_n: '{n} outils associés', knowledge_n: '{n} bases de connaissances associées', no_caps: 'Aucune fonctionnalité n’est définie pour ce modèle.', model_missing: 'Ce modèle ne figure pas parmi ceux que vous pouvez utiliser.',
       n_reported: 'Le modèle a compté son propre prompt pour la dernière réponse ({n} jetons). Tout ce qui précède est ajusté à ce comptage.',
-      n_estimated: 'Le modèle n’a pas indiqué son propre comptage : ce sont des estimations à partir du texte. Les outils, documents récupérés et autres instructions ajoutés par Open WebUI ne sont pas inclus.',
+      n_estimated: 'Le modèle n’a pas indiqué son propre comptage : ce sont des estimations à partir du texte. Les outils, documents récupérés et autres instructions ajoutés par {app} ne sont pas inclus.',
       n_family: 'Les estimations sont ajustées pour les modèles {family}.', n_family_default: 'Les estimations utilisent un réglage général, car la famille de ce modèle n’est pas reconnue.',
       n_images: '{n} images de cette conversation ne sont pas comptées dans les estimations.', n_sources: 'La dernière réponse a utilisé {n} sources récupérées ; leur texte est dans la part déduite.',
       n_reasoning: 'Le raisonnement n’est généralement pas renvoyé au modèle ; il n’est donc pas compté dans le contexte.',
       n_multi: 'Cette conversation interroge plusieurs modèles à la fois ; chacun a son propre contexte. Choisissez-en un ci-dessus.',
-      n_compaction: 'Le seuil de résumé d’Open WebUI indique quand il compacte la conversation ; ce n’est pas la fenêtre du modèle.'
+      n_compaction: 'Le seuil de résumé d’{app} indique quand il compacte la conversation ; ce n’est pas la fenêtre du modèle.'
     }
   };
   const icons = {
@@ -653,8 +664,18 @@ LOADER_SCRIPT = r"""
     return STRINGS[locale.slice(0, 2)] ? locale.slice(0, 2) : 'en';
   };
   let lang = 'en';
+  // The platform's own name, as its administrator set it (WEBUI_NAME), so the words say "EveGPT" rather than "Open WebUI"
+  let appName = String(CONFIG.platformName || '').trim() || 'Open WebUI';
+  const resolveAppName = async () => {
+    if (String(CONFIG.platformName || '').trim()) return;
+    try {
+      // Open WebUI appends " (Open WebUI)" to a custom WEBUI_NAME
+      const name = String((await api('/api/config'))?.name || '').replace(/\s*\(Open WebUI\)\s*$/, '').trim();
+      if (name && name !== appName) { appName = name; if (typeof render === 'function' && dialog && !dialog.hidden) render(); }
+    } catch {}
+  };
   const t = (key, vars) => {
-    const text = STRINGS[lang][key] ?? STRINGS.en[key] ?? key;
+    const text = String(STRINGS[lang][key] ?? STRINGS.en[key] ?? key).replace(/\{app\}/g, appName);
     return vars ? text.replace(/\{(\w+)\}/g, (whole, name) => name in vars ? vars[name] : whole) : text;
   };
   const tn = (key, n, vars) => t(key + (n === 1 ? '_one' : '_other'), {n, ...vars});
@@ -905,12 +926,12 @@ LOADER_SCRIPT = r"""
     dialog = el('div', 'ci-dialog'); dialog.id = 'owui-chat-inspector'; dialog.hidden = true; dialog.lang = lang;
     dialog.setAttribute('role', 'tabpanel'); dialog.setAttribute('aria-labelledby', 'owui-chat-inspector-tab');
     head = el('div', 'ci-head');
-    const title = el('h2', 'ci-heading', t('context'));
+    const title = el('h2', 'ci-heading', t('context')); title.id = 'ci-title';
     modelSelect = el('select', 'ci-select'); modelSelect.setAttribute('aria-label', t('model')); modelSelect.hidden = true;
     modelSelect.addEventListener('change', () => { pick = modelSelect.value; load(true); });
     updatedEl = el('span', 'ci-updated'); updatedEl.setAttribute('aria-live', 'polite');
     refreshButton = iconButton(t('refresh'), 'refresh', () => load(true));
-    soloClose = iconButton(t('close_context'), 'close', () => closeTab(), 'ci-icon ci-close'); soloClose.hidden = true;
+    soloClose = iconButton(t('close_context'), 'close', () => popOpen ? closePop() : closeTab(), 'ci-icon ci-close'); soloClose.hidden = true;
     head.append(title, modelSelect, el('span', 'ci-spacer'), updatedEl, refreshButton, soloClose);
     body = el('div', 'ci-body'); body.tabIndex = -1;
     live = el('div', 'ci-sr'); live.setAttribute('aria-live', 'polite');
@@ -1121,7 +1142,7 @@ LOADER_SCRIPT = r"""
   // While the tab is in front, a new or growing answer is read once it has stopped changing
   let watchSignal = '', watchStable = 0, watching = false;
   setInterval(() => {
-    if (!tabOpen || !active || !dialog || dialog.hidden || document.hidden || loading || !chatIdFromPath()) return;
+    if (!((tabOpen && active) || popOpen) || !dialog || dialog.hidden || document.hidden || loading || !chatIdFromPath()) return;
     const messages = document.querySelectorAll('#messages-container [id^="message-"]');
     const last = messages[messages.length - 1];
     const signal = messages.length + ':' + (last ? last.id + ':' + last.textContent.length : '');
@@ -1178,6 +1199,7 @@ LOADER_SCRIPT = r"""
   }
   function place() {
     tracking = 0;
+    if (popOpen) return;
     const spot = target();
     dialog.hidden = !spot;
     if (!spot) { if (tabOpen && active) tracking = requestAnimationFrame(place); return; }
@@ -1218,7 +1240,7 @@ LOADER_SCRIPT = r"""
     tabButton.tabIndex = active ? 0 : -1;
     for (const list of document.querySelectorAll('.panel-tab-strip')) list.classList.toggle('ci-dim', active && list === found?.list);
     const alone = solo && !found;
-    if (dialog) { dialog.classList.toggle('ci-solo', alone); soloClose.hidden = !alone; }
+    if (dialog && !popOpen) { dialog.classList.toggle('ci-solo', alone); soloClose.hidden = !alone; }
     track();
   }
   function buildTab() {
@@ -1249,7 +1271,8 @@ LOADER_SCRIPT = r"""
   }
   function deactivate() { if (active) { active = false; paintTab(); } }
   function openTab() {
-    if (dialog && !tabOpen && builtLang !== language()) { dialog.remove(); strip?.remove(); opener?.remove(); headerButton?.remove(); dialog = strip = opener = headerButton = null; }
+    if (popOpen) closePop(true);
+    if (dialog && !tabOpen && !popOpen && builtLang !== language()) { dialog.remove(); strip?.remove(); opener?.remove(); headerButton?.remove(); dialog = strip = opener = headerButton = null; }
     if (!dialog) build();
     if (menuGroup) homeGroup = menuGroup;
     if (!strip) buildTab();
@@ -1280,6 +1303,7 @@ LOADER_SCRIPT = r"""
     if (!headerButton) {
       lang = language();
       headerButton = iconButton(t('context'), 'gauge', () => {
+        if (CONFIG.openAs !== 'tab') { popOpen ? closePop() : openPop(headerButton); return; }
         if (tabOpen && active) { deactivate(); return; }
         if (tabOpen) { solo = !panel(); activate(); return; }
         menuGroup = headerButton.closest('[data-panel-group]')?.dataset.panelGroup ?? null; openTab();
@@ -1298,17 +1322,116 @@ LOADER_SCRIPT = r"""
       if (headerButton.parentElement !== host || (previous && previous !== neighbour)) neighbour ? neighbour.after(headerButton) : host.prepend(headerButton);
     }
   }
+  /* ---- the pop-up, opened from the chat's own ⋯ menu ---- */
+  let popOpen = false, popAnchor = null, popFrame = 0, popRect = '', backdrop = null, chatMenu = null, chatTrigger = null, menuItem = null;
+  const visibleNode = node => !!node && node.isConnected && node.getClientRects().length > 0;
+  function openPop(anchor) {
+    if (tabOpen) closeTab();
+    if (dialog && !popOpen && builtLang !== language()) { dialog.remove(); backdrop?.remove(); opener?.remove(); headerButton?.remove(); menuItem?.remove(); dialog = backdrop = opener = headerButton = menuItem = null; }
+    if (!dialog) build();
+    if (!backdrop) {
+      // Only on a phone, where the pop-up is a sheet over the chat; a tap outside it closes it
+      backdrop = el('div', 'ci-backdrop'); backdrop.hidden = true;
+      backdrop.addEventListener('click', () => closePop());
+      document.body.append(backdrop);
+    }
+    const fresh = !popOpen;
+    popOpen = true; popAnchor = anchor || popAnchor;
+    dialog.classList.add('ci-pop'); dialog.classList.remove('ci-solo');
+    dialog.setAttribute('role', 'dialog'); dialog.setAttribute('aria-modal', 'false'); dialog.setAttribute('aria-labelledby', 'ci-title');
+    soloClose.hidden = false;
+    dialog.hidden = false;
+    popRect = ''; placePop();
+    if (fresh) load();
+    setTimeout(() => { if (popOpen) soloClose.focus({preventScroll: true}); });
+  }
+  function closePop(silent) {
+    if (!popOpen) return;
+    popOpen = false; cancelAnimationFrame(popFrame); popFrame = 0;
+    controller?.abort(); snapshot = null; body.replaceChildren(); loadedChat = null;
+    dialog.hidden = true; backdrop.hidden = true;
+    dialog.classList.remove('ci-pop', 'ci-sheet');
+    dialog.setAttribute('role', 'tabpanel'); dialog.removeAttribute('aria-modal'); dialog.setAttribute('aria-labelledby', 'owui-chat-inspector-tab');
+    for (const key of ['left', 'top', 'width', 'height', 'maxHeight', 'bottom']) dialog.style[key] = '';
+    if (!silent) (visibleNode(popAnchor) ? popAnchor : document.getElementById('chat-input'))?.focus({preventScroll: true});
+  }
+  // Under the button it was opened from, kept on screen and clear of the message box; on a phone, a sheet from the bottom
+  function placePop() {
+    popFrame = 0;
+    if (!popOpen) return;
+    const vw = innerWidth, vh = innerHeight, phone = vw < 640;
+    let rect;
+    if (phone) rect = {left: 0, top: Math.round(vh * 0.18), width: vw, maxHeight: Math.round(vh * 0.82), sheet: true};
+    else {
+      const width = Math.min(460, vw - 24);
+      const anchor = visibleNode(popAnchor) ? popAnchor.getBoundingClientRect() : null;
+      const area = [document.getElementById('chat-panel-main-chat-view'), document.getElementById('chat-pane'), document.getElementById('chat-container')].find(visibleNode)?.getBoundingClientRect();
+      const nav = [...document.querySelectorAll('#chat-container nav, [data-panel-tab-bar]')].find(visibleNode)?.getBoundingClientRect();
+      let left = anchor ? anchor.left - 8 : (area ? area.right - width - 16 : vw - width - 16);
+      left = Math.max(12, Math.min(left, vw - width - 12));
+      const top = Math.max(8, Math.round(anchor ? anchor.bottom + 8 : (nav ? nav.bottom + 8 : 56)));
+      // Stop above the message box where the two would overlap, so typing stays possible with the pop-up open
+      const composer = document.getElementById('chat-input')?.closest('form') || document.getElementById('chat-input');
+      const box = visibleNode(composer) ? composer.getBoundingClientRect() : null;
+      const overlaps = box && box.left < left + width && box.right > left && box.top > top + 200;
+      const bottom = overlaps ? box.top - 12 : vh - 12;
+      rect = {left: Math.round(left), top, width: Math.round(width), maxHeight: Math.max(220, Math.round(bottom - top)), sheet: false};
+    }
+    const key = JSON.stringify(rect);
+    if (key !== popRect) {
+      popRect = key;
+      const style = dialog.style;
+      style.left = rect.left + 'px'; style.top = rect.top + 'px'; style.width = rect.width + 'px'; style.height = ''; style.maxHeight = rect.maxHeight + 'px';
+      dialog.classList.toggle('ci-sheet', rect.sheet);
+      backdrop.hidden = !rect.sheet;
+    }
+    popFrame = requestAnimationFrame(placePop);
+  }
+  function itemIcon() { const icon = svg('gauge'); icon.setAttribute('class', 'size-3.5'); return icon; }
+  // Adds "Context" to the chat's ⋯ menu, under Overview, styled like Open WebUI's own items
+  function syncChatMenu() {
+    const trigger = CONFIG.chatMenu ? [...document.querySelectorAll('#chat-context-menu-button[aria-expanded="true"]')].find(visibleNode) : null;
+    if (!trigger || !isChatRoute() || !chatIdFromPath()) { chatMenu = chatTrigger = null; menuItem?.remove(); return; }
+    if (!chatMenu?.isConnected || chatTrigger !== trigger) {
+      // The main menu opens on its own; its Download and Move submenus only appear later, on hover,
+      // so the first menu seen after the ⋯ button opens is the one to use, and it is kept until it closes
+      const menus = [...document.querySelectorAll('body > [role="menu"] .app-dropdown-menu')].filter(menu => !menu.contains(opener));
+      chatMenu = menus.length === 1 ? menus[0] : menus.find(menu => menu.querySelector(':scope > button[aria-haspopup="dialog"]')) || null;
+      chatTrigger = trigger;
+    }
+    if (!chatMenu) return;
+    if (!menuItem) {
+      lang = language();
+      menuItem = el('button', 'flex h-[1.6875rem] w-full items-center gap-2 rounded-xl px-2 text-[0.8125rem] cursor-pointer select-none hover:bg-gray-50/40 dark:hover:bg-gray-800/40');
+      menuItem.type = 'button'; menuItem.id = 'owui-chat-inspector-menu-item'; menuItem.draggable = false;
+      menuItem.setAttribute('aria-haspopup', 'dialog');
+      menuItem.append(itemIcon(), el('div', 'flex items-center', t('context')));
+      // Open WebUI closes its menu after the click; the trigger stays behind as the pop-up's anchor
+      menuItem.addEventListener('click', () => { const anchor = chatTrigger; CONFIG.openAs === 'tab' ? openTab() : openPop(anchor); });
+    }
+    if (menuItem.parentElement !== chatMenu) {
+      const overview = chatMenu.querySelector(':scope > button[aria-haspopup="dialog"]:not(#owui-chat-inspector-menu-item)');
+      overview ? overview.after(menuItem) : chatMenu.prepend(menuItem);
+    }
+  }
+  addEventListener('keydown', event => {
+    if (event.key !== 'Escape' || !popOpen || event.defaultPrevented) return;
+    // Escape belongs to an open menu or dialog of Open WebUI first
+    if (document.querySelector('body > [role="menu"], dialog[open], .modal')) return;
+    event.preventDefault(); closePop();
+  }, true);
   function sync() {
     syncPending = false;
     const found = panel();
     if (lastPath === null) lastPath = location.pathname;
     if (location.pathname !== lastPath) {
       lastPath = location.pathname; keepUntil = Date.now() + 1500;
-      if (tabOpen) load();
+      if (tabOpen || popOpen) load();
     }
     syncHeader(found);
     const open = found?.lists.find(list => plusOf(list)?.getAttribute('aria-expanded') === 'true');
-    const menu = open && [...document.querySelectorAll('body > [role="menu"]')].pop()?.querySelector('.app-dropdown-menu');
+    syncChatMenu();
+    const menu = CONFIG.plusMenu && open && [...document.querySelectorAll('body > [role="menu"]')].pop()?.querySelector('.app-dropdown-menu');
     if (menu) {
       menuGroup = open.closest('[data-panel-group]')?.dataset.panelGroup ?? null;
       if (!opener) {
@@ -1316,7 +1439,7 @@ LOADER_SCRIPT = r"""
         opener = el('button'); opener.type = 'button'; opener.id = 'owui-chat-inspector-button';
         const icon = svg('gauge'); icon.setAttribute('width', '14'); icon.setAttribute('height', '14');
         opener.append(icon, t('context'));
-        opener.addEventListener('click', openTab);
+        opener.addEventListener('click', () => openTab());
       }
       if (opener.parentElement !== menu) menu.append(opener);
     } else opener?.remove();
@@ -1342,7 +1465,8 @@ LOADER_SCRIPT = r"""
     const style = document.createElement('style'); style.textContent = __CSS__; document.head.append(style);
     new MutationObserver(schedule).observe(document.body, {childList: true, subtree: true, attributes: true, attributeFilter: ['aria-selected', 'aria-expanded']});
     addEventListener('owui-panel-tab-front', event => { if (event.detail?.owner !== 'chat-inspector') deactivate(); });
-    addEventListener('owui-chat-inspector-open', () => { menuGroup = null; openTab(); });
+    addEventListener('owui-chat-inspector-open', () => { menuGroup = null; CONFIG.openAs === 'tab' ? openTab() : openPop(null); });
+    resolveAppName();
     document.documentElement.dataset.chatInspector = '1';
     document.addEventListener('click', event => {
       const clicked = event.target.closest?.('#controls-container .panel-tab-strip [role="tab"]');
@@ -1374,9 +1498,25 @@ class Event:
             default=True,
             description="Show what the chosen model is set up to do, and how many tools and knowledge bases are attached to it.",
         )
+        platform_name: str = Field(
+            default="",
+            description="The name to use in Context's wording, such as 'EveGPT'. Empty uses the name your administrator gave the platform (WEBUI_NAME), and 'Open WebUI' if none was set.",
+        )
+        open_as: Literal["popup", "tab"] = Field(
+            default="popup",
+            description="How Context opens: 'popup' is a panel under the button it was opened from, leaving the chat in view; 'tab' fills the chat's pane like the Tabs panel's own tabs.",
+        )
+        show_in_chat_menu: bool = Field(
+            default=True,
+            description="Add Context to the chat's ⋯ menu, under Overview. Every account has that menu.",
+        )
+        show_in_plus_menu: bool = Field(
+            default=False,
+            description="Also add Context to the Tabs panel's + menu, where it always opens as a tab. Many accounts have no + menu.",
+        )
         header_button: bool = Field(
             default=False,
-            description="Also add a Context button to the chat's tab row or top bar. Off, Context opens only from the Tabs panel's + menu, as the built-in tabs do; turn it on for accounts that have no + menu.",
+            description="Also add a Context button to the chat's tab row or top bar. It opens Context the way open_as says.",
         )
         language: Literal["auto", "en", "fr"] = Field(
             default="auto",
@@ -1401,6 +1541,10 @@ class Event:
             "warnPercent": int(valves.warn_percent),
             "showCapabilities": bool(valves.show_capabilities),
             "headerButton": bool(valves.header_button),
+            "platformName": str(valves.platform_name).strip()[:60],
+            "openAs": valves.open_as,
+            "chatMenu": bool(valves.show_in_chat_menu),
+            "plusMenu": bool(valves.show_in_plus_menu),
             "language": valves.language,
         }
 
