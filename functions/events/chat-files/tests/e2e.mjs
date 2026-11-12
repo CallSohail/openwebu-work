@@ -26,7 +26,7 @@ const api = async (account, method, path, body) => {
   return { status: response.status, json: await response.json().catch(() => null) };
 };
 const setValves = valves => api(seed.admin, 'POST', '/api/v1/functions/id/chat_files/valves/update', valves);
-const defaults = { max_zip_mb: 300, include_images: 'auto', show_references: true, allow_rename: true, allow_delete: true, header_button: true, language: 'auto' };
+const defaults = { max_zip_mb: 300, include_images: 'auto', show_references: true, allow_rename: true, allow_delete: true, header_button: true, button_beside_menu: false, default_view: 'list', thumbnails: true, language: 'auto' };
 const U = seed.user, F = U.files, E = U.expect;
 const refs = E.chat_refs;
 // Without Chat Gallery the chat's photo is listed too
@@ -59,6 +59,14 @@ async function session(account, { viewport = { width: 1400, height: 900 }, theme
   return { context, page, state, open };
 }
 const shot = (page, name) => shots ? page.screenshot({ path: `${shots}/${name}.png` }) : null;
+// Files is chosen from the tab row's + menu where there is one, and from its own button elsewhere
+const plusOf = page => page.locator('#controls-container button[aria-label="New tab"]').first();
+const openFiles = async page => {
+  if (await page.locator('#owui-chat-files-header').isVisible().catch(() => false)) { await page.click('#owui-chat-files-header'); return; }
+  await plusOf(page).click();
+  await page.click('#owui-chat-files-button');
+};
+const html = (page, name) => page.evaluate(name => document.documentElement.dataset[name], name);
 const rowsOf = page => page.locator('.cf-list .cf-row');
 const foot = page => page.locator('.cf-foot').innerText().catch(() => 'closed');
 const settle = (page, count, timeout = 20000) => page.waitForFunction(n => document.querySelectorAll('.cf-list .cf-row').length === n && !/Collecting|Loading/.test(document.querySelector('.cf-foot')?.textContent || ''), count, { timeout }).then(() => true, () => false);
@@ -109,15 +117,17 @@ console.log('Plain user, wide screen' + (seed.gallery ? ', with Chat Gallery' : 
   // The linked web page's site doesn't exist; a stand-in answers so the new tab has something to show
   await context.route('https://linked.example.test/**', route => route.fulfill({ status: 200, contentType: 'text/html', body: '<p>article</p>' }));
   await open('/c/' + U.chat);
-  check('Files button is on the page', await page.locator('#owui-chat-files-header').isVisible());
-  if (seed.gallery) {
+  const plusThere = await plusOf(page).isVisible().catch(() => false);
+  if (plusThere) check('with a + menu in the tab row, Files has no button of its own', !(await page.locator('#owui-chat-files-header').count()));
+  else check('with no + menu in the tab row, Files has its own button', await page.locator('#owui-chat-files-header').isVisible());
+  if (seed.gallery && !plusThere) {
     const order = await page.evaluate(() => { const f = document.getElementById('owui-chat-files-header'), g = document.getElementById('owui-chat-gallery-header'); return f && g && f.parentElement === g.parentElement ? (f.compareDocumentPosition(g) & Node.DOCUMENT_POSITION_FOLLOWING ? 'files-first' : 'gallery-first') : 'apart'; });
     const inBar = await page.evaluate(() => !!document.getElementById('owui-chat-files-header').closest('#controls-container'));
     check('Files and Gallery buttons sit side by side, Gallery nearest the edge', order === (inBar ? 'files-first' : 'gallery-first'), order);
     const moves = await page.evaluate(() => new Promise(done => { const host = document.getElementById('owui-chat-files-header').parentElement; let n = 0; const watch = new MutationObserver(list => { n += list.length; }); watch.observe(host, { childList: true }); setTimeout(() => { watch.disconnect(); done(n); }, 1500); }));
     check('the two buttons settle and stop moving', moves === 0, moves + ' moves');
   }
-  await page.click('#owui-chat-files-header');
+  await openFiles(page);
   check(`This chat lists ${E.chat_files + photo} files and ${refs} references`, await settle(page, chatRows), await foot(page));
   const tabRow = await page.evaluate(() => !!document.getElementById('chat-panel-main-chat-view'));
   console.log('  (layout: ' + (tabRow ? 'tab row' : 'classic top bar') + ')');
@@ -152,17 +162,25 @@ console.log('Plain user, wide screen' + (seed.gallery ? ', with Chat Gallery' : 
   // Filters, sorting and search
   const kinds = { documents: 9, sheets: 2, slides: 1, code: 3, audio: 1, archives: 1, other: 1, references: refs };
   for (const [value, count] of Object.entries(kinds)) {
-    await page.selectOption('.cf-head .cf-select >> nth=0', value);
+    await page.click(`.cf-kinds .cf-chip[data-kind="${value}"]`);
     check(`kind filter: ${count} ${value}`, await settle(page, count, 5000), await foot(page));
   }
-  await page.selectOption('.cf-head .cf-select >> nth=0', 'all');
+  check('each kind shows how many files it has', /Documents\s*9/.test(await page.locator('.cf-kinds .cf-chip[data-kind="documents"]').innerText()) && await page.locator('.cf-kinds .cf-chip[data-kind="references"][aria-pressed="true"]').count() === 1);
+  await page.click('.cf-kinds .cf-chip[data-kind="all"]');
   await settle(page, chatRows);
-  await page.selectOption('.cf-head .cf-select >> nth=1', 'largest');
+  await page.selectOption('.cf-tools .cf-select', 'largest');
   check('largest first puts the 3 MB log on top', (await names(page))[0] === 'big.log');
-  await page.selectOption('.cf-head .cf-select >> nth=1', 'name');
+  await page.selectOption('.cf-tools .cf-select', 'name');
   const byName = await names(page);
   check('name order sorts as people expect', byName[0].startsWith('a-very-long') && byName[byName.length - 1] === 'تقرير المشروع.txt', byName.slice(0, 3).join(' | ') + ' … ' + byName.slice(-2).join(' | '));
-  await page.selectOption('.cf-head .cf-select >> nth=1', 'oldest');
+  await page.selectOption('.cf-tools .cf-select', 'oldest');
+  // The column titles order the list too
+  await page.click('.cf-colhead .cf-colsize');
+  const bySize = await names(page);
+  await page.click('.cf-colhead .cf-coldate');
+  const byDate = await names(page);
+  check('the Size and Date column titles order the list', bySize[0] === 'big.log' && await page.locator('.cf-tools .cf-select').inputValue() === 'newest' && byDate[byDate.length - 1] === 'report.pdf', bySize[0] + ' / ' + byDate.slice(-1));
+  await page.selectOption('.cf-tools .cf-select', 'oldest');
   await page.fill('.cf-search', 'تقرير');
   check('search finds an Arabic name', await settle(page, 1, 5000));
   await page.fill('.cf-search', 'csv');
@@ -179,13 +197,16 @@ console.log('Plain user, wide screen' + (seed.gallery ? ', with Chat Gallery' : 
   // Previews
   await openRow(page, 'report.pdf');
   check('a PDF opens in the browser’s PDF viewer', await page.locator('.cf-stage iframe.cf-pdf[src^="blob:"]').count() === 1 && await visible(page, 'Open in a new tab'));
+  check('the preview’s state is ready', await html(page, 'cfPreview') === 'ready', await html(page, 'cfPreview'));
   const details = await facts(page);
-  check('details show type, size, date, status and owner', /PDF|Documents/.test(details.Type) && /KB/.test(details.Size) && details.Uploaded && details.Status === 'Ready' && details.Owner === 'You', JSON.stringify(details));
+  check('details show kind, media type, extension, size in bytes, date, status, owner and the file ID', details.Kind === 'Documents' && details['Media type'] === 'application/pdf' && details.Extension === '.pdf' && /KB \([\d,.\s ]+ bytes\)/.test(details.Size) && details.Uploaded && details.Status === 'Ready' && details.Owner === 'You' && /^[0-9a-f-]{36}$/.test(details['File ID']), JSON.stringify(details));
   await shot(page, 'viewer-pdf');
   await back(page);
   await openRow(page, 'data.csv');
   const csv = await page.$$eval('.cf-table tr', trs => trs.map(tr => [...tr.children].map(cell => cell.textContent)));
   check('CSV: quoted commas, doubled quotes and line breaks inside quotes', csv[1]?.[0] === 'Smith, Jane' && csv[1]?.[2] === 'said "hello"' && csv[2]?.[1] === 'القاهرة' && csv[2]?.[2] === 'two\nlines', JSON.stringify(csv));
+  const csvFacts = await facts(page);
+  check('details count a table’s rows and columns', csvFacts.Rows === '2' && csvFacts.Columns === '3', JSON.stringify(csvFacts));
   await shot(page, 'viewer-csv');
   await back(page);
   await openRow(page, 'ventes.csv');
@@ -194,6 +215,7 @@ console.log('Plain user, wide screen' + (seed.gallery ? ', with Chat Gallery' : 
   await back(page);
   await openRow(page, 'config.json');
   check('JSON is pretty-printed', /\n {2}"items": \[\n {4}1,/.test(await page.locator('.cf-pre').innerText()));
+  check('details count a text’s lines, words and characters', +(await facts(page)).Lines > 0 && +(await facts(page)).Words > 0 && +(await facts(page)).Characters > 0, JSON.stringify(await facts(page)));
   await back(page);
   await openRow(page, 'big.log');
   const log = await page.evaluate(() => ({ cut: document.querySelector('.cf-cut')?.textContent || '', length: document.querySelector('.cf-pre')?.textContent.length || 0 }));
@@ -216,6 +238,7 @@ console.log('Plain user, wide screen' + (seed.gallery ? ', with Chat Gallery' : 
   await openRow(page, 'tone.wav');
   const duration = await page.waitForFunction(() => { const audio = document.querySelector('.cf-stage audio'); return audio && audio.readyState >= 1 ? audio.duration : 0; }, null, { timeout: 15000 }).then(handle => handle.jsonValue(), () => 0);
   check('audio plays in the page, straight from Open WebUI', Math.abs(duration - 1) < 0.1, String(duration));
+  check('details give a recording’s length', (await facts(page)).Duration === '0:01', JSON.stringify(await facts(page)));
   await back(page);
   await openRow(page, 'archive.zip');
   check('an archive offers a download instead of a preview', /No preview/.test(await stageText(page)) && await page.locator('.cf-stage .cf-btn', { hasText: 'Download' }).count() === 1);
@@ -233,18 +256,82 @@ console.log('Plain user, wide screen' + (seed.gallery ? ', with Chat Gallery' : 
   await back(page);
 
   // Keyboard
-  await rowsOf(page).first().focus();
+  await page.locator('.cf-list .cf-main').first().focus();
   await page.keyboard.press('ArrowDown');
-  const second = await page.evaluate(() => document.activeElement === document.querySelectorAll('.cf-row')[1]);
+  const second = await page.evaluate(() => document.activeElement === document.querySelectorAll('.cf-main')[1]);
   await page.keyboard.press('End');
-  const last = await page.evaluate(() => { const all = document.querySelectorAll('.cf-row'); return document.activeElement === all[all.length - 1]; });
+  const last = await page.evaluate(() => { const all = document.querySelectorAll('.cf-main'); return document.activeElement === all[all.length - 1]; });
   await page.keyboard.press('Home'); await page.keyboard.press('Enter');
   await page.waitForSelector('.cf-viewer.cf-open');
   await page.keyboard.press('ArrowRight');
   const stepped = await page.locator('.cf-count').innerText();
   await page.keyboard.press('Escape');
-  const returned = await page.evaluate(() => document.activeElement?.classList.contains('cf-row') && !document.querySelector('.cf-viewer.cf-open'));
+  const returned = await page.evaluate(() => document.activeElement?.classList.contains('cf-main') && !document.querySelector('.cf-viewer.cf-open'));
   check('arrow keys, Home, End, Enter and Escape work through the list and preview', second && last && stepped === `2 / ${chatRows}` && returned, JSON.stringify({ second, last, stepped, returned }));
+  await page.keyboard.press('/');
+  check('slash goes to the search box', await page.evaluate(() => document.activeElement?.classList.contains('cf-search')));
+  await page.keyboard.press('Escape');
+
+  // Each file's menu: the ⋯ button, a right click, or Shift+F10
+  const csvRow = page.locator('.cf-row', { has: page.locator('.cf-name', { hasText: 'data.csv' }) }).first();
+  await csvRow.hover(); await csvRow.locator('.cf-more').click();
+  await page.waitForFunction(() => /Rename/.test(document.querySelector('.cf-menu')?.textContent || ''), null, { timeout: 8000 }).catch(() => {});
+  const menuWords = await page.locator('.cf-menu').innerText().catch(() => '');
+  check('a file’s ⋯ menu offers open, download, attach, show in chat, copy name, rename and delete', ['Open', 'Download', 'Attach to message', 'Show in chat', 'Copy name', 'Rename', 'Delete'].every(word => menuWords.includes(word)), menuWords.replace(/\n/g, ' | '));
+  check('the menu takes the keyboard, and the ⋯ button says it is open', await page.evaluate(() => document.activeElement?.classList.contains('cf-menuitem')) && await csvRow.locator('.cf-more[aria-expanded="true"]').count() === 1);
+  await page.keyboard.press('ArrowDown'); await page.keyboard.press('Escape');
+  check('Escape closes the menu and gives focus back to the file', !(await page.locator('.cf-menu').count()) && await page.evaluate(() => document.activeElement?.closest('.cf-row')?.querySelector('.cf-name')?.textContent === 'data.csv') && await page.locator('.cf-viewer.cf-open').count() === 0);
+  await csvRow.click({ button: 'right' });
+  check('a right click opens the same menu', await page.locator('.cf-menu .cf-menuitem').count() >= 5);
+  await page.locator('.cf-menu .cf-menuitem', { hasText: 'Copy name' }).click();
+  check('Copy name copies the file’s name', (await page.evaluate(() => navigator.clipboard.readText())) === 'data.csv');
+  const kbRow = page.locator('.cf-row', { has: page.locator('.cf-name', { hasText: 'Course reading list' }) }).first();
+  await kbRow.locator('.cf-main').focus(); await page.keyboard.press('Shift+F10');
+  const refMenu = await page.locator('.cf-menu').innerText().catch(() => '');
+  check('Shift+F10 opens it from the keyboard; a reference offers no download, rename or delete', /Open/.test(refMenu) && !/Download|Rename|Delete/.test(refMenu), refMenu.replace(/\n/g, ' | '));
+  await page.keyboard.press('Escape');
+
+  // Picking files: Space, Shift for a range, Ctrl+A, the footer adds them up
+  await page.locator('.cf-list .cf-main').first().focus();
+  await page.keyboard.press(' ');
+  check('Space picks a file and starts Select mode', await html(page, 'cfSelect') === 'on' && /^1 selected/.test(await foot(page)), await foot(page));
+  await page.locator('.cf-list .cf-row').nth(3).click({ modifiers: ['Shift'] });
+  check('Shift-click picks everything in between, and the footer adds it up', /^4 selected · [\d.,]+ (KB|MB)$/.test(await foot(page)), await foot(page));
+  await page.locator('.cf-list .cf-main').first().focus();
+  await page.keyboard.press('Control+a');
+  const allPicked = await page.locator('.cf-row.cf-picked').count();
+  check('Ctrl+A picks every file, and no reference', allPicked === E.chat_files + photo - 1, `${allPicked}`);
+  await page.keyboard.press('Escape');
+  check('Escape leaves Select mode', await html(page, 'cfSelect') === 'off' && !(await page.locator('.cf-row.cf-picked').count()));
+  const pyRow = page.locator('.cf-row', { has: page.locator('.cf-name', { hasText: 'script.py' }) }).first();
+  await pyRow.locator('.cf-main').focus(); await page.keyboard.press('Delete');
+  await page.waitForSelector('.cf-modal[open]');
+  const box = await page.locator('.cf-modal[open]').boundingBox(), vp = page.viewportSize();
+  check('Delete asks first, names the file, in a box in the middle of the screen', /script\.py/.test(await page.locator('.cf-modal[open] .cf-names').innerText()) && Math.abs(box.x + box.width / 2 - vp.width / 2) < 4 && Math.abs(box.y + box.height / 2 - vp.height / 2) < 4, JSON.stringify(box));
+  await page.click('.cf-modal[open] .cf-btn:has-text("Cancel")');
+
+  // The grid
+  await page.click('.cf-head [aria-label="Grid"]');
+  const grid = await page.evaluate(() => { const cards = [...document.querySelectorAll('.cf-list .cf-item')]; const top = cards[0].offsetTop; return { view: document.querySelector('.cf-list').dataset.view, perRow: cards.filter(card => card.offsetTop === top).length, cols: !document.querySelector('.cf-colhead') || document.querySelector('.cf-colhead').hidden }; });
+  check('the grid shows files as cards, several to a row, without the column titles', grid.view === 'grid' && grid.perRow >= 3 && grid.cols && await html(page, 'cfView') === 'grid', JSON.stringify(grid));
+  await page.locator('.cf-list .cf-main').first().focus();
+  await page.keyboard.press('ArrowRight'); await page.keyboard.press('ArrowDown');
+  const gridAt = await page.evaluate(() => [...document.querySelectorAll('.cf-main')].indexOf(document.activeElement));
+  check('in the grid, arrows move across and down a row', gridAt === 1 + grid.perRow, `${gridAt} of rows of ${grid.perRow}`);
+  await shot(page, 'grid-light');
+  await page.reload({ waitUntil: 'domcontentloaded' }); await page.waitForFunction(() => document.documentElement.dataset.chatFiles === '1');
+  await page.waitForTimeout(1500);
+  await openFiles(page);
+  await settle(page, chatRows);
+  check('the grid is remembered in this browser', await page.locator('.cf-list[data-view="grid"]').count() === 1);
+  await page.click('.cf-head [aria-label="List"]');
+  // The platform's language, switched while it is open
+  await page.evaluate(() => document.documentElement.setAttribute('lang', 'fr-FR'));
+  await page.waitForTimeout(400);
+  const french = await page.locator('#cf-tab-chat').innerText().catch(() => '');
+  await page.evaluate(() => document.documentElement.setAttribute('lang', 'en-US'));
+  await page.waitForTimeout(400);
+  check('switching Open WebUI to French redraws Files in French at once, and back, keeping the files', french === 'Cette conversation' && await page.locator('#cf-tab-chat').innerText() === 'This chat' && await settle(page, chatRows), french);
 
   // Copy, download, attach
   await openRow(page, 'script.py');
@@ -304,7 +391,7 @@ console.log('Plain user, wide screen' + (seed.gallery ? ', with Chat Gallery' : 
   check('in This chat a deleted file stays, marked deleted', await page.locator('.cf-row.cf-gone .cf-name', { hasText: 'branch-only.txt' }).count() === 1);
 
   // Select and zip
-  await page.click('.cf-head .cf-btn[aria-pressed]');
+  await page.click('.cf-head .cf-btn[aria-pressed]:has-text("Select")');
   for (const name of ['report.pdf', 'data.csv']) for (const row of await page.locator('.cf-row', { has: page.locator('.cf-name', { hasText: name }) }).all()) await row.click();
   await page.locator('.cf-row', { has: page.locator('.cf-name', { hasText: 'Course reading list' }) }).click();
   check('Select mode picks files and ignores references', await page.locator('.cf-head .cf-btn:has-text("Download 3")').isVisible());
@@ -328,6 +415,7 @@ console.log('Plain user, wide screen' + (seed.gallery ? ', with Chat Gallery' : 
   await page.locator('#owui-chat-files').waitFor({ state: 'visible', timeout: 5000 }).catch(() => {});
   check('coming back keeps the preview you left', await page.locator('.cf-viewer.cf-open').count() === 1);
   await back(page);
+  await api(U, 'POST', '/api/v1/files/' + U.extras[5] + '/rename', { filename: 'invoice\u202Etxt.exe' });
   await page.click('#cf-tab-library');
   await page.waitForFunction(() => document.querySelectorAll('.cf-row').length >= 150, null, { timeout: 20000 }).catch(() => {});
   const firstPage = await rowsOf(page).count();
@@ -337,6 +425,9 @@ console.log('Plain user, wide screen' + (seed.gallery ? ', with Chat Gallery' : 
   check(`My files pages through all ${mine} files`, await settle(page, mine, 20000) && firstPage < mine, `${firstPage} then ${await rowsOf(page).count()} · ${await foot(page)}`);
   const all = await names(page);
   check('My files has the extra files and no references', all.includes('extra-229.txt') && !all.includes('Course reading list') && all.includes('résumé final.md'));
+  check('a name with a hidden direction control is shown as it really reads', all.includes('invoicetxt.exe') && !all.some(name => /[\u202A-\u202E\u2066-\u2069]/.test(name)), all.filter(name => /invoice/.test(name)).join());
+  check('My files is grouped by date', /Today/.test(await page.locator('.cf-list .cf-group').first().innerText().catch(() => '')));
+  check('the library’s state is shown, and tab and job are settled', await html(page, 'cfLibrary') === 'done' && await html(page, 'cfTab') === 'front' && await html(page, 'cfJob') === 'idle', [await html(page, 'cfLibrary'), await html(page, 'cfTab'), await html(page, 'cfJob')].join());
   await shot(page, 'library-light');
 
   // A server error, then a retry
@@ -352,7 +443,7 @@ console.log('Plain user, wide screen' + (seed.gallery ? ', with Chat Gallery' : 
   await page.click(tabRow ? '#owui-chat-files-tabs [aria-label="Close Files"]' : '.cf-head [aria-label="Close Files"]');
   check('closing removes the tab and uncovers the chat', await page.locator('#owui-chat-files').isHidden() && !(await page.locator('[data-cf-covered]').count()));
   await open('/c/' + U.empty);
-  await page.click('#owui-chat-files-header');
+  await openFiles(page);
   await page.waitForSelector('.cf-empty');
   check('an empty chat says so', /No files in this chat yet/.test(await page.locator('.cf-empty').innerText()));
   await page.click(tabRow ? '#owui-chat-files-tabs [aria-label="Close Files"]' : '.cf-head [aria-label="Close Files"]');
@@ -373,10 +464,10 @@ console.log('Themes');
 for (const theme of ['light', 'dark', 'oled-dark', 'her']) {
   const { context, page, state, open } = await session(U, { theme });
   await open('/c/' + U.chat);
-  await page.click('#owui-chat-files-header');
+  await openFiles(page);
   await settle(page, chatRows);
   const scores = {};
-  for (const [label, selector] of Object.entries({ names: '.cf-name', details: '.cf-sub', badges: '.cf-badge', flags: '.cf-flag', tabs: '.cf-tab', footer: '.cf-foot span', buttons: '.cf-head .cf-btn' })) scores[label] = +(await contrastOf(page, selector)).toFixed(2);
+  for (const [label, selector] of Object.entries({ names: '.cf-name', details: '.cf-cell', badges: '.cf-badge', flags: '.cf-flag', tabs: '.cf-tab', chips: '.cf-chip', columns: '.cf-colbtn', footer: '.cf-foot span', buttons: '.cf-head .cf-btn' })) scores[label] = +(await contrastOf(page, selector)).toFixed(2);
   const low = Object.entries(scores).filter(([, score]) => score < 4.5);
   check(`${theme}: every text reaches 4.5:1 contrast`, low.length === 0, JSON.stringify(scores));
   await shot(page, `chat-${theme}`);
@@ -440,6 +531,7 @@ console.log('Administrator');
     await plus.click();
     await page.waitForSelector('#owui-chat-files-button', { timeout: 10000 }).catch(() => {});
     check('Files is in the + menu' + (seed.gallery ? ', beside Gallery' : ''), await page.locator('#owui-chat-files-button').count() === 1 && (!seed.gallery || await page.locator('#owui-chat-gallery-button').count() === 1));
+    check('and has no button of its own beside the + menu', !(await page.locator('#owui-chat-files-header').count()));
     await page.click('#owui-chat-files-button');
     check('choosing it opens a Files tab in the panel', await settle(page, 1) && await page.locator('#controls-container #owui-chat-files-tab[aria-selected="true"]').count() === 1);
     await page.click('#cf-tab-library');
@@ -455,12 +547,18 @@ console.log('Valves');
   await setValves({ ...defaults, include_images: 'yes', show_references: false, allow_rename: false, allow_delete: false, language: 'fr' });
   const { context, page, open } = await session(U);
   await open('/c/' + U.chat);
-  await page.click('#owui-chat-files-header');
+  await openFiles(page);
   const expected = E.chat_files + 1;
   check('images can be listed and references left out', await settle(page, expected) && (await names(page)).includes('photo.png') && !(await names(page)).includes('An article'), `${await rowsOf(page).count()} · ${await foot(page)}`);
   check('the Files tab speaks French', await page.locator('#cf-tab-chat').innerText() === 'Cette conversation' && await page.locator('#cf-tab-library').innerText() === 'Mes fichiers' && /fichiers/.test(await foot(page)));
   await openRow(page, 'photo.png');
   check('an image previews when images are listed', await page.locator('.cf-stage img.cf-media').count() === 1);
+  await page.waitForFunction(() => /\d+ × \d+/.test(document.querySelector('.cf-info')?.textContent || ''), null, { timeout: 8000 }).catch(() => {});
+  check('details give a picture’s size', /\d+ × \d+/.test((await facts(page)).Dimensions || ''), JSON.stringify(await facts(page)));
+  await page.click('.cf-vbar [aria-label="Retour aux fichiers"]');
+  const thumb = await page.waitForFunction(() => { const img = [...document.querySelectorAll('.cf-thumbimg')].find(node => node.closest('.cf-row').querySelector('.cf-name').textContent === 'photo.png'); return img && img.complete && img.naturalWidth > 0; }, null, { timeout: 8000 }).then(() => true, () => false);
+  check('an image shows as a small picture in the list', thumb);
+  await openRow(page, 'photo.png');
   check('no rename or delete when they are turned off', !(await visible(page, 'Renommer')) && !(await visible(page, 'Supprimer')) && await visible(page, 'Télécharger'));
   await context.close();
 
@@ -476,7 +574,7 @@ console.log('Valves');
     await api(seed.admin, 'POST', '/api/v1/functions/id/chat_gallery/toggle');
     const third = await session(U);
     await third.open('/c/' + U.chat);
-    await third.page.click('#owui-chat-files-header');
+    await openFiles(third.page);
     await settle(third.page, chatRows + 1);
     check('with Chat Gallery turned off, images are listed automatically', (await names(third.page)).includes('photo.png'));
     await third.context.close();

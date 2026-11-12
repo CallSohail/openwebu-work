@@ -4,6 +4,10 @@ This repository contains independently versioned Open WebUI extensions. Plugin-s
 
 ## 2026-11-12
 
+### Chat Files 2.0.0
+
+Redesigned in Open WebUI's greys. Files is chosen from the tab row's + menu and no longer adds its own button beside it; the button stays where there is no such menu. Files show as a list with Name, Kind, Size and Date columns or as a grid of cards, with pictures of images, kind chips with counts, a menu on every file (⋯, right click, Shift+F10), date groups in My files, range picking, keyboard shortcuts and fuller details: media type, exact size, the file ID, and lines, rows, picture size or length found by the preview. The tab, lists, selection, jobs, layout and preview are explicit state machines; Files follows Open WebUI's language live; names lose direction-control characters that could disguise an extension; zips stay within their 32-bit limits. The browser suite passed 133 of 133 checks on Open WebUI 0.13.3 with Chat Gallery, 126 of 126 without it, and 129 of 129 on 0.13.0.
+
 ### Artifacts 1.2.0
 
 Spreadsheets can be corrected as in Excel: click a cell and type, move with Enter, Tab and the arrows, select ranges and see their sum, copy and paste with Excel, undo and redo, insert and delete rows and columns; new formulas (IFERROR, COUNTIF, SUMIF, AVERAGEIF, ROUNDUP, ROUNDDOWN) recalculate as you type, and the Excel download keeps them. Slides can be edited, added and deleted one at a time and download as PowerPoint, with diagrams and charts as pictures. The panel now uses Open WebUI's greys and centred dialogs, follows the platform's language (French included) the moment it changes, and runs its panel, loading, streaming and editing states as explicit state machines. Artifacts mode tells the model to write presentations as artifacts rather than scripts that make files. The browser suite passed 153 of 153 checks on Open WebUI 0.13.0 and 0.13.3, alone and with the other event functions.

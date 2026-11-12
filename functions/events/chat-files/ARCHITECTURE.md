@@ -48,7 +48,7 @@ anything else ─► GET /data/content ─► Open WebUI's extracted text, or a 
 
 ## 3. Writing to the page
 
-Everything from a file, its name, contents, cells or extracted text, is set with `textContent` or as an element attribute, never parsed as HTML. Names and text blocks get `dir="auto"`, so Arabic or Hebrew names read right to left in a left-to-right page and the reverse. The unit tests fail if `innerHTML` or a similar call appears in the script.
+Everything from a file, its name, contents, cells or extracted text, is set with `textContent` or as an element attribute, never parsed as HTML. Names and text blocks get `dir="auto"`, so Arabic or Hebrew names read right to left in a left-to-right page and the reverse. Direction-control characters are removed from every name as it is read (`cleanName`), so `dir="auto"` is the only thing deciding direction and no name can reorder itself to hide its real extension; `safeName` applies the same to downloads and zip entries. The unit tests fail if `innerHTML` or a similar call appears in the script.
 
 ## 4. Colours and themes
 
@@ -61,12 +61,30 @@ Text on a tinted background (file-type badges, warning flags) uses a deeper tone
 Both plugins add a tab and a button to the same places, so each keeps to a fixed spot to avoid moving the other every frame:
 
 - **Tabs:** chat tabs, then Gallery's tab, then Files' tab. Files places itself after `#owui-chat-gallery-tabs` when it is there.
-- **Buttons:** Gallery's button stays nearest the edge. In the tab row Files sits just before it; in the top bar just after it.
+- **Buttons:** where the tab row has a + menu, Files adds no button (both are in the menu). Elsewhere Gallery's button stays nearest the edge; in the tab row Files sits just before it, in the top bar just after it.
 - **Taking turns:** both listen for the `owui-panel-tab-front` event and step aside when the other announces itself.
 - **Hiding what lies under them:** each uses its own marker (`data-cg-covered`, `data-cf-covered`), so neither uncovers what the other hid.
 - **Images:** with `include_images` on `auto`, Files checks `data-chat-gallery` on `<html>` and leaves images out when Gallery is running.
 
-## 6. Where to change things
+## 6. State machines
+
+Each piece of state that changes over time is a small machine made by `machine(name, initial, table, onEnter)`: a table of `state → event → next state` (`'*'` for any state). `send(event)` makes a move only if the table has it and says whether it did; the current state is written on `<html>` as `data-cf-<name>`, which the browser tests read.
+
+| Machine | States | Moves |
+| --- | --- | --- |
+| `tab` | closed, front, behind | `open`, `hide` (another tab came forward), `show`, `close` |
+| `chat` | none, loading, ready, failed | `none` (no chat open), `load`, `done`, `fail` |
+| `library` | idle, loading, more, done, failed | `load`, `page`, `last`, `fail`; a refresh makes a new list with its own machine, and a page that arrives for an older list is dropped |
+| `select` | off, on | `start`, `stop` |
+| `job` | idle, zipping, deleting | `zip`, `delete`, `done`; only one at a time |
+| `view` | list, grid | `list`, `grid` |
+| `preview` | closed, loading, ready, failed | `open` (also from one file to the next), `ready`, `fail`, `close`; entering a state sets the classes and `inert` on what lies under it |
+
+## 7. List, grid and menus
+
+Each file is an `<li>` holding a row: a main button (check, picture or badge, name and details) whose `::after` covers the whole row, the Kind, Size and Date cells, and a ⋯ button above it. The same elements serve the list and the grid; only `data-view` on the list and the stylesheet change. `render` builds the wanted order (with date headings in *My files*) and moves existing nodes into place, so focus and scrolling survive. Arrow keys read the grid's columns from where the cards sit. The menu is built per file when opened, placed inside the panel, and offers rename and delete once the file's owner is known, asking for its record if a chat didn't say.
+
+## 8. Where to change things
 
 | To change | Look at |
 | --- | --- |
@@ -77,3 +95,7 @@ Both plugins add a tab and a button to the same places, so each keeps to a fixed
 | How a kind is previewed | `previewKind` and `renderPreview` |
 | How much text is read | `TEXT_LIMIT` |
 | Colours | the two variable blocks at the top of `FILES_CSS` |
+| A state and its moves | the `machine(…)` tables named above |
+| The list, the grid, the columns | `rowFor`, `paintRow`, `buildColumns`, `render`, and the `[data-view]` rules in `FILES_CSS` |
+| A file's menu | `openRowMenu` |
+| Details in the preview | `paintInfo`, and `item.facts` set in `renderPreview`, `tableOf` and `mediaFrom` |

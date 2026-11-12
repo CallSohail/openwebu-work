@@ -82,9 +82,9 @@ Adds a Gallery tab to the chat: every image in the current chat as a grid, and a
 
 See [chat-gallery/README.md](chat-gallery/README.md) for installation, Valves, security and limits, [chat-gallery/ARCHITECTURE.md](chat-gallery/ARCHITECTURE.md) for how it works, and [chat-gallery/CHANGELOG.md](chat-gallery/CHANGELOG.md) for the release history.
 
-### Chat Files 1.0.0
+### Chat Files 2.0.0
 
-Adds a Files tab to the chat: every document, spreadsheet and other file in the current chat, including references to knowledge bases, notes and web pages, and a second view with every file the person owns. It previews PDFs, tables, JSON, text, code and audio, shows the text Open WebUI extracted from office files, and offers search, filters, rename, delete, zip, attach and a jump back to the message, in English and French. It is a companion to Chat Gallery and takes turns with it. It requires Open WebUI 0.13.0 or newer.
+Adds a Files tab to the chat, chosen from the Tabs panel's + menu, as a list with sortable columns or a grid of cards: every document, spreadsheet and other file in the current chat, including references to knowledge bases, notes and web pages, and a second view with every file the person owns. It previews PDFs, tables, JSON, text, code and audio, shows the text Open WebUI extracted from office files, and offers search, kind chips, a menu on every file, details down to a table's rows or a recording's length, rename, delete, zip, attach and a jump back to the message, in English and French, switching with Open WebUI's language. It is a companion to Chat Gallery and takes turns with it. It requires Open WebUI 0.13.0 or newer.
 
 See [chat-files/README.md](chat-files/README.md) for installation, Valves, security and limits, [chat-files/ARCHITECTURE.md](chat-files/ARCHITECTURE.md) for how it works, and [chat-files/CHANGELOG.md](chat-files/CHANGELOG.md) for the release history.
 

@@ -116,6 +116,9 @@ def test_script_is_served_with_the_default_settings(served):
         "allowRename": True,
         "allowDelete": True,
         "headerButton": True,
+        "buttonBesideMenu": False,
+        "defaultView": "list",
+        "thumbnails": True,
         "language": "auto",
     }
 
@@ -162,6 +165,7 @@ def test_registering_twice_keeps_one_route(served):
         {"max_zip_mb": 5000},
         {"include_images": "maybe"},
         {"language": "de"},
+        {"default_view": "tiles"},
     ],
 )
 def test_out_of_range_valves_are_refused(plugin, bad):
@@ -223,3 +227,62 @@ def test_shares_the_tab_protocol_with_chat_gallery(plugin):
     assert "'owui-chat-gallery-tabs'" in script and "'owui-chat-gallery-header'" in script
     # Each hides what lies under it with its own marker, so one never uncovers the other's
     assert "data-cg-covered" not in script and "data-cf-covered" in script
+
+
+def _function_source(script, start, end):
+    return script[script.index(start) : script.index(end, script.index(start))]
+
+
+@pytest.mark.skipif(shutil.which("node") is None, reason="Node.js is not installed")
+def test_state_machines_and_names(plugin, tmp_path):
+    script = plugin.LOADER_SCRIPT
+    # Every state that changes over time is an explicit machine
+    for name in ("tab", "chat", "library", "select", "job", "view", "preview"):
+        assert f"machine('{name}'" in script, name
+    runner = tmp_path / "logic.js"
+    runner.write_text(
+        "const assert = require('assert');\nconst document = {documentElement: {dataset: {}}};\n"
+        + _function_source(script, "  function machine(", "\n  }\n") + "\n  }\n"
+        + "\n".join(line for line in script.split("\n") if line.lstrip().startswith(("const BIDI_RE", "const cleanName")))
+        + r"""
+const seen = [];
+const tab = machine('tab', 'closed', {closed: {open: 'front'}, front: {hide: 'behind', close: 'closed'}, behind: {show: 'front', close: 'closed'}}, (next, from, event) => seen.push(from + '>' + next));
+assert.strictEqual(tab.send('hide'), false, 'a closed tab cannot be set aside');
+assert.ok(tab.send('open') && tab.send('hide') && tab.is('behind'));
+assert.strictEqual(tab.send('open'), false, 'an open tab is shown, not opened again');
+assert.ok(tab.send('show') && tab.send('close'));
+assert.deepStrictEqual(seen, ['closed>front', 'front>behind', 'behind>front', 'front>closed']);
+assert.strictEqual(document.documentElement.dataset.cfTab, 'closed');
+const job = machine('job', 'idle', {idle: {zip: 'zipping', delete: 'deleting'}, zipping: {done: 'idle'}, deleting: {done: 'idle'}});
+assert.ok(job.send('zip')); assert.strictEqual(job.send('delete'), false, 'one long job at a time');
+// Direction controls never reach a name on screen or on disk
+assert.strictEqual(cleanName('invoice\u202Efdp.exe'), 'invoicefdp.exe');
+assert.strictEqual(cleanName('\u2067a\u2069\u200Fb\u061C'), 'ab');
+assert.strictEqual(cleanName('تقرير.txt'), 'تقرير.txt');
+assert.strictEqual(cleanName(null), '');
+console.log('ok');
+""",
+        encoding="utf-8",
+    )
+    result = subprocess.run(["node", str(runner)], capture_output=True, text=True)
+    assert result.returncode == 0 and result.stdout.strip() == "ok", result.stdout + result.stderr
+
+
+def test_downloads_and_renames_drop_direction_controls(plugin):
+    script = plugin.LOADER_SCRIPT
+    assert "let clean = cleanName(name)" in script  # safeName, used for every download and zip entry
+    assert "const name = cleanName(input.value).trim();" in script  # rename
+    assert "item.name = cleanName(meta.name" in script  # every record read
+
+
+def test_a_zip_never_needs_its_64_bit_form(plugin):
+    script = plugin.LOADER_SCRIPT
+    assert "list.length > 65535" in script
+    # The largest zip a valve allows stays under 4 GB, the limit of a 32-bit size
+    assert plugin.Event.Valves.model_fields["max_zip_mb"].metadata[-1].le * 1048576 < 2**32
+
+
+def test_files_is_chosen_from_the_plus_menu_where_there_is_one(plugin):
+    script = plugin.LOADER_SCRIPT
+    assert "const menuThere = !!(found?.list && plusOf(found.list));" in script
+    assert "(!menuThere || CONFIG.buttonBesideMenu)" in script
