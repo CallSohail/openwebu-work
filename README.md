@@ -16,6 +16,7 @@ The goal is simple: keep each extension portable, documented, and safe to review
 | [Secure Dynamic Onboarding](functions/events/secure-onboarding/) | Event | 9.3.0 | Stable | English, French, Spanish and Catalan permission-aware onboarding with a language dropdown, immediate Valve synchronization, UTF-8-safe Rich UI delivery, guided tutorials, and safe rollout |
 | [RAGFlow Advanced Connector](tools/ragflow/) | Tool | 3.0.0 | Stable | RAGFlow retrieval, dataset discovery, document search, and configurable retrieval controls |
 | [Windows Skills for Open Terminal](skills/windows/) | Skills | 1.2.0 | Stable | Nine Agent Skills for safe Windows work through Open Terminal and Tether: cmd vs PowerShell, work-folder rules, Office COM automation, browser automation, files and data, local dev servers, Tether devices, automations, Git, and reliable Windows system info via fastfetch/JSON |
+| [owctl](tools/owctl/) | CLI tool | 0.1.0 | Stable | Quoting-safe local tool the assistant calls for reliable Windows system info (JSON) and safe, reversible disk cleanup: a plan/apply/purge state machine with compare-and-swap, a lock, and quarantine |
 
 ## Repository structure
 

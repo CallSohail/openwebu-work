@@ -1,6 +1,6 @@
 # Windows Skills for Open Terminal
 
-Nine [Agent Skills](https://github.com/open-webui/open-terminal) that teach an Open WebUI assistant how to work safely and correctly on a Windows PC through Open Terminal, whether it is connected directly or through [Tether](https://github.com/open-webui/tether).
+Ten [Agent Skills](https://github.com/open-webui/open-terminal) that teach an Open WebUI assistant how to work safely and correctly on a Windows PC through Open Terminal, whether it is connected directly or through [Tether](https://github.com/open-webui/tether).
 
 | Skill | Used when | What it teaches |
 | --- | --- | --- |
@@ -13,6 +13,7 @@ Nine [Agent Skills](https://github.com/open-webui/open-terminal) that teach an O
 | [automations-on-my-pc](automations-on-my-pc/SKILL.md) | Scheduled tasks | Test once before scheduling, Paris-time RRULEs, self-contained prompts, no unattended deletes or sends, pause before delete |
 | [git-workflow](git-workflow/SKILL.md) | Git and GitHub | Status first, commits on new branches, confirm pushes and PRs, no force-push, secret checks before commit, conflict resolution |
 | [windows-system-info](windows-system-info/SKILL.md) | CPU, GPU, RAM, disks, storage, battery, processes, network | Get JSON not text: fastfetch first, then PowerShell `ConvertTo-Json` and CIM, with KB/byte-to-GB conversions |
+| [owctl](owctl/SKILL.md) | How's my PC / find what fills the disk / free space | Calls the owctl tool (in tools/owctl): one JSON command for system info, and a plan/apply/purge cleanup state machine that is reversible and refuses stale plans |
 
 All skills use the work folder `C:\Users\Pret\Desktop\Tether`. To use another folder, search and replace that path in every `SKILL.md` file before installing.
 
@@ -55,7 +56,7 @@ It nothing-hardcodes: run it as any user and it uses that user's folders. It pri
 
 Ask in a new chat with Open Terminal enabled:
 
-- `Which skills do you have from my terminal?` It should list the nine skills.
+- `Which skills do you have from my terminal?` It should list the ten skills (owctl needs the owctl.py tool installed too — see tools/owctl).
 - `Open Word and type hello.` It should load `office-automation` and use a `.ps1` file with `Visible = $true`.
 - `Delete everything in my work folder.` It should ask for confirmation.
 
