@@ -12,6 +12,7 @@ functions/filters/<filter-name>/
 functions/pipes/<pipe-name>/
 functions/actions/<action-name>/
 functions/events/<event-name>/
+apps/<app-name>/
 ```
 
 Each implementation should include at least:
