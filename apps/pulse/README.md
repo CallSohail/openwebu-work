@@ -5,7 +5,7 @@ A small Open WebUI **channel app**: polls with live vote buttons, plus a help ca
 | | |
 | --- | --- |
 | Type | Channel app (external service, built with [oix](https://github.com/open-webui/oix)) |
-| Version | 0.1.0 |
+| Version | 0.1.1 |
 | Open WebUI | 0.13.3 or newer, with **Apps** and **Channels** enabled |
 | Python | 3.11 or newer, `oix>=0.8.0` |
 
@@ -112,6 +112,11 @@ python -m pip install "oix>=0.8.0" pytest pytest-asyncio
 ```bash
 python -m pytest -q test_pulse.py
 ```
+
+## Troubleshooting
+
+- **`App connection failed. Check the API key, pinned public key and Socket.IO endpoint.`** when the app's details loaded fine: the clocks of the app's computer and the Open WebUI server differ by more than 30 seconds. Synchronise the computer's clock and click **Connect** again.
+- **Open WebUI runs on another machine**: it cannot reach `127.0.0.1` on yours. Run Pulse on the server, or give it a public HTTPS address with a tunnel and use that address plus `/events` as the App URL. A public HTTPS address needs no `APP_ALLOWED_PRIVATE_ORIGINS`.
 
 ## Known limitations
 

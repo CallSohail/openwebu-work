@@ -1,7 +1,7 @@
 """
 title: Pulse
 description: A small Open WebUI channel app: polls with live vote buttons, plus a tour of what apps can do.
-version: 0.1.0
+version: 0.1.1
 requirements: oix>=0.8.0
 required_open_webui_version: 0.13.3
 
@@ -16,11 +16,13 @@ import logging
 import os
 import re
 import secrets
+import time
 import uuid
 from pathlib import Path
 
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
+import oix.socket
 from oix import Action, App, AppChannelReply, Embed
 
 log = logging.getLogger("pulse")
@@ -30,6 +32,29 @@ PORT = int(os.environ.get("PORT", "8000"))
 COLOR_OPEN, COLOR_CLOSED = 0x44545B, 0x8C9A9E
 MAX_OPTIONS = 10
 MENTION = re.compile(r"<@A:[^>|]*(\|[^>]*)?>")
+CLOCK_LEEWAY = 30
+
+
+class _BackdatedClock:
+    """Date connection proofs CLOCK_LEEWAY seconds in the past.
+
+    oix signs a proof valid for 60 seconds from "now", and Open WebUI rejects
+    one whose start is in its future. A PC a few seconds ahead of the server
+    then fails with "App connection failed". Backdating by 30 seconds lets the
+    two clocks differ by up to 30 seconds either way.
+    """
+
+    def __init__(self, clock):
+        self._clock = clock
+
+    def __getattr__(self, name):
+        return getattr(self._clock, name)
+
+    def time(self):
+        return self._clock.time() - CLOCK_LEEWAY
+
+
+oix.socket.time = _BackdatedClock(oix.socket.time)
 
 
 # Credentials
@@ -183,7 +208,7 @@ HELP = Embed(
         "The buttons below show the three ways an app can answer a click."
     ),
     color=COLOR_OPEN,
-    footer={"text": "Pulse 0.1.0 · built with oix"},
+    footer={"text": "Pulse 0.1.1 · built with oix"},
 )
 HELP_ACTIONS = [
     Action(action_id="demo:private", label="Private reply"),

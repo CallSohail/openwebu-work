@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.1.1] - 2026-11-13
+
+### Fixed
+
+- **Connect** no longer fails with `App connection failed` when the app's computer clock is up to 30 seconds ahead of or behind the Open WebUI server. Connection proofs are now dated 30 seconds in the past.
+
 ## [0.1.0] - 2026-11-13
 
 ### Added

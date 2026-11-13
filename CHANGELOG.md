@@ -4,6 +4,10 @@ This repository contains independently versioned Open WebUI extensions. Plugin-s
 
 ## 2026-11-13
 
+### Pulse 0.1.1
+
+Connecting no longer fails when the app's computer clock is up to 30 seconds off the Open WebUI server's; checked against Open WebUI 0.13.3 with clocks 25 seconds apart in both directions.
+
 ### Pulse 0.1.0
 
 A first channel app, in a new `apps/` directory: a separate program built with oix that Open WebUI connects to. Mention it to start a poll with vote buttons that update the card in place, or to get a help card showing a private reply, a file download, an acknowledged slow job and a link button. It creates its own credentials on first start. Seven protocol tests pass against a stand-in Open WebUI, and the same flows were checked in a browser on Open WebUI 0.13.3.
