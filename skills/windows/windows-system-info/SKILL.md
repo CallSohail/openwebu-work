@@ -11,19 +11,18 @@ Windows has no `/proc` or `lsblk`. The reliable rule on Windows is: **get JSON, 
 
 ## 1. Everything at once: fastfetch (preferred)
 
-Check once whether it is installed: `where.exe fastfetch`. If it is:
+fastfetch returns CPU, GPU, memory, disks, OS, host, uptime and display as labelled JSON in one call. Find it in this order and use the first that works:
 
-```
-fastfetch --format json
-```
+1. On PATH: run `fastfetch --format json`.
+2. If `where.exe fastfetch` finds nothing, try the known install path and run it directly:
+   `& "C:\Users\Pret\Desktop\Tether\fastfetch\fastfetch.exe" --format json`
+   (Through cmd, drop the `&`: `"C:\Users\Pret\Desktop\Tether\fastfetch\fastfetch.exe" --format json`.)
 
-This returns CPU, GPU, memory, disks, OS, host, uptime and display as labelled JSON. Read the fields you need from it. For a few modules only:
+fastfetch runs on Windows; it is **not** a Linux-only tool. Never tell the user it is "not installed" without first trying the full path above. For a few modules only, add `-s CPU:GPU:Memory:Disk:OS`.
 
-```
-fastfetch -s CPU:GPU:Memory:Disk:OS --format json
-```
+If neither works, use the built-in commands below, and mention the user can put fastfetch on PATH for faster results. Do not install anything yourself without asking.
 
-If `where.exe fastfetch` finds nothing, tell the user they can install it with `winget install fastfetch` for the best results, then use the built-in commands below for now. Do not install it yourself without asking.
+Reading fastfetch JSON: it is an array of `{type, result}` objects. Memory `total`/`used` and Disk `bytes.free`/`bytes.total` are in **bytes** (GB = value / 1073741824). CPU is under type `CPU`, GPU under `GPU`, disks under `Disk`, battery under `Battery`.
 
 ## 2. Built-in fallback (no install)
 
