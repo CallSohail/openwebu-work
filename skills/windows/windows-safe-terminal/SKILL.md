@@ -27,6 +27,8 @@ You are operating a real Windows computer that belongs to the user. Every comman
 | Anything longer than one line, or with quotes, `$` variables, pipes or loops | Write a `.ps1` file with `write_file`, then run `powershell -NoProfile -ExecutionPolicy Bypass -File "C:\Users\Pret\Desktop\Tether\script.ps1"` |
 | Python | Write a `.py` file, then run `python script.py`. Use `python -c` only for one-liners without nested quotes |
 
+**Hard rule that prevents the most common failures:** the moment a PowerShell command contains any of `$_`, a pipe `|`, `ForEach-Object`, `Where-Object`, `$(...)`, `-split`, `@{...}`, or a quote inside a quote, **do not run it inline through cmd** — cmd eats `$_`, doubles backslashes and mangles nested quotes. Write it to a `.ps1` file with the file tools and run it with `-File`. One clean command with no special characters (like `fastfetch --format json`) is fine inline; anything more goes in a file. If an inline command returns a quoting or `$_` error, don't retry variations — switch to a `.ps1` file immediately.
+
 Rules that prevent most failures:
 - `$env:NAME="x"`, `Get-ChildItem`, `ForEach-Object` and other PowerShell syntax **fail in cmd**. Always wrap them as shown above.
 - Quote every path, because paths often contain spaces: `"C:\Users\Pret\Desktop\Tether\my file.txt"`.

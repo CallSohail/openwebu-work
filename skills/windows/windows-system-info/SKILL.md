@@ -7,7 +7,11 @@ description: Read hardware, operating system, performance and network informatio
 
 Follow `windows-safe-terminal` as well. Everything here is **read-only**: never change settings, stop processes or delete anything from these commands.
 
-Windows has no `/proc` or `lsblk`. The reliable rule on Windows is: **get JSON, then read it.** Never parse the text of `systeminfo` or `wmic`; both are slow, inconsistent, and `wmic` is deprecated. Prefer the commands below, in this order.
+Windows has no `/proc` or `lsblk`. The reliable rule on Windows is: **get JSON, then read it.** Never parse the text of `systeminfo` or `wmic`; both are slow, inconsistent, and `wmic` is deprecated.
+
+**For almost every question, fastfetch alone is the answer.** Its JSON already contains **live** values, not just specs: `Memory` has `used` and `total` (bytes), `Disk` has `bytes.free` and `bytes.total`, plus CPU, GPU, battery, uptime and network. So "how is my PC doing / how much RAM and disk is free" is answered by one call to `fastfetch --format json` — do **not** reach for `Get-Counter`, `Get-CimInstance` pipelines or other fragile one-liners for it; those break when cmd.exe runs them. Use the PowerShell fallbacks only for details fastfetch does not report (installed programs, specific driver lists, saved Wi-Fi), and when you do, put them in a `.ps1` file, never an inline one-liner with `$_` or pipes.
+
+Prefer the commands below, in this order.
 
 ## 1. Everything at once: fastfetch (preferred)
 
@@ -26,7 +30,7 @@ Reading fastfetch JSON: it is an array of `{type, result}` objects. Memory `tota
 
 ## 2. Built-in fallback (no install)
 
-Always pipe to `ConvertTo-Json`. Run through PowerShell:
+Use these only when fastfetch cannot answer, and **write them to a `.ps1` file, then run with `-File`** — inline pipelines with `$_` break through cmd.exe. Always end with `ConvertTo-Json`.
 
 ```
 powershell -NoProfile -Command "Get-ComputerInfo | ConvertTo-Json -Depth 3"
