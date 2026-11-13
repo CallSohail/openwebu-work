@@ -24,7 +24,21 @@ All skills use the work folder `C:\Users\Pret\Desktop\Tether`. To use another fo
 
 The descriptions name the situations each skill covers, so the model picks the right one.
 
+## Reliable system info (fastfetch)
+
+Windows has no clean `/proc` like Linux, so the assistant often guesses at `wmic`/`systeminfo` and gets confused. `setup-system-info.ps1` fixes this for the current user, with no admin:
+
+- Downloads **fastfetch** (right build for the CPU) and adds it to PATH, so one command returns all hardware as JSON: `fastfetch --format json`.
+- Sets **`OPEN_TERMINAL_INFO`**, a note added to Open Terminal's base prompt in every chat, telling the model it is on Windows/cmd.exe, that fastfetch is installed and how to read its JSON. This stops the "fastfetch is not installed / it's a Linux tool" mistake.
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File .\setup-system-info.ps1
+```
+
+It nothing-hardcodes: run it as any user and it uses that user's folders. It prints the exact `OPEN_TERMINAL_INFO` text to paste into **Tether > Settings > Open Terminal** (Tether ignores the system-level variable). Restart Open Terminal afterwards. The `windows-system-info` skill still works on its own if you skip this; the script just makes it faster and removes the guessing.
+
 ## Install
+
 
 1. Copy this `windows` folder to your PC.
 2. In PowerShell, from inside the folder:
