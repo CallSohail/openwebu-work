@@ -15,7 +15,7 @@ The goal is simple: keep each extension portable, documented, and safe to review
 | [Quick Actions](functions/actions/quick-actions/) | Action | 3.0.1 | Stable | Compact context-aware response transformations, Humanize actions, verification, creation workflows, English/French UI, and user/team custom actions |
 | [Secure Dynamic Onboarding](functions/events/secure-onboarding/) | Event | 9.3.0 | Stable | English, French, Spanish and Catalan permission-aware onboarding with a language dropdown, immediate Valve synchronization, UTF-8-safe Rich UI delivery, guided tutorials, and safe rollout |
 | [RAGFlow Advanced Connector](tools/ragflow/) | Tool | 3.0.0 | Stable | RAGFlow retrieval, dataset discovery, document search, and configurable retrieval controls |
-| [Windows Skills for Open Terminal](skills/windows/) | Skills | 1.1.0 | Stable | Eight Agent Skills for safe Windows work through Open Terminal and Tether: cmd vs PowerShell, work-folder rules, Office COM automation, browser automation, files and data, local dev servers, Tether devices, automations and Git |
+| [Windows Skills for Open Terminal](skills/windows/) | Skills | 1.2.0 | Stable | Nine Agent Skills for safe Windows work through Open Terminal and Tether: cmd vs PowerShell, work-folder rules, Office COM automation, browser automation, files and data, local dev servers, Tether devices, automations, Git, and reliable Windows system info via fastfetch/JSON |
 
 ## Repository structure
 

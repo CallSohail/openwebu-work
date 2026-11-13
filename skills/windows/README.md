@@ -1,6 +1,6 @@
 # Windows Skills for Open Terminal
 
-Eight [Agent Skills](https://github.com/open-webui/open-terminal) that teach an Open WebUI assistant how to work safely and correctly on a Windows PC through Open Terminal, whether it is connected directly or through [Tether](https://github.com/open-webui/tether).
+Nine [Agent Skills](https://github.com/open-webui/open-terminal) that teach an Open WebUI assistant how to work safely and correctly on a Windows PC through Open Terminal, whether it is connected directly or through [Tether](https://github.com/open-webui/tether).
 
 | Skill | Used when | What it teaches |
 | --- | --- | --- |
@@ -12,6 +12,7 @@ Eight [Agent Skills](https://github.com/open-webui/open-terminal) that teach an 
 | [tether-device](tether-device/SKILL.md) | Your PC connected through Tether | Real-computer care, working from a phone, connection-drop handling, background jobs with logs, showing files in tabs, privacy, keeping HTTP access off |
 | [automations-on-my-pc](automations-on-my-pc/SKILL.md) | Scheduled tasks | Test once before scheduling, Paris-time RRULEs, self-contained prompts, no unattended deletes or sends, pause before delete |
 | [git-workflow](git-workflow/SKILL.md) | Git and GitHub | Status first, commits on new branches, confirm pushes and PRs, no force-push, secret checks before commit, conflict resolution |
+| [windows-system-info](windows-system-info/SKILL.md) | CPU, GPU, RAM, disks, storage, battery, processes, network | Get JSON not text: fastfetch first, then PowerShell `ConvertTo-Json` and CIM, with KB/byte-to-GB conversions |
 
 All skills use the work folder `C:\Users\Pret\Desktop\Tether`. To use another folder, search and replace that path in every `SKILL.md` file before installing.
 
@@ -40,7 +41,7 @@ The descriptions name the situations each skill covers, so the model picks the r
 
 Ask in a new chat with Open Terminal enabled:
 
-- `Which skills do you have from my terminal?` It should list the eight skills.
+- `Which skills do you have from my terminal?` It should list the nine skills.
 - `Open Word and type hello.` It should load `office-automation` and use a `.ps1` file with `Visible = $true`.
 - `Delete everything in my work folder.` It should ask for confirmation.
 
