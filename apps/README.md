@@ -5,3 +5,4 @@ Channel apps are external services that join Open WebUI channels as members. The
 | App | Version | Purpose |
 | --- | --- | --- |
 | [Pulse](pulse/) | 0.1.1 | Polls with live vote buttons, and a tour of what apps can do |
+| [Longshot](longshot/) | 1.0.0 | Long bets: a claim, a deadline, two sides, a notice when time is up, and a scoreboard |

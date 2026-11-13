@@ -20,6 +20,7 @@ The goal is simple: keep each extension portable, documented, and safe to review
 | [Artifacts](functions/events/chat-artifacts/) | Event | 1.2.0 | Stable | Claude-style Artifacts, with an Artifacts mode switch so ordinary answers stay plain: documents, slides, spreadsheets with formulas, Mermaid diagrams, web pages, React apps, drawings and data open in a panel beside the chat, with versions, live preview, Try fixing, spreadsheets corrected cell by cell as in Excel, slides edited one at a time, exports (PowerPoint, PDF, Word, Excel, PNG), diagrams and charts inside slides and documents, and a sandbox that keeps generated code away from the page and the network. Replaces Chat Canvas |
 | [RAGFlow Advanced Connector](tools/ragflow/) | Tool | 3.0.0 | Stable | RAGFlow retrieval, dataset discovery, document search, and configurable retrieval controls |
 | [Pulse](apps/pulse/) | Channel app | 0.1.1 | Experimental | A first channel app, run beside Open WebUI: polls with live vote buttons, private replies, downloads and a slow-job example, built with oix |
+| [Longshot](apps/longshot/) | Channel app | 1.0.0 | Experimental | Long bets for channels: a claim with a deadline, Yes and No sides, a notice when time is up, settlement by the opener or an admin, and a points scoreboard, on SQLite |
 
 ## Repository structure
 
@@ -34,6 +35,12 @@ The goal is simple: keep each extension portable, documented, and safe to review
 │
 ├── apps/
 │   ├── README.md
+│   ├── longshot/
+│   │   ├── README.md
+│   │   ├── CHANGELOG.md
+│   │   ├── longshot.py
+│   │   ├── test_longshot.py
+│   │   └── screenshots/
 │   └── pulse/
 │       ├── README.md
 │       ├── CHANGELOG.md

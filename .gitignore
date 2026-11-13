@@ -37,5 +37,5 @@ dist/
 tools/generative-ui/tests/out/
 node_modules/
 
-# Pulse app credentials and polls
-apps/pulse/data/
+# App credentials and data
+apps/*/data/

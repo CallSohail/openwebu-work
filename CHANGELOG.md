@@ -4,6 +4,10 @@ This repository contains independently versioned Open WebUI extensions. Plugin-s
 
 ## 2026-11-13
 
+### Longshot 1.0.0
+
+A second channel app, grown from Pulse: long bets. A mention opens a bet with a claim and a deadline, people pick Yes or No until it closes, and at the deadline the app posts the bet again and asks the opener how it turned out. The opener or an admin settles, voids or reopens it; each person stakes 10 points and the losing side's points are split among the winners, with a scoreboard per channel. It keeps its bets in SQLite and serves a health check. 18 protocol tests pass, and 12 of 12 browser checks passed on Open WebUI 0.13.3 with an admin and an ordinary account.
+
 ### Pulse 0.1.1
 
 Connecting no longer fails when the app's computer clock is up to 30 seconds off the Open WebUI server's; checked against Open WebUI 0.13.3 with clocks 25 seconds apart in both directions.
