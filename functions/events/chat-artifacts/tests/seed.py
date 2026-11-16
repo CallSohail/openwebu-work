@@ -155,6 +155,32 @@ MOTION_LINES = [
 ]
 PIXEL = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=="
 MOTION = "\n".join(MOTION_LINES).replace("PIXEL_HERE", PIXEL)
+
+
+def tone_data(seconds=2.0, rate=22050, freq=330):
+    """A short WAV tone as a data: address, for an animation's music."""
+    import base64, math, struct
+    count = int(seconds * rate)
+    frames = b"".join(struct.pack("<h", int(6000 * math.sin(2 * math.pi * freq * i / rate))) for i in range(count))
+    wav = b"RIFF" + struct.pack("<I", 36 + len(frames)) + b"WAVEfmt " + struct.pack("<IHHIIHH", 16, 1, 1, rate, rate * 2, 2, 16) + b"data" + struct.pack("<I", len(frames)) + frames
+    return "data:audio/wav;base64," + base64.b64encode(wav).decode()
+
+
+# Everything Motion can do in one animation: a style, a logo, a progress bar, karaoke captions, music and narration,
+# patterns, particles, camera moves, shapes, icons, a lower third, a chart race, rings, bars, a timeline, a comparison,
+# a quote, a donut, kinetic type and every new transition, plus one camera move it doesn't know
+SHOWCASE = "\n".join([
+    "<!-- artifact: Campus tour -->", "size: 16:9", "style: neon", "logo: PIXEL_HERE", "progress: on", "captions: karaoke", "music: MUSIC_HERE | 0.4", "voice: on", "",
+    "--- 3s iris", "pattern: rings", "particles: sparkles", "camera: zoom-in", "# Welcome to campus {letters}", "badge: New for 2026", "say: Welcome to the new campus tour.", "",
+    "--- 4s flash", "shape: circle #f43f5e top-right large {float}", "shape: star bottom-left medium {spin}", "icons: graduation Courses, users Clubs, book Library, rocket Startups", "lower: Dr. Ada Lovelace | Head of Computing", "",
+    "--- 4s rise", "## Enrolment race", "chart: race", "Faculty,2023,2024,2025", "Science,1200,1350,1600", "Arts,1400,1300,1250", "Law,800,950,1100", "Medicine,900,1000,1500", "",
+    "--- 3s blur", "ring: 72% | Course completion", "progress: 3/4 | Modules done", "",
+    "--- 4s", "timeline: 2019 Founded; 2021 New labs; 2023 Library; 2025 12,000 students", "",
+    "--- 3.5s", "compare: Before | After", "- Paper forms | One click online", "- Queues | Instant answers", "",
+    "--- 3s", "quote: Education is the most powerful tool. | Nelson Mandela {words}", "chart: donut Budget", "Item,Share", "Staff,55", "Labs,25", "Other,20", "",
+    "--- 2s", "# The end {scramble}", "icon: 🎉 | See you soon", "particles: confetti", "camera: wobble",
+    "say: Thank you for watching this tour, we hope to see you on campus very soon for an open day visit.",
+]).replace("PIXEL_HERE", PIXEL).replace("MUSIC_HERE", tone_data())
 RICH_DECK = ("<!-- artifact: Research methods -->\n<!-- layout: title -->\n# Research methods\nA ==short== guide\n\n---\n\n# How it flows\n" + F + "mermaid\nflowchart LR\n  Q[Question] --> D[Data] --> R[Result]\n" + F
              + "\n\n---\n\n# Results\n" + F + "chart\ntype: line\ntitle: Responses\nWeek,Online,Paper\n1,10,4\n2,25,6\n3,40,5\n" + F
              + "\n\n---\n\n# Two sides\n- Fast\n- Cheap\n|||\n- Slow\n- ==Costly==\n\n---\n\n<!-- layout: section -->\n# Part two\n\n---\n\n# Shapes\n> [!WARNING]\n> Check your sample.\n\n" + F + "svg\n<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 10 10\"><rect width=\"10\" height=\"10\" fill=\"#16a34a\"/></svg>\n" + F
@@ -178,6 +204,7 @@ def seed(token):
         "doc": make_chat(token, "Doc chat", [("user", "Library guide"), ("assistant", "Here it is.\n\n" + F4 + "markdown\n" + DOC + "\n" + F4)]),
         "answer": make_chat(token, "Long answer chat", [("user", "Library guide"), ("assistant", DOC_ANSWER)]),
         "general": make_chat(token, "General chat", [("user", "How should I study?"), ("assistant", GENERAL)]),
+        "showcase": make_chat(token, "Showcase chat", [("user", "Show everything"), ("assistant", F4 + "motion\n" + SHOWCASE + "\n" + F4)]),
         "motion": make_chat(token, "Motion chat", [("user", "Animate our enrolment"), ("assistant", "Here it is.\n\n" + F4 + "motion\n" + MOTION + "\n" + F4)]),
         "rich": make_chat(token, "Rich deck chat", [("user", "Slides on research"), ("assistant", F4 + "slides\n" + RICH_DECK + "\n" + F4)]),
         "chart": make_chat(token, "Chart chat", [("user", "Budget chart"), ("assistant", F + "chart\n" + CHART + "\n" + F)]),

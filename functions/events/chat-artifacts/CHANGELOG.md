@@ -5,6 +5,27 @@ This project follows [Semantic Versioning](https://semver.org/).
 
 Released as `chat-artifacts-v<version>`. See [RELEASING.md](../../../RELEASING.md) for the release process.
 
+## [1.4.0] - 2026-11-16
+
+Motion becomes a motion-graphics tool, in the spirit of HyperFrames, while staying data rather than code.
+
+### Added
+
+- **Styles**: `minimal`, `bold`, `corporate`, `neon`, `paper`, `editorial`, `playful` and `chalk`, each a complete look (colours, type, pattern, how titles arrive, rules under titles, glow).
+- **Kinetic type**: `{words}`, `{letters}`, `{scramble}`, `{wave}`, plus `{blur}` and `{drop}` entrances.
+- **Blocks**: icons (about 50 drawn line icons by name and any emoji), rows of icons with labels, progress bars and rings (percentages or fractions, counting up), timelines, before-and-after comparisons, quotes, badges and lower thirds.
+- **Charts**: donut, horizontal bars and bar chart races, where each column is a moment and bars change places.
+- **Behind and over a scene**: patterns (grid, dots, lines, waves, rings, blobs), particles (confetti, sparkles, snow, bokeh, bubbles), up to six shapes with a place, size, colour and motion (spin, float, pulse, draw), and camera moves (zoom in or out, pan, drift).
+- **Transitions**: flash, iris, rise and blur, as well as fade, slide, zoom, wipe and cut.
+- **Over the whole video**: a logo in the corner and a progress bar.
+- **Captions**: karaoke (each word lights up as it is said, the default), plain or off.
+- **Sound**: narration of every caption through Open WebUI's text-to-speech (`voice: on`), with scenes lengthened to fit; music (`music:`), quieter under the narration and fading out at the end; both played in time in the preview, with mute, and mixed into the MP4 (AAC or Opus), or recorded with the video where sound can't be encoded.
+- In the player: buttons to add music from your device and to switch narration on or off, as your edit.
+
+### Changed
+
+- Artifacts mode describes the whole format; the *New* request asks for a style, kinetic type and the newer blocks.
+
 ## [1.3.0] - 2026-11-16
 
 ### Added

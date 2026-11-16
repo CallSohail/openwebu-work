@@ -2,7 +2,7 @@
 title: Artifacts
 description: Claude-style Artifacts for Open WebUI: documents, slides, spreadsheets, diagrams, web pages, React apps, drawings and data open in a panel beside the chat, with versions, editing, exports (PDF, Word, Excel, PNG) and a sandbox. Pair it with Artifacts mode, the switch that tells the model when and how to make them.
 author: Muhammad Sohail
-version: 1.3.0
+version: 1.4.0
 license: MIT
 required_open_webui_version: 0.13.0
 """
@@ -760,7 +760,7 @@ LOADER_SCRIPT = r"""
       tp_code: 'Write a program that: \n\nPut the whole program in one code block opened with ``` followed by the language and artifact, for example ```python artifact, and give its file name in a first-line comment.',
       all_columns: 'All columns', chart_area: 'Area', chart_pie: 'Pie', callout_note: 'Note', callout_tip: 'Tip', callout_important: 'Important', callout_warning: 'Warning', drawing: 'Drawing the diagram…', preparing: 'Preparing the download…', show_code: 'Show the code in the chat', hide_code: 'Hide the code in the chat',
       del_row: 'Delete the selected rows', del_col: 'Delete the selected columns', undo: 'Undo', redo: 'Redo', sheet_keys: 'Spreadsheet. Arrow keys move, Shift selects, typing or Enter edits, Delete clears, Ctrl+Z undoes.', edit_slide: 'Edit this slide', add_slide: 'Add a slide after this one', del_slide: 'Delete this slide', save_slide: 'Save the slide', slide_saved: 'Slide saved as your edit', t_motion: 'Motion', d_motion: 'A short animated explainer you can download as a video',
-      tp_motion: 'Make a short animated explainer (about 20 to 40 seconds) about: \n\nPut it in one code block opened with ```motion artifact. Start with settings such as "size: 16:9" and "theme: light". Open each scene with a line like "--- 4s fade", then use # headings, short text, - bullets, "number: 12% | label" for a figure that counts up, "chart: bar" followed by CSV lines, "steps: A -> B -> C" for a process, and "say: …" for the caption. Keep each scene to one idea.',
+      tp_motion: 'Make a short animated explainer (about 30 seconds) about: \n\nPut it in one code block opened with ```motion artifact. Start with settings: a size (16:9, 9:16 or 1:1), a style (minimal, bold, corporate, neon, paper, editorial, playful or chalk), "progress: on" and "captions: karaoke". Open each scene with a line like "--- 4s fade" (or slide, zoom, iris, flash, rise). Use # headings with kinetic type such as {words} or {letters}, "number: 12% | label", "chart: bar" or "chart: race" with CSV lines, "icons: book Library, users Clubs", "ring: 72% | label", "timeline: …", "compare: Before | After", "quote: … | who", a pattern, particles or a camera move where they help, and "say: …" for each caption. One idea per scene.',
       m_play: 'Play', m_pause: 'Pause', m_seek: 'Position in the video', m_scene: 'Scene {n} of {total}', scenes_n: '{n} scenes', m_full: 'Full screen',
       m_edit: 'Edit this scene', m_add: 'Add a scene after this one', m_del: 'Delete this scene', m_save: 'Save the scene', m_saved: 'Scene saved as your edit',
       m_duration: 'Length in seconds', m_auto: 'auto', m_transition: 'Transition', tr_fade: 'Fade', tr_slide: 'Slide', tr_zoom: 'Zoom', tr_wipe: 'Wipe', tr_cut: 'Cut',
@@ -769,7 +769,10 @@ LOADER_SCRIPT = r"""
       m_failed: 'Couldn’t make the video', m_cancelled: 'Video cancelled', m_busy: 'A video is already being made', m_none: 'No scenes yet', m_problems: 'What was adjusted',
       mw_line: 'Line {line}: {what}', mw_duration: '“{value}” isn’t a usable length, so {n} s is used', mw_transition: '“{value}” isn’t a transition, so it fades', mw_effect: '“{value}” isn’t an effect',
       mw_chart: 'the chart has no numbers to draw', mw_chart_type: '“{value}” isn’t a chart type, so bars are drawn', mw_scenes: 'only the first {n} scenes are shown', mw_total: 'the video stops at {n} seconds',
-      mw_items: 'only the first {n} are shown', mw_size: '“{value}” isn’t a size, so 16:9 is used', mw_color: '“{value}” isn’t a colour', mw_image: 'a picture from another site isn’t shown', mw_long: 'the line is cut at {n} characters', exporting: 'Making the presentation…',
+      mw_items: 'only the first {n} are shown', mw_size: '“{value}” isn’t a size, so 16:9 is used', mw_color: '“{value}” isn’t a colour', mw_image: 'a picture from another site isn’t shown', mw_long: 'the line is cut at {n} characters',
+      mw_value: '“{value}” isn’t a {what} it knows', mw_music: 'the music couldn’t be loaded', mw_music_site: 'music from another site isn’t played; add a file instead', mw_voice: 'narration isn’t available: text-to-speech isn’t set up or isn’t allowed for you',
+      m_mute: 'Mute', m_unmute: 'Unmute', m_music: 'Add music from your device', m_music_remove: 'Remove the music', m_music_adding: 'Adding the music…', m_music_big: 'Music files can be up to 25 MB', m_music_failed: 'Couldn’t add the music',
+      m_voice_on: 'Narrate the captions', m_voice_off: 'Stop narrating', m_voice_wait: 'Preparing the narration…', exporting: 'Making the presentation…',
       blank_type: 'Kind', blank_name: 'Title', blank_create: 'Create', blank_default: 'My artifact'
     },
     fr: {
@@ -808,7 +811,7 @@ LOADER_SCRIPT = r"""
       tp_code: 'Écris un programme qui : \n\nMets tout le programme dans un seul bloc ouvert par ``` suivi du langage et de artifact, par exemple ```python artifact, avec son nom de fichier dans un commentaire en première ligne.',
       all_columns: 'Toutes les colonnes', chart_area: 'Aires', chart_pie: 'Secteurs', callout_note: 'Remarque', callout_tip: 'Astuce', callout_important: 'Important', callout_warning: 'Attention', drawing: 'Dessin du diagramme…', preparing: 'Préparation du téléchargement…', show_code: 'Afficher le code dans la conversation', hide_code: 'Masquer le code dans la conversation',
       del_row: 'Supprimer les lignes sélectionnées', del_col: 'Supprimer les colonnes sélectionnées', undo: 'Annuler', redo: 'Rétablir', sheet_keys: 'Tableur. Les flèches déplacent, Maj sélectionne, la saisie ou Entrée modifie, Suppr efface, Ctrl+Z annule.', edit_slide: 'Modifier cette diapositive', add_slide: 'Ajouter une diapositive après celle-ci', del_slide: 'Supprimer cette diapositive', save_slide: 'Enregistrer la diapositive', slide_saved: 'Diapositive enregistrée comme votre modification', t_motion: 'Animation', d_motion: 'Une courte vidéo explicative à télécharger',
-      tp_motion: 'Crée une courte animation explicative (environ 20 à 40 secondes) sur : \n\nMets-la dans un seul bloc ouvert par ```motion artifact. Commence par des réglages comme « size: 16:9 » et « theme: light ». Ouvre chaque scène par une ligne comme « --- 4s fade », puis utilise des titres #, des textes courts, des puces -, « number: 12% | légende » pour un chiffre qui défile, « chart: bar » suivi de lignes CSV, « steps: A -> B -> C » pour un processus, et « say: … » pour le sous-titre. Une idée par scène.',
+      tp_motion: 'Crée une courte animation explicative (environ 30 secondes) sur : \n\nMets-la dans un seul bloc ouvert par ```motion artifact. Commence par des réglages : un format (16:9, 9:16 ou 1:1), un style (minimal, bold, corporate, neon, paper, editorial, playful ou chalk), « progress: on » et « captions: karaoke ». Ouvre chaque scène par une ligne comme « --- 4s fade » (ou slide, zoom, iris, flash, rise). Utilise des titres # avec un texte animé comme {words} ou {letters}, « number: 12% | légende », « chart: bar » ou « chart: race » suivi de lignes CSV, « icons: book Bibliothèque, users Clubs », « ring: 72% | légende », « timeline: … », « compare: Avant | Après », « quote: … | auteur », un motif, des particules ou un mouvement de caméra quand ils aident, et « say: … » pour chaque sous-titre. Une idée par scène.',
       m_play: 'Lire', m_pause: 'Pause', m_seek: 'Position dans la vidéo', m_scene: 'Scène {n} sur {total}', scenes_n: '{n} scènes', m_full: 'Plein écran',
       m_edit: 'Modifier cette scène', m_add: 'Ajouter une scène après celle-ci', m_del: 'Supprimer cette scène', m_save: 'Enregistrer la scène', m_saved: 'Scène enregistrée comme votre modification',
       m_duration: 'Durée en secondes', m_auto: 'auto', m_transition: 'Transition', tr_fade: 'Fondu', tr_slide: 'Glissement', tr_zoom: 'Zoom', tr_wipe: 'Volet', tr_cut: 'Coupe',
@@ -817,7 +820,10 @@ LOADER_SCRIPT = r"""
       m_failed: 'Impossible de créer la vidéo', m_cancelled: 'Vidéo annulée', m_busy: 'Une vidéo est déjà en cours de création', m_none: 'Pas encore de scène', m_problems: 'Ce qui a été ajusté',
       mw_line: 'Ligne {line} : {what}', mw_duration: '« {value} » n’est pas une durée utilisable : {n} s est utilisé', mw_transition: '« {value} » n’est pas une transition : fondu', mw_effect: '« {value} » n’est pas un effet',
       mw_chart: 'le graphique n’a pas de nombres à tracer', mw_chart_type: '« {value} » n’est pas un type de graphique : barres', mw_scenes: 'seules les {n} premières scènes sont montrées', mw_total: 'la vidéo s’arrête à {n} secondes',
-      mw_items: 'seuls les {n} premiers sont montrés', mw_size: '« {value} » n’est pas un format : 16:9 est utilisé', mw_color: '« {value} » n’est pas une couleur', mw_image: 'une image d’un autre site n’est pas montrée', mw_long: 'la ligne est coupée à {n} caractères', exporting: 'Création de la présentation…',
+      mw_items: 'seuls les {n} premiers sont montrés', mw_size: '« {value} » n’est pas un format : 16:9 est utilisé', mw_color: '« {value} » n’est pas une couleur', mw_image: 'une image d’un autre site n’est pas montrée', mw_long: 'la ligne est coupée à {n} caractères',
+      mw_value: '« {value} » n’est pas une valeur connue ({what})', mw_music: 'la musique n’a pas pu être chargée', mw_music_site: 'la musique d’un autre site n’est pas jouée ; ajoutez plutôt un fichier', mw_voice: 'la narration n’est pas disponible : la synthèse vocale n’est pas configurée ou pas autorisée pour vous',
+      m_mute: 'Couper le son', m_unmute: 'Rétablir le son', m_music: 'Ajouter une musique depuis votre appareil', m_music_remove: 'Retirer la musique', m_music_adding: 'Ajout de la musique…', m_music_big: 'Les fichiers de musique peuvent faire jusqu’à 25 Mo', m_music_failed: 'Impossible d’ajouter la musique',
+      m_voice_on: 'Lire les sous-titres à voix haute', m_voice_off: 'Arrêter la narration', m_voice_wait: 'Préparation de la narration…', exporting: 'Création de la présentation…',
       blank_type: 'Type', blank_name: 'Titre', blank_create: 'Créer', blank_default: 'Mon artefact'
     }
   };
@@ -860,6 +866,10 @@ LOADER_SCRIPT = r"""
     pencil: 'm16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125',
     sparkle: 'M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09Z',
     pause: 'M15.75 5.25v13.5m-7.5-13.5v13.5',
+    sound: 'M19.114 5.636a9 9 0 0 1 0 12.728M16.463 8.288a5.25 5.25 0 0 1 0 7.424M6.75 8.25l4.72-4.72a.75.75 0 0 1 1.28.53v15.88a.75.75 0 0 1-1.28.53l-4.72-4.72H4.51c-.88 0-1.704-.507-1.938-1.354A9.009 9.009 0 0 1 2.25 12c0-.83.112-1.633.322-2.396C2.806 8.756 3.63 8.25 4.51 8.25H6.75Z',
+    mute: 'M17.25 9.75 19.5 12m0 0 2.25 2.25M19.5 12l2.25-2.25M19.5 12l-2.25 2.25m-10.5-6 4.72-4.72a.75.75 0 0 1 1.28.53v15.88a.75.75 0 0 1-1.28.53l-4.72-4.72H4.51c-.88 0-1.704-.507-1.938-1.354A9.009 9.009 0 0 1 2.25 12c0-.83.112-1.633.322-2.396C2.806 8.756 3.63 8.25 4.51 8.25H6.75Z',
+    music: 'm9 9 10.5-3m0 6.553v3.75a2.25 2.25 0 0 1-1.632 2.163l-1.32.377a1.803 1.803 0 1 1-.99-3.467l2.31-.66a2.25 2.25 0 0 0 1.632-2.163Zm0 0V2.25L9 5.25v10.303m0 0v3.75a2.25 2.25 0 0 1-1.632 2.163l-1.32.377a1.803 1.803 0 0 1-.99-3.467l2.31-.66A2.25 2.25 0 0 0 9 15.553Z',
+    voice: 'M12 18.75a6 6 0 0 0 6-6v-1.5m-6 7.5a6 6 0 0 1-6-6v-1.5m6 7.5v3.75m-3.75 0h7.5M12 15.75a3 3 0 0 1-3-3V4.5a3 3 0 1 1 6 0v8.25a3 3 0 0 1-3 3Z',
     motion: 'M3.375 19.5h17.25m-17.25 0a1.125 1.125 0 0 1-1.125-1.125M3.375 19.5h1.5C5.496 19.5 6 18.996 6 18.375m-3.75 0V5.625m0 12.75v-1.5c0-.621.504-1.125 1.125-1.125m18.375 2.625V5.625m0 12.75c0 .621-.504 1.125-1.125 1.125m1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125m0 3.75h-1.5A1.125 1.125 0 0 1 18 18.375M20.625 4.5H3.375m17.25 0c.621 0 1.125.504 1.125 1.125M20.625 4.5h-1.5C18.504 4.5 18 5.004 18 5.625m3.75 0v1.5c0 .621-.504 1.125-1.125 1.125M3.375 4.5c-.621 0-1.125.504-1.125 1.125M3.375 4.5h1.5C5.496 4.5 6 5.004 6 5.625m-3.75 0v1.5c0 .621.504 1.125 1.125 1.125m0 0h1.5m-1.5 0c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125m1.5-3.75C5.496 8.25 6 7.746 6 7.125v-1.5M4.875 8.25C5.496 8.25 6 8.754 6 9.375v1.5m0-5.25v5.25m0-5.25C6 5.004 6.504 4.5 7.125 4.5h9.75c.621 0 1.125.504 1.125 1.125m1.125 2.625h1.5m-1.5 0A1.125 1.125 0 0 1 18 7.125v-1.5m1.125 2.625c-.621 0-1.125.504-1.125 1.125v1.5m2.625-2.625c.621 0 1.125.504 1.125 1.125v1.5c0 .621-.504 1.125-1.125 1.125M18 5.625v5.25M7.125 12h9.75m-9.75 0A1.125 1.125 0 0 1 6 10.875M7.125 12C6.504 12 6 12.504 6 13.125m0-2.25C6 11.496 5.496 12 4.875 12M18 10.875c0 .621-.504 1.125-1.125 1.125M18 10.875c0 .621.504 1.125 1.125 1.125m-2.25 0c.621 0 1.125.504 1.125 1.125m-12 5.25v-5.25m0 5.25c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125m-12 0v-1.5c0-.621-.504-1.125-1.125-1.125M18 18.375v-5.25m0 5.25v-1.5c0-.621.504-1.125 1.125-1.125M18 13.125v1.5c0 .621.504 1.125 1.125 1.125M18 13.125c0-.621.504-1.125 1.125-1.125M6 13.125v1.5c0 .621-.504 1.125-1.125 1.125M6 13.125C6 12.504 5.496 12 4.875 12m-1.5 0h1.5m-1.5 0c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125M19.125 12h1.5m0 0c.621 0 1.125.504 1.125 1.125v1.5c0 .621-.504 1.125-1.125 1.125m-17.25 0h1.5m14.25 0h1.5',
     play: 'M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.347a1.125 1.125 0 0 1 0 1.972l-11.54 6.347a1.125 1.125 0 0 1-1.667-.986V5.653Z',
     warn: 'M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z',
@@ -3103,12 +3113,19 @@ try{mermaid.initialize({startOnLoad:false,securityLevel:'strict',htmlLabels:fals
   // line such as "--- 4s fade" and holds headings, text, bullets, a big number, a chart, steps, a picture and a
   // spoken caption. A line may end with {effect} or {effect at 1.5s} to choose how and when it comes in.
   const MOTION_SIZES = {'16:9': [1280, 720], '9:16': [720, 1280], '1:1': [1080, 1080], '4:3': [960, 720], '4:5': [864, 1080]};
-  const MOTION_TRANSITIONS = ['fade', 'slide', 'zoom', 'wipe', 'cut'];
-  const MOTION_EFFECTS = ['fade', 'up', 'down', 'left', 'right', 'zoom', 'pop', 'type', 'none'];
-  const MOTION_CHARTS = ['bar', 'line', 'area', 'pie'];
-  const MOTION_LIMITS = {scenes: 40, items: 12, bullets: 8, sceneMin: 0.5, sceneMax: 30, total: 180, chars: 300, rows: 24, series: 6, steps: 6};
+  const MOTION_TRANSITIONS = ['fade', 'slide', 'zoom', 'wipe', 'cut', 'flash', 'iris', 'rise', 'blur'];
+  // How a line comes in. The last six move its words or letters: kinetic type.
+  const MOTION_EFFECTS = ['fade', 'up', 'down', 'left', 'right', 'zoom', 'pop', 'type', 'none', 'words', 'letters', 'scramble', 'wave', 'blur', 'drop'];
+  const MOTION_CHARTS = ['bar', 'line', 'area', 'pie', 'donut', 'hbar', 'race'];
+  const MOTION_STYLES_LIST = ['minimal', 'bold', 'corporate', 'neon', 'paper', 'editorial', 'playful', 'chalk'];
+  const MOTION_CAMERAS = ['still', 'zoom-in', 'zoom-out', 'pan-left', 'pan-right', 'pan-up', 'pan-down', 'drift'];
+  const MOTION_PATTERNS = ['none', 'grid', 'dots', 'lines', 'waves', 'rings', 'blobs'];
+  const MOTION_PARTICLES = ['none', 'confetti', 'sparkles', 'snow', 'bokeh', 'bubbles'];
+  const MOTION_SHAPES = ['circle', 'square', 'ring', 'triangle', 'star', 'blob', 'line', 'dots', 'arrow', 'plus'];
+  const MOTION_PLACES = ['top-left', 'top', 'top-right', 'left', 'center', 'right', 'bottom-left', 'bottom', 'bottom-right'];
+  const MOTION_LIMITS = {scenes: 40, items: 12, bullets: 8, sceneMin: 0.5, sceneMax: 30, total: 180, chars: 300, rows: 24, series: 6, steps: 6, shapes: 6, frames: 12};
   const SCENE_RE = /^\s*-{3,}(?:\s+(.*?))?\s*$/;
-  const SETTING_RE = /^\s*(size|theme|accent|background|font|title)\s*:\s*(.*?)\s*$/i;
+  const SETTING_RE = /^\s*(size|theme|style|accent|background|font|title|logo|progress|captions|music|voice)\s*:\s*(.*?)\s*$/i;
   const COMMENT_RE = /^\s*(?:\/\/|%%|<!--.*-->\s*$)/;
   const colorOk = value => {
     if (!value || value.length > 60) return false;
@@ -3182,7 +3199,8 @@ try{mermaid.initialize({startOnLoad:false,securityLevel:'strict',htmlLabels:fals
     return {text, effect, at};
   }
   function motionScene(part, index, warn, base) {
-    const scene = {part: index, duration: null, transition: 'fade', items: [], say: '', background: '', layout: '', line: base};
+    const scene = {part: index, duration: null, transition: 'fade', items: [], say: '', background: '', layout: '', camera: '', pattern: '', particles: '', shapes: [], lower: null, line: base};
+    const choose = (list, value, line, what) => { const word = String(value || '').trim().toLowerCase(); if (list.includes(word)) return word; warn(line, 'mw_value', {what, value: String(value || '').trim()}); return ''; };
     // "--- 4s fade" sets the scene's length and how it arrives
     const head = SCENE_RE.exec(part.head || '');
     for (const word of (head?.[1] || '').split(/\s+/).filter(Boolean)) {
@@ -3205,6 +3223,65 @@ try{mermaid.initialize({startOnLoad:false,securityLevel:'strict',htmlLabels:fals
       if (key === 'background') { const value = directive[2].trim(); if (value.split(',').every(each => colorOk(each.trim()))) scene.background = value; else warn(line, 'mw_color', {value}); continue; }
       if (key === 'layout') { const word = directive[2].trim().toLowerCase(); if (['center', 'left', 'split'].includes(word)) scene.layout = word; continue; }
       if (key === 'say' || key === 'caption' || key === 'voice') { scene.say = motionLine(directive[2], warn, line).text; continue; }
+      if (key === 'camera') { scene.camera = choose(MOTION_CAMERAS, directive[2], line, 'camera'); continue; }
+      if (key === 'pattern') { scene.pattern = choose(MOTION_PATTERNS, directive[2], line, 'pattern'); continue; }
+      if (key === 'particles' || key === 'fx') { scene.particles = choose(MOTION_PARTICLES, directive[2], line, 'particles'); continue; }
+      if (key === 'lower' || key === 'lowerthird') { const [name, ...role] = motionLine(directive[2], warn, line).text.split('|'); scene.lower = {name: name.trim(), role: role.join('|').trim()}; continue; }
+      // "shape: circle #f59e0b top-right large {spin}": something drawn behind the scene, not part of its flow
+      if (key === 'shape') {
+        let text = directive[2].trim(), effect = '', motionWord = '';
+        const tail = /\s*\{([^{}]*)\}\s*$/.exec(text);
+        if (tail) { text = text.slice(0, tail.index); for (const w of tail[1].toLowerCase().split(/[\s,]+/).filter(Boolean)) { if (['spin', 'float', 'pulse', 'draw'].includes(w)) motionWord = w; else if (MOTION_EFFECTS.includes(w)) effect = w; else warn(line, 'mw_effect', {value: w}); } }
+        const shape = {kind: '', color: '', place: 'center', size: 'medium', motion: motionWord, effect, line};
+        for (const word of text.split(/\s+/).filter(Boolean)) {
+          const w = word.toLowerCase();
+          if (MOTION_SHAPES.includes(w)) shape.kind = w;
+          else if (MOTION_PLACES.includes(w)) shape.place = w;
+          else if (['small', 'medium', 'large', 'huge'].includes(w)) shape.size = w;
+          else if (colorOk(word)) shape.color = word;
+          else warn(line, 'mw_value', {what: 'shape', value: word});
+        }
+        if (!shape.kind) { if (!text.split(/\s+/).some(w => w && !MOTION_SHAPES.includes(w.toLowerCase()) && !MOTION_PLACES.includes(w.toLowerCase()) && !['small', 'medium', 'large', 'huge'].includes(w.toLowerCase()) && !colorOk(w))) warn(line, 'mw_value', {what: 'shape', value: text}); continue; }
+        if (scene.shapes.length >= MOTION_LIMITS.shapes) { warn(line, 'mw_items', {n: MOTION_LIMITS.shapes}); continue; }
+        scene.shapes.push(shape);
+        continue;
+      }
+      if (key === 'icon') { const {text, effect, at} = motionLine(directive[2], warn, line); const [name, ...label] = text.split('|'); add({kind: 'icon', name: name.trim(), label: label.join('|').trim(), effect, at}); continue; }
+      if (key === 'icons') {
+        const {text, effect, at} = motionLine(directive[2], warn, line);
+        const list = text.split(/\s*[,;]\s*/).filter(Boolean).map(each => { const [name, ...label] = each.trim().split(/\s+/); return {name, label: label.join(' ')}; });
+        if (list.length > MOTION_LIMITS.steps) warn(line, 'mw_items', {n: MOTION_LIMITS.steps});
+        if (list.length) add({kind: 'icons', list: list.slice(0, MOTION_LIMITS.steps), effect, at});
+        continue;
+      }
+      // "progress: 72% | Course completed" fills a bar; "ring:" a circle. "3/5" works as well as a percentage.
+      if (key === 'progress' || key === 'ring') {
+        const {text, effect, at} = motionLine(directive[2], warn, line);
+        const [value, ...label] = text.split('|');
+        const fraction = /^\s*(\d+(?:[.,]\d+)?)\s*\/\s*(\d+(?:[.,]\d+)?)/.exec(value), count = countOf(value);
+        let ratio = fraction ? parseFloat(fraction[1].replace(',', '.')) / (parseFloat(fraction[2].replace(',', '.')) || 1) : count ? count.value / 100 : null;
+        if (ratio == null) { warn(line, 'mw_value', {what: key, value: value.trim()}); continue; }
+        if (ratio < 0 || ratio > 1) { warn(line, 'mw_value', {what: key, value: value.trim()}); ratio = clamp(ratio, 0, 1); }
+        add({kind: key, value: value.trim(), label: label.join('|').trim(), ratio, count: fraction ? null : count, effect, at});
+        continue;
+      }
+      if (key === 'timeline') {
+        const {text, effect, at} = motionLine(directive[2], warn, line);
+        const marks = text.split(/\s*[;|]\s*/).filter(Boolean).map(each => { const [when, ...what] = each.trim().split(/\s+/); return {when, what: what.join(' ')}; });
+        if (marks.length > MOTION_LIMITS.steps) warn(line, 'mw_items', {n: MOTION_LIMITS.steps});
+        if (marks.length) add({kind: 'timeline', marks: marks.slice(0, MOTION_LIMITS.steps), effect, at});
+        continue;
+      }
+      // "compare: Before | After", then lines "- old way | new way"
+      if (key === 'compare' || key === 'versus' || key === 'vs') {
+        const {text, effect, at} = motionLine(directive[2], warn, line);
+        const [left, ...right] = text.split('|'); const rows = [];
+        while (i + 1 < lines.length && /^\s*[-*+•]\s+/.test(lines[i + 1]) && rows.length < MOTION_LIMITS.bullets) { const [a, ...b] = lines[++i].replace(/^\s*[-*+•]\s+/, '').split('|'); rows.push([a.trim(), b.join('|').trim()]); }
+        add({kind: 'compare', left: left.trim(), right: right.join('|').trim(), rows, effect, at});
+        continue;
+      }
+      if (key === 'quote') { const {text, effect, at} = motionLine(directive[2], warn, line); const [body, ...who] = text.split('|'); add({kind: 'quote', text: body.trim().replace(/^["“«]|["”»]$/g, ''), author: who.join('|').trim(), effect, at}); continue; }
+      if (key === 'badge' || key === 'tag') { const {text, effect, at} = motionLine(directive[2], warn, line); add({kind: 'badge', text, effect, at}); continue; }
       if (key === 'number' || key === 'big' || key === 'stat') {
         const {text, effect, at} = motionLine(directive[2], warn, line);
         const [value, ...label] = text.split('|');
@@ -3259,7 +3336,8 @@ try{mermaid.initialize({startOnLoad:false,securityLevel:'strict',htmlLabels:fals
   // A scene without a length gets one from what it holds, and long enough to read its caption
   function sceneLength(scene) {
     let need = 1.2;
-    for (const item of scene.items) need += {title: 0.9, subtitle: 0.6, bullet: 0.9, number: 1.8, chart: 2.6, steps: 0.7 * (item.steps?.length || 1), image: 1.2, callout: 0.4 + wordsIn(item.text) / 4}[item.kind] ?? 0.3 + wordsIn(item.text) / 4;
+    for (const item of scene.items) need += {title: 0.9, subtitle: 0.6, bullet: 0.9, number: 1.8, chart: item.type === 'race' ? 1.2 * (item.data?.series.length || 1) : 2.6, steps: 0.7 * (item.steps?.length || 1), image: 1.2, callout: 0.4 + wordsIn(item.text) / 4,
+      icon: 1, icons: 0.5 * (item.list?.length || 1), progress: 1.6, ring: 1.8, timeline: 0.7 * (item.marks?.length || 1), compare: 0.8 * (item.rows?.length || 1) + 0.6, quote: 1 + wordsIn(item.text) / 3.5, badge: 0.3}[item.kind] ?? 0.3 + wordsIn(item.text) / 4;
     need = Math.max(need, scene.say ? 1 + wordsIn(scene.say) / 2.6 : 0);
     return clamp(Math.round(need * 2) / 2, 2, 12);
   }
@@ -3267,7 +3345,8 @@ try{mermaid.initialize({startOnLoad:false,securityLevel:'strict',htmlLabels:fals
     const warnings = [];
     const warn = (line, key, vars = {}) => { if (warnings.length < 30) warnings.push({line, key, vars}); };
     const parts = motionParts(text);
-    const settings = {size: '16:9', w: 1280, h: 720, theme: 'light', accent: '', background: '', font: 'sans', title: ''};
+    const settings = {size: '16:9', w: 1280, h: 720, theme: 'light', style: '', accent: '', background: '', font: '', title: '', logo: '', progress: false, captions: 'karaoke', music: '', volume: 0.35, voice: false};
+    const yes = value => /^(on|yes|true|1)$/i.test(value);
     parts.prefix.forEach((line, i) => {
       const m = SETTING_RE.exec(line);
       if (!m) return;
@@ -3276,8 +3355,15 @@ try{mermaid.initialize({startOnLoad:false,securityLevel:'strict',htmlLabels:fals
       else if (key === 'theme') { const word = value.toLowerCase(); if (word === 'light' || word === 'dark') settings.theme = word; else if (colorOk(value)) settings.background = value; else warn(i + 1, 'mw_color', {value}); }
       else if (key === 'accent') { if (colorOk(value)) settings.accent = value; else warn(i + 1, 'mw_color', {value}); }
       else if (key === 'background') { if (value.split(',').every(each => colorOk(each.trim()))) settings.background = value; else warn(i + 1, 'mw_color', {value}); }
-      else if (key === 'font') { const word = value.toLowerCase(); settings.font = ['serif', 'mono', 'rounded'].includes(word) ? word : 'sans'; }
+      else if (key === 'font') { const word = value.toLowerCase(); settings.font = ['serif', 'mono', 'rounded', 'sans'].includes(word) ? word : (warn(i + 1, 'mw_value', {what: 'font', value}), ''); }
       else if (key === 'title') settings.title = value.slice(0, 120);
+      else if (key === 'style') { const word = value.toLowerCase(); if (MOTION_STYLES_LIST.includes(word)) settings.style = word; else warn(i + 1, 'mw_value', {what: 'style', value}); }
+      else if (key === 'logo') settings.logo = value.split('|')[0].trim();
+      else if (key === 'progress') settings.progress = yes(value);
+      else if (key === 'captions') { const word = value.toLowerCase(); if (['karaoke', 'plain', 'off'].includes(word)) settings.captions = word; else warn(i + 1, 'mw_value', {what: 'captions', value}); }
+      // "music: /api/v1/files/…/content | 0.3": a track from this site under the whole video, at that volume
+      else if (key === 'music') { const [src, level] = value.split('|').map(v => v.trim()); settings.music = src || ''; const v = parseFloat(String(level || '').replace('%', '')); if (Number.isFinite(v)) settings.volume = clamp(/%/.test(level) || v > 1 ? v / 100 : v, 0, 1); }
+      else if (key === 'voice') settings.voice = yes(value);
     });
     let line = parts.prefix.length + 1;
     const scenes = [];
@@ -3285,27 +3371,54 @@ try{mermaid.initialize({startOnLoad:false,securityLevel:'strict',htmlLabels:fals
       const base = part.head ? line : line - 1;
       const scene = motionScene(part, index, warn, base);
       line += (part.head ? 1 : 0) + part.lines.length;
-      if (!scene.items.length && !scene.say) return;
+      if (!scene.items.length && !scene.say && !scene.lower) return;
       scenes.push(scene);
     });
     if (scenes.length > MOTION_LIMITS.scenes) { warn(scenes[MOTION_LIMITS.scenes].line, 'mw_scenes', {n: MOTION_LIMITS.scenes}); scenes.length = MOTION_LIMITS.scenes; }
+    for (const scene of scenes) {
+      if (scene.duration != null && (scene.duration < MOTION_LIMITS.sceneMin || scene.duration > MOTION_LIMITS.sceneMax)) { warn(scene.line, 'mw_duration', {value: scene.duration + 's', n: clamp(scene.duration, MOTION_LIMITS.sceneMin, MOTION_LIMITS.sceneMax)}); }
+      scene.given = scene.duration == null ? sceneLength(scene) : clamp(scene.duration, MOTION_LIMITS.sceneMin, MOTION_LIMITS.sceneMax);
+    }
+    if (scenes[0]) scenes[0].transition = 'fade';
+    if (!settings.title) settings.title = scenes.flatMap(s => s.items).find(item => item.kind === 'title')?.text || '';
+    const model = {settings, w: settings.w, h: settings.h, scenes, total: 0, warnings};
+    timeScenes(model, warn);
+    return model;
+  }
+  // Where each scene starts. A scene lasts as long as it was given, or as long as its narration if that is longer,
+  // and the whole video stops at the limit.
+  function timeScenes(model, warn) {
     let start = 0;
+    const scenes = model.scenes;
     for (let i = 0; i < scenes.length; i++) {
       const scene = scenes[i];
-      if (scene.duration != null && (scene.duration < MOTION_LIMITS.sceneMin || scene.duration > MOTION_LIMITS.sceneMax)) { warn(scene.line, 'mw_duration', {value: scene.duration + 's', n: clamp(scene.duration, MOTION_LIMITS.sceneMin, MOTION_LIMITS.sceneMax)}); }
-      scene.duration = scene.duration == null ? sceneLength(scene) : clamp(scene.duration, MOTION_LIMITS.sceneMin, MOTION_LIMITS.sceneMax);
-      if (start + scene.duration > MOTION_LIMITS.total) { warn(scene.line, 'mw_total', {n: MOTION_LIMITS.total}); scene.duration = MOTION_LIMITS.total - start; if (scene.duration < MOTION_LIMITS.sceneMin) { scenes.length = i; break; } }
-      if (i === 0) scene.transition = 'fade';
+      scene.duration = Math.max(scene.given, scene.spoken ? Math.min(MOTION_LIMITS.sceneMax, scene.spoken + 0.6) : 0);
+      if (start + scene.duration > MOTION_LIMITS.total + 1e-9) {
+        if (warn && !model.warnings.some(w => w.key === 'mw_total')) warn(scene.line, 'mw_total', {n: MOTION_LIMITS.total});
+        scene.duration = MOTION_LIMITS.total - start;
+        if (scene.duration < MOTION_LIMITS.sceneMin) { scenes.length = i; break; }
+      }
       scene.start = start; start += scene.duration;
     }
-    if (!settings.title) settings.title = scenes.flatMap(s => s.items).find(item => item.kind === 'title')?.text || '';
-    return {settings, w: settings.w, h: settings.h, scenes, total: start, warnings};
+    model.total = start;
+    model.layouts?.clear();
   }
 
   /* ---- motion: drawing ---- */
   const MOTION_THEMES = {
     light: {bg: '#ffffff', text: '#111827', muted: '#4b5563', accent: '#2563eb', soft: 'rgba(17,24,39,0.06)', line: 'rgba(17,24,39,0.14)'},
     dark: {bg: '#0b1020', text: '#f3f4f6', muted: '#a3acb9', accent: '#60a5fa', soft: 'rgba(255,255,255,0.08)', line: 'rgba(255,255,255,0.18)'}
+  };
+  // Ready-made looks, in the spirit of design templates: colours, type, a background pattern and how titles arrive
+  const MOTION_STYLES = {
+    minimal: {...MOTION_THEMES.light},
+    bold: {bg: '#facc15', text: '#111111', muted: '#3f3f46', accent: '#111111', soft: 'rgba(0,0,0,0.08)', line: 'rgba(0,0,0,0.22)', titleWeight: 900, upper: true, effects: {title: 'drop'}},
+    corporate: {bg: '#ffffff', text: '#0f172a', muted: '#475569', accent: '#2563eb', soft: 'rgba(37,99,235,0.07)', line: 'rgba(15,23,42,0.1)', pattern: 'grid', bar: true},
+    neon: {bg: '#05010f, #1e0b3a', text: '#f5f3ff', muted: '#c4b5fd', accent: '#22d3ee', soft: 'rgba(34,211,238,0.12)', line: 'rgba(196,181,253,0.22)', glow: true, pattern: 'lines', titleWeight: 800, effects: {title: 'blur'}},
+    paper: {bg: '#f6f1e7', text: '#2b2118', muted: '#6b5b4b', accent: '#c2410c', soft: 'rgba(43,33,24,0.06)', line: 'rgba(43,33,24,0.14)', font: 'serif', pattern: 'dots'},
+    editorial: {bg: '#fafaf9', text: '#0c0a09', muted: '#57534e', accent: '#dc2626', soft: 'rgba(12,10,9,0.05)', line: 'rgba(12,10,9,0.15)', font: 'serif', bar: true, effects: {title: 'words'}},
+    playful: {bg: '#fff7ed', text: '#1e1b4b', muted: '#4c4980', accent: '#8b5cf6', soft: 'rgba(139,92,246,0.1)', line: 'rgba(30,27,75,0.14)', font: 'rounded', pattern: 'blobs', titleWeight: 800, effects: {title: 'pop', bullet: 'pop', icon: 'pop'}},
+    chalk: {bg: '#1d3b2f', text: '#f0fdf4', muted: '#bbf7d0', accent: '#fde047', soft: 'rgba(255,255,255,0.08)', line: 'rgba(255,255,255,0.18)', font: 'rounded', effects: {title: 'letters'}}
   };
   const MOTION_FONTS = {serif: 'Georgia, "Times New Roman", serif', mono: 'ui-monospace, SFMono-Regular, Menlo, Consolas, monospace', rounded: 'ui-rounded, "SF Pro Rounded", "Nunito", system-ui, sans-serif'};
   const easeOut = p => 1 - Math.pow(1 - clamp(p, 0, 1), 3);
@@ -3323,10 +3436,14 @@ try{mermaid.initialize({startOnLoad:false,securityLevel:'strict',htmlLabels:fals
   // The colours of a scene: its theme, or text that reads on the background it was given
   function lookOf(model, scene) {
     const s = model.settings, background = scene?.background || s.background;
-    let look = {...MOTION_THEMES[s.theme] || MOTION_THEMES.light};
-    if (background) { const first = background.split(',')[0].trim(); look = {...(lightness(rgbOf(first)) < 0.35 ? MOTION_THEMES.dark : MOTION_THEMES.light)}; look.bg = background; }
+    const style = MOTION_STYLES[s.style] || null;
+    let look = {...(style || MOTION_THEMES[s.theme] || MOTION_THEMES.light)};
+    // A background of its own: text and lines that read on it, keeping the style's type and pattern
+    if (background) { const first = background.split(',')[0].trim(); const base = lightness(rgbOf(first)) < 0.35 ? MOTION_THEMES.dark : MOTION_THEMES.light; look = {...look, text: base.text, muted: base.muted, soft: base.soft, line: base.line, accent: style ? look.accent : base.accent}; look.bg = background; }
     if (s.accent) look.accent = s.accent;
-    look.family = MOTION_FONTS[s.font] || model.family;
+    look.family = MOTION_FONTS[s.font || look.font] || model.family;
+    look.pattern = scene?.pattern || look.pattern || 'none';
+    look.onAccent = lightness(rgbOf(look.accent)) > 0.4 ? '#111111' : '#ffffff';
     return look;
   }
   const RTL_RE = /[֐-ࣿיִ-﷿ﹰ-﻿]/;
@@ -3375,23 +3492,26 @@ try{mermaid.initialize({startOnLoad:false,securityLevel:'strict',htmlLabels:fals
     push();
     return {lines, rtl: false};
   }
-  const STYLE = {title: [64, 700, 1.15], subtitle: [40, 600, 1.2], text: [30, 400, 1.35], bullet: [30, 400, 1.35], callout: [28, 500, 1.35], label: [28, 500, 1.3], say: [26, 500, 1.3]};
+  const STYLE = {title: [64, 700, 1.15], subtitle: [40, 600, 1.2], text: [30, 400, 1.35], bullet: [30, 400, 1.35], callout: [28, 500, 1.35], label: [28, 500, 1.3], say: [26, 500, 1.3], quote: [44, 500, 1.3], small: [22, 500, 1.3], head: [32, 700, 1.2]};
   // Where everything in a scene goes, worked out once for a size and kept
   function layoutScene(g, model, scene) {
     const key = scene.part + ':' + model.w + 'x' + model.h;
     model.layouts = model.layouts || new Map();
     if (model.layouts.has(key)) return model.layouts.get(key);
     const W = model.w, H = model.h, look = lookOf(model, scene), base = Math.min(W, H) / 720 * (W < H ? 1.05 : 1);
-    const marginX = W * 0.075, marginY = H * (scene.say ? 0.07 : 0.085), sayRoom = scene.say ? H * 0.14 : 0;
+    const captions = model.settings.captions !== 'off' && scene.say;
+    const marginX = W * 0.075, marginY = H * (captions ? 0.07 : 0.085), sayRoom = (captions ? H * 0.14 : 0) + (scene.lower ? H * 0.13 : 0);
     const pictures = scene.items.filter(item => item.kind === 'chart' || item.kind === 'image');
     const visual = pictures.length === 1 ? pictures[0] : null;
     const words = scene.items.filter(item => !pictures.includes(item) && item.kind !== 'title' && item.kind !== 'subtitle');
     const split = W > H * 1.2 && visual && words.length && scene.layout !== 'center' && scene.layout !== 'left' || scene.layout === 'split' && visual;
-    const center = scene.layout === 'center' || (!scene.layout && !pictures.length && scene.items.every(item => ['title', 'subtitle', 'number', 'text', 'steps'].includes(item.kind)) && scene.items.filter(item => item.kind === 'text').length <= 1);
+    const center = scene.layout === 'center' || (!scene.layout && !pictures.length && scene.items.every(item => ['title', 'subtitle', 'number', 'text', 'steps', 'icon', 'icons', 'ring', 'quote', 'badge', 'timeline', 'progress', 'compare'].includes(item.kind)) && scene.items.filter(item => item.kind === 'text').length <= 1);
     const textBlock = (item, width, scale) => {
-      const [size0, weight, lead] = STYLE[item.kind] || STYLE.text, size = size0 * base * scale;
+      const [size0, weight0, lead] = STYLE[item.kind] || STYLE.text, size = size0 * base * scale;
+      const weight = item.kind === 'title' ? look.titleWeight || weight0 : weight0;
+      const text = item.kind === 'title' && look.upper ? item.text.toLocaleUpperCase(lang) : item.text;
       const indent = item.kind === 'bullet' ? size * 1.1 : item.kind === 'callout' ? size * 1.2 : 0;
-      const wrapped = wrapText(g, item.text, look, size, weight, width - indent - (item.kind === 'callout' ? size * 0.9 : 0));
+      const wrapped = wrapText(g, text, look, size, weight, width - indent - (item.kind === 'callout' ? size * 0.9 : 0));
       const pad = item.kind === 'callout' ? size * 0.6 : 0;
       return {item, size, weight, lead, indent, pad, lines: wrapped.lines, rtl: wrapped.rtl, w: width, h: wrapped.lines.length * size * lead + pad * 2};
     };
@@ -3399,6 +3519,24 @@ try{mermaid.initialize({startOnLoad:false,securityLevel:'strict',htmlLabels:fals
       if (item.kind === 'number') { const size = 128 * base * scale; const label = item.label ? textBlock({kind: 'label', text: item.label}, width, scale) : null; return {item, size, label, w: width, h: size * 1.05 + (label ? label.h + size * 0.1 : 0)}; }
       if (item.kind === 'steps') { const vertical = W < H; const n = item.steps.length, gap = 28 * base; const boxW = vertical ? width * 0.8 : (width - gap * (n - 1)) / n; const size = clamp(28 * base * scale, 14, 40); const wraps = item.steps.map(s => wrapText(g, s, look, size, 600, boxW - size * 1.2)); const lines = Math.max(...wraps.map(w => w.lines.length)); const boxH = lines * size * 1.3 + size * 1.4; return {item, size, wraps, boxW, boxH, gap, vertical, w: width, h: vertical ? n * boxH + (n - 1) * gap * 1.4 : boxH}; }
       if (item.kind === 'chart' || item.kind === 'image') return {item, w: width, h: height || Math.min(H * 0.5, width * 0.62), caption: item.kind === 'image' && item.caption ? textBlock({kind: 'say', text: item.caption}, width, scale) : null};
+      if (item.kind === 'icon') { const size = 150 * base * scale; const label = item.label ? textBlock({kind: 'label', text: item.label}, width, scale) : null; return {item, size, label, w: width, h: size + (label ? label.h + 12 * base : 0)}; }
+      if (item.kind === 'icons') { const n = item.list.length, cell = Math.min(width / n, 240 * base), size = Math.min(96 * base * scale, cell * 0.62); const labels = item.list.map(each => each.label ? textBlock({kind: 'small', text: each.label}, cell - 8, scale) : null); return {item, size, cell, labels, w: cell * n, h: size + 14 * base + Math.max(0, ...labels.map(l => l?.h || 0))}; }
+      if (item.kind === 'progress') { const label = textBlock({kind: 'label', text: item.label || ' '}, width * 0.75, scale), bar = 26 * base * scale; return {item, label, bar, w: Math.min(width, 900 * base), h: label.h + 12 * base + bar}; }
+      if (item.kind === 'ring') { const size = Math.min(width, 250 * base * scale); const label = item.label ? textBlock({kind: 'label', text: item.label}, Math.max(size, width * 0.5), scale) : null; return {item, size, label, w: Math.max(size, label?.w || 0), h: size + (label ? label.h + 12 * base : 0)}; }
+      if (item.kind === 'timeline') {
+        const n = item.marks.length, vertical = W < H, cell = vertical ? width : width / n;
+        const whats = item.marks.map(m => textBlock({kind: 'small', text: m.what || ' '}, vertical ? width * 0.7 : cell - 12 * base, scale));
+        const dateSize = 30 * base * scale;
+        return {item, vertical, cell, whats, dateSize, w: width, h: vertical ? whats.reduce((sum, b) => sum + Math.max(b.h, dateSize * 1.2) + 18 * base, 0) : dateSize * 1.4 + 40 * base + Math.max(...whats.map(b => b.h))};
+      }
+      if (item.kind === 'compare') {
+        const col = (width - 40 * base) / 2, heads = [textBlock({kind: 'head', text: item.left || ' '}, col, scale), textBlock({kind: 'head', text: item.right || ' '}, col, scale)];
+        const rows = item.rows.map(([a, b2]) => [textBlock({kind: 'small', text: a || ' '}, col - 30 * base, scale), textBlock({kind: 'small', text: b2 || ' '}, col - 30 * base, scale)]);
+        const rowH = rows.map(([a, b2]) => Math.max(a.h, b2.h) + 12 * base);
+        return {item, col, heads, rows, rowH, w: width, h: Math.max(heads[0].h, heads[1].h) + 22 * base + rowH.reduce((sum, h) => sum + h, 0)};
+      }
+      if (item.kind === 'quote') { const body = textBlock({kind: 'quote', text: item.text}, width * 0.9, scale); const who = item.author ? textBlock({kind: 'label', text: '— ' + item.author}, width * 0.9, scale) : null; return {...body, item, who, w: width, h: body.h + 50 * base * scale + (who ? who.h + 10 * base : 0)}; }
+      if (item.kind === 'badge') { const size = 22 * base * scale; g.font = fontOf(look, size, 700); const w = g.measureText(item.text.toLocaleUpperCase(lang)).width + size * 1.6; return {item, size, w, h: size * 1.9}; }
       return textBlock(item, width, scale);
     };
     const gap = H * 0.035;
@@ -3427,7 +3565,7 @@ try{mermaid.initialize({startOnLoad:false,securityLevel:'strict',htmlLabels:fals
       if (totalH > room && scale > 0.52) continue;
       if (totalH > room) warnTight = true;
       let y = top + Math.max(0, (room - totalH) / 2);
-      for (const b of all) { b.x = center || b.item.kind === 'chart' || b.item.kind === 'image' ? (W - b.w) / 2 : marginX; b.y = y; y += b.h + (b.caption ? b.caption.h + 8 : 0) + gap; blocks.push(b); }
+      for (const b of all) { b.x = center || b.item.kind === 'chart' || b.item.kind === 'image' || b.item.kind === 'icons' ? (W - b.w) / 2 : marginX; b.y = y; y += b.h + (b.caption ? b.caption.h + 8 : 0) + gap; blocks.push(b); }
       placed = blocks; break;
     }
     if (!placed) placed = [];
@@ -3435,17 +3573,22 @@ try{mermaid.initialize({startOnLoad:false,securityLevel:'strict',htmlLabels:fals
     let at = 0.25;
     for (const b of placed) {
       const item = b.item, explicit = item.at != null;
-      const enter = item.kind === 'number' ? 1.3 : item.kind === 'chart' ? 1.4 : item.kind === 'steps' ? 0.45 * item.steps.length + 0.3 : item.effect === 'type' ? clamp([...(item.text || '')].length * 0.035, 0.5, 3) : 0.7;
+      b.effect = item.effect || look.effects?.[item.kind] || {title: 'up', subtitle: 'up', text: 'up', bullet: 'left', callout: 'fade', number: 'zoom', chart: 'fade', steps: 'pop', image: 'zoom', icon: 'pop', icons: 'pop', progress: 'fade', ring: 'zoom', timeline: 'fade', compare: 'fade', quote: 'words', badge: 'pop'}[item.kind] || 'fade';
+      const chars = [...(item.text || '')].length, words = wordsIn(item.text);
+      const enter = item.kind === 'number' ? 1.3 : item.kind === 'chart' ? (item.type === 'race' ? Math.max(1.5, scene.duration - 0.8) : 1.4) : item.kind === 'steps' ? 0.45 * item.steps.length + 0.3
+        : item.kind === 'icons' ? 0.35 * item.list.length + 0.4 : item.kind === 'progress' ? 1.3 : item.kind === 'ring' ? 1.5 : item.kind === 'timeline' ? 0.45 * item.marks.length + 0.5 : item.kind === 'compare' ? 0.35 * item.rows.length + 0.7
+        : b.effect === 'type' ? clamp(chars * 0.035, 0.5, 3) : b.effect === 'words' ? clamp(words * 0.16, 0.6, 3) : b.effect === 'letters' ? clamp(chars * 0.03, 0.6, 2.5) : b.effect === 'scramble' ? clamp(chars * 0.03, 0.8, 2) : b.effect === 'wave' ? 1.1 : 0.7;
       b.start = explicit ? item.at : at; b.enter = enter;
       if (!explicit) at += item.kind === 'title' ? 0.45 : item.kind === 'bullet' ? 0.4 : Math.min(enter, 0.9) * 0.6 + 0.2;
-      b.effect = item.effect || {title: 'up', subtitle: 'up', text: 'up', bullet: 'left', callout: 'fade', number: 'zoom', chart: 'fade', steps: 'pop', image: 'zoom'}[item.kind] || 'fade';
       b.center = center && !split;
     }
     // A scene too short for what it holds still shows everything: the entrances are squeezed into it
     const last = Math.max(0, ...placed.map(b => b.start + b.enter));
     const room = Math.max(0.4, scene.duration - 0.35);
     if (last > room) { const f = room / last; for (const b of placed) { b.start *= f; b.enter *= f; } }
-    const layout = {blocks: placed, look, sayRoom, tight: warnTight, say: scene.say ? {block: textBlock({kind: 'say', text: scene.say}, W * 0.8, 1), y: H - marginY * 0.6 - sayRoom * 0.5} : null};
+    const captionRoom = captions ? H * 0.14 : 0;
+    const layout = {blocks: placed, look, sayRoom, base, tight: warnTight, say: captions ? {block: textBlock({kind: 'say', text: scene.say}, W * 0.8, 1), y: H - marginY * 0.6 - captionRoom * 0.5} : null,
+      lower: scene.lower ? {name: textBlock({kind: 'head', text: scene.lower.name || ' '}, W * 0.5, 1), role: scene.lower.role ? textBlock({kind: 'small', text: scene.lower.role}, W * 0.5, 1) : null, y: H - marginY * 0.5 - captionRoom - H * 0.12} : null};
     model.layouts.set(key, layout);
     return layout;
   }
@@ -3457,7 +3600,39 @@ try{mermaid.initialize({startOnLoad:false,securityLevel:'strict',htmlLabels:fals
   }
   function roundRect(g, x, y, w, h, r) { g.beginPath(); if (g.roundRect) g.roundRect(x, y, w, h, r); else g.rect(x, y, w, h); }
   // Lines of text, with bold and highlighted words, right to left where the script is
-  function paintLines(g, b, look, x, y, width, align, reveal = Infinity, color = look.text) {
+  // Kinetic type: words or letters arrive one by one, scramble into place, or ride a wave
+  const SCRAMBLE = 'ABCDEFGHJKLMNPQRSTUVWXYZ0123456789#%&*+';
+  function paintKinetic(g, b, look, x, y, width, align, color, kind, p) {
+    const pieces = b.lines.flat(), total = kind === 'words' ? pieces.filter(pc => /\S/.test(pc.text)).length : pieces.reduce((n, pc) => n + [...pc.text].length, 0);
+    let k = 0;
+    b.lines.forEach((line, i) => {
+      const lineW = line.reduce((sum, piece) => sum + piece.w, 0);
+      const baseY = y + i * b.size * b.lead + b.size * (b.lead - 1) / 2 + b.size * 0.82;
+      let cx = align === 'center' ? x + (width - lineW) / 2 : x;
+      for (const piece of line) {
+        g.font = fontOf(look, b.size, piece.bold ? Math.max(b.weight, 700) : b.weight, piece.italic);
+        g.fillStyle = piece.mark ? look.accent : color;
+        if (kind === 'words') {
+          if (/\S/.test(piece.text)) {
+            const q = easeOut(clamp((p - 0.75 * k / Math.max(1, total)) / 0.25, 0, 1)); k++;
+            if (q > 0) { g.save(); g.globalAlpha *= q; g.fillText(piece.text, cx, baseY + (1 - q) * b.size * 0.45); g.restore(); }
+          }
+        } else {
+          let ox = cx;
+          for (const ch of piece.text) {
+            const w = g.measureText(ch).width, order = k / Math.max(1, total); k++;
+            if (kind === 'letters') { const q = clamp((p - 0.8 * order) / 0.2, 0, 1); if (q > 0) { g.save(); g.globalAlpha *= easeOut(q); g.fillText(ch, ox, baseY - (1 - easeBack(q)) * b.size * 0.6); g.restore(); } }
+            else if (kind === 'scramble') { const done = order < p * 1.15 - 0.15; const glyph = done || !/\S/.test(ch) ? ch : SCRAMBLE[(k * 7 + Math.floor(p * 40) * 13) % SCRAMBLE.length]; g.save(); if (!done) g.globalAlpha *= 0.55; g.fillText(glyph, ox, baseY); g.restore(); }
+            else { const lift = Math.sin(k * 0.55 - p * 12) * b.size * 0.22 * (1 - p); g.save(); g.globalAlpha *= clamp(p * 2 - order, 0, 1); g.fillText(ch, ox, baseY + lift); g.restore(); }
+            ox += w;
+          }
+        }
+        cx += piece.w;
+      }
+    });
+  }
+  function paintLines(g, b, look, x, y, width, align, reveal = Infinity, color = look.text, kinetic = null) {
+    if (kinetic && !b.rtl && kinetic.p < 1) { paintKinetic(g, b, look, x, y, width, align, color, kinetic.kind, kinetic.p); return; }
     let shownChars = 0;
     b.lines.forEach((line, i) => {
       const lineW = line.reduce((sum, piece) => sum + piece.w, 0);
@@ -3488,11 +3663,13 @@ try{mermaid.initialize({startOnLoad:false,securityLevel:'strict',htmlLabels:fals
     let top = y;
     if (item.title) { g.fillStyle = look.text; g.font = fontOf(look, size * 1.25, 700); g.fillText(item.title, x, y + size * 1.2); top += size * 2; }
     const legendH = data.series.length > 1 ? size * 1.8 : 0;
-    if (item.type === 'pie') {
+    if (item.type === 'race') { paintRace(g, b, look, p, top, size, colors); return; }
+    if (item.type === 'pie' || item.type === 'donut') {
       const values = data.series[0].values.map(v => Math.max(0, v)), sum = values.reduce((a, v) => a + v, 0) || 1;
       const r = Math.min(w * 0.3, (h - (top - y)) / 2 - size), cx = x + r + size, cy = top + (h - (top - y)) / 2;
       let angle = -Math.PI / 2; const end = -Math.PI / 2 + Math.PI * 2 * easeOut(p);
       values.forEach((v, i) => { const a = (v / sum) * Math.PI * 2, stop = Math.min(angle + a, end); if (stop > angle) { g.beginPath(); g.moveTo(cx, cy); g.arc(cx, cy, r, angle, stop); g.closePath(); g.fillStyle = colors[i % colors.length]; g.fill(); } angle += a; });
+      if (item.type === 'donut') { g.save(); g.globalCompositeOperation = 'destination-out'; g.beginPath(); g.arc(cx, cy, r * 0.58, 0, Math.PI * 2); g.fill(); g.restore(); g.fillStyle = look.text; g.font = fontOf(look, r * 0.3, 800); g.textAlign = 'center'; g.fillText(Math.round(sum).toLocaleString(lang), cx, cy + r * 0.1); g.textAlign = 'left'; }
       g.font = fontOf(look, size, 500);
       data.labels.slice(0, 10).forEach((label, i) => { const ly = cy - r + i * size * 1.6; g.globalAlpha = clamp(p * 2 - i * 0.1, 0, 1); g.fillStyle = colors[i % colors.length]; g.fillRect(cx + r + size * 2, ly, size, size); g.fillStyle = look.text; g.fillText(label + '  ' + Math.round(values[i] / sum * 100) + '%', cx + r + size * 3.5, ly + size * 0.9); });
       g.globalAlpha = 1;
@@ -3510,6 +3687,12 @@ try{mermaid.initialize({startOnLoad:false,securityLevel:'strict',htmlLabels:fals
     const n = data.labels.length, step = plotW / Math.max(1, n);
     data.labels.forEach((label, i) => { const text = label.length > 14 ? label.slice(0, 13) + '…' : label; g.fillText(text, L + step * i + step / 2, B + size * 1.3); });
     g.textAlign = 'left';
+    if (item.type === 'hbar') {
+      g.clearRect(0, 0, 0, 0);
+      const rowsN = data.labels.length, rowH = (h - (top - y) - legendH) / Math.max(1, rowsN), labelW = Math.min(w * 0.3, 220), max2 = Math.max(1e-9, ...data.series[0].values);
+      data.labels.forEach((label, i) => { const v = data.series[0].values[i], q = easeOut(clamp(p * 1.6 - i * 0.1, 0, 1)), yy = top + i * rowH, bw = (w - labelW - 70) * (v / max2) * q; g.fillStyle = look.text; g.font = fontOf(look, Math.min(size * 1.1, rowH * 0.45), 600); g.textAlign = 'right'; g.fillText(label.length > 18 ? label.slice(0, 17) + '…' : label, x + labelW - 10, yy + rowH * 0.62); g.textAlign = 'left'; g.fillStyle = colors[i % colors.length]; roundRect(g, x + labelW, yy + rowH * 0.18, Math.max(2, bw), rowH * 0.64, Math.min(8, rowH * 0.2)); g.fill(); g.fillStyle = look.muted; g.fillText(Math.round(v * q).toLocaleString(lang), x + labelW + bw + 10, yy + rowH * 0.62); });
+      return;
+    }
     if (item.type === 'bar') {
       const k = data.series.length, barW = step * 0.7 / k;
       data.series.forEach((s, si) => s.values.forEach((v, i) => {
@@ -3527,6 +3710,25 @@ try{mermaid.initialize({startOnLoad:false,securityLevel:'strict',htmlLabels:fals
       });
     }
     if (legendH) { let lx = L; g.font = fontOf(look, size * 0.95, 500); data.series.forEach((s, si) => { g.fillStyle = colors[si % colors.length]; g.fillRect(lx, y + h - legendH * 0.55, size * 0.8, size * 0.8); g.fillStyle = look.text; g.fillText(s.name, lx + size * 1.2, y + h - legendH * 0.55 + size * 0.75); lx += g.measureText(s.name).width + size * 2.6; }); }
+  }
+  // A bar chart race: each column is a moment (a year, a month); the bars grow, shrink and change places
+  function paintRace(g, b, look, p, top, size, colors) {
+    const data = b.item.data, frames = data.series, n = data.labels.length, x = b.x, w = b.w, h = b.h - (top - b.y);
+    const f = clamp(p, 0, 1) * Math.max(0, frames.length - 1), i0 = Math.floor(f), i1 = Math.min(frames.length - 1, i0 + 1), mix = f - i0, ease = mix * mix * (3 - 2 * mix);
+    const value = r => frames[i0].values[r] + (frames[i1].values[r] - frames[i0].values[r]) * ease;
+    const rankOf = frame => { const order = frames[frame].values.map((v, r) => [v, r]).sort((a, c) => c[0] - a[0]); const ranks = []; order.forEach(([, r], k) => { ranks[r] = k; }); return ranks; };
+    const r0 = rankOf(i0), r1 = rankOf(i1), shown = Math.min(n, 8), rowH = h / (shown + 0.6), max = Math.max(1e-9, ...Array.from({length: n}, (_, r) => value(r)));
+    const labelW = Math.min(w * 0.28, 200);
+    // The moment shown, large and faint behind the bars
+    const moment = frames[mix < 0.5 ? i0 : i1].name;
+    g.save(); g.fillStyle = look.text; g.globalAlpha *= 0.22; g.font = fontOf(look, Math.min(h * 0.3, 150), 800); g.textAlign = 'right'; g.fillText(moment, x + w, b.y + b.h - size * 0.5); g.restore();
+    for (let r = 0; r < n; r++) {
+      const rank = r0[r] + (r1[r] - r0[r]) * ease; if (rank > shown - 0.5) continue;
+      const yy = top + rank * rowH, v = value(r), bw = (w - labelW - 90) * (v / max);
+      g.fillStyle = look.text; g.font = fontOf(look, Math.min(size * 1.15, rowH * 0.42), 600); g.textAlign = 'right'; g.fillText(data.labels[r], x + labelW - 10, yy + rowH * 0.6); g.textAlign = 'left';
+      g.fillStyle = colors[r % colors.length]; roundRect(g, x + labelW, yy + rowH * 0.14, Math.max(2, bw), rowH * 0.7, Math.min(8, rowH * 0.2)); g.fill();
+      g.fillStyle = look.muted; g.fillText(Math.round(v).toLocaleString(lang), x + labelW + bw + 10, yy + rowH * 0.6);
+    }
   }
   function paintSteps(g, b, look, p) {
     const n = b.item.steps.length;
@@ -3562,13 +3764,222 @@ try{mermaid.initialize({startOnLoad:false,securityLevel:'strict',htmlLabels:fals
     g.restore();
     if (b.caption) paintLines(g, b.caption, look, x, y + h + 8, w, 'center', Infinity, look.muted);
   }
+
+  // Line icons drawn by the panel itself, and emoji for everything else, so any name gives a picture
+  const LINE_ICONS = {
+    check: 'M5 12.5l4.5 4.5L19 7', cross: 'M6 6l12 12M18 6L6 18', plus: 'M12 5v14M5 12h14', minus: 'M5 12h14',
+    arrow: 'M4 12h15M13 6l6 6-6 6', 'arrow-right': 'M4 12h15M13 6l6 6-6 6', 'arrow-left': 'M20 12H5M11 6l-6 6 6 6', 'arrow-up': 'M12 20V5M6 11l6-6 6 6', 'arrow-down': 'M12 4v15M6 13l6 6 6-6',
+    star: 'M12 3l2.8 5.7 6.2.9-4.5 4.4 1.1 6.2L12 17.3l-5.6 2.9 1.1-6.2L3 9.6l6.2-.9z',
+    heart: 'M12 20s-7.5-4.6-7.5-10.2A4.3 4.3 0 0 1 12 7.1a4.3 4.3 0 0 1 7.5 2.7C19.5 15.4 12 20 12 20z',
+    bolt: 'M13 2 4.5 13.5H11L10 22l8.5-11.5H12z', clock: 'M12 3a9 9 0 1 0 0 18a9 9 0 1 0 0-18M12 7v5l3.5 2',
+    calendar: 'M4 6h16v14H4zM4 10h16M8 3v5M16 3v5', user: 'M12 4a4 4 0 1 0 0 8a4 4 0 1 0 0-8M4.5 20c.8-3.6 3.9-6 7.5-6s6.7 2.4 7.5 6',
+    users: 'M9 5a3.5 3.5 0 1 0 0 7a3.5 3.5 0 1 0 0-7M2.5 19.5c.7-3 3.4-5 6.5-5s5.8 2 6.5 5M16 5.2a3.3 3.3 0 0 1 0 6.4M17.5 14.6c2.1.5 3.6 2.3 4 4.9',
+    globe: 'M12 3a9 9 0 1 0 0 18a9 9 0 1 0 0-18M3 12h18M12 3c2.5 2.5 3.8 5.5 3.8 9s-1.3 6.5-3.8 9M12 3C9.5 5.5 8.2 8.5 8.2 12s1.3 6.5 3.8 9',
+    idea: 'M9 18h6M10 21h4M12 3a6 6 0 0 0-3.6 10.8c.7.6 1.1 1.3 1.1 2.2h5c0-.9.4-1.6 1.1-2.2A6 6 0 0 0 12 3z',
+    lock: 'M6 11h12v10H6zM8.5 11V7.5a3.5 3.5 0 0 1 7 0V11', shield: 'M12 3l7.5 3v5.5c0 4.6-3.2 8.3-7.5 9.5-4.3-1.2-7.5-4.9-7.5-9.5V6z',
+    chart: 'M4 20h16M7 16v-6M12 16V5M17 16v-4', pie: 'M12 3a9 9 0 1 0 9 9h-9zM14.5 2.5v7h7a7 7 0 0 0-7-7z',
+    target: 'M12 3a9 9 0 1 0 0 18a9 9 0 1 0 0-18M12 7a5 5 0 1 0 0 10a5 5 0 1 0 0-10M12 11a1 1 0 1 0 0 2a1 1 0 1 0 0-2',
+    flag: 'M5 21V4M5 4h11l-2 4 2 4H5', mail: 'M3.5 6h17v12h-17zM4 7l8 6 8-6', home: 'M4 11l8-7 8 7M6 9.5V20h12V9.5M10 20v-5h4v5',
+    pin: 'M12 21s-6.5-6-6.5-11a6.5 6.5 0 0 1 13 0c0 5-6.5 11-6.5 11zM12 7.5a2.5 2.5 0 1 0 0 5a2.5 2.5 0 1 0 0-5',
+    book: 'M4 5.5C6.5 4 9.5 4 12 5.5v14c-2.5-1.5-5.5-1.5-8 0zM20 5.5c-2.5-1.5-5.5-1.5-8 0v14c2.5-1.5 5.5-1.5 8 0z',
+    graduation: 'M2.5 9.5 12 5l9.5 4.5L12 14zM6.5 11.5v4.5c3.5 2.5 7.5 2.5 11 0v-4.5M21.5 9.5v5',
+    leaf: 'M5 19c0-8 5-13 15-14-1 10-6 15-14 15M5 19c3-4 6-6 9-7',
+    sun: 'M12 8a4 4 0 1 0 0 8a4 4 0 1 0 0-8M12 2v2M12 20v2M2 12h2M20 12h2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4',
+    moon: 'M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z', chat: 'M4 5h16v11H9l-5 4z',
+    search: 'M10.5 4a6.5 6.5 0 1 0 0 13a6.5 6.5 0 1 0 0-13M15.5 15.5 20 20', info: 'M12 3a9 9 0 1 0 0 18a9 9 0 1 0 0-18M12 11v6M12 7.5v.5',
+    warning: 'M12 3.5 2.5 20h19zM12 10v4.5M12 17.5v.5',
+    money: 'M12 3a9 9 0 1 0 0 18a9 9 0 1 0 0-18M15 9c-.5-1.2-1.7-2-3-2-1.7 0-3 1-3 2.5S10.3 11.5 12 12s3 1 3 2.5-1.3 2.5-3 2.5c-1.3 0-2.5-.8-3-2M12 5.5V7M12 17v1.5',
+    trophy: 'M8 4h8v5a4 4 0 0 1-8 0zM8 6H5c0 3 1.5 4.5 3 4.5M16 6h3c0 3-1.5 4.5-3 4.5M12 13v4M8.5 20h7M10 17h4v3h-4z',
+    play: 'M8 5l11 7-11 7z', music: 'M9 18V6l11-2v12M9 18a2.5 2.5 0 1 1-5 0a2.5 2.5 0 1 1 5 0M20 16a2.5 2.5 0 1 1-5 0a2.5 2.5 0 1 1 5 0',
+    laptop: 'M5 6h14v9H5zM3 18h18', phone: 'M8 3h8v18H8zM11 18h2',
+    gear: 'M12 9a3 3 0 1 0 0 6a3 3 0 1 0 0-6M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5.3 5.3l2.1 2.1M16.6 16.6l2.1 2.1M5.3 18.7l2.1-2.1M16.6 7.4l2.1-2.1',
+    rocket: 'M12 3c3 2 4.5 5.5 4.5 9.5L14 16h-4l-2.5-3.5C7.5 8.5 9 5 12 3zM12 8.5a1.5 1.5 0 1 0 0 3a1.5 1.5 0 1 0 0-3M8 14l-3 3 1 2 3-1M16 14l3 3-1 2-3-1M10.5 18.5 12 21l1.5-2.5',
+    flask: 'M9 3h6M10 3v6L4.5 19a1.5 1.5 0 0 0 1.3 2h12.4a1.5 1.5 0 0 0 1.3-2L14 9V3M7.5 14h9', cloud: 'M7 18h10a4 4 0 0 0 .5-8 5.5 5.5 0 0 0-10.6 1.3A3.4 3.4 0 0 0 7 18z',
+    download: 'M12 4v11M7 10l5 5 5-5M5 20h14', upload: 'M12 20V9M7 14l5-5 5 5M5 4h14'
+  };
+  const ICON_ALIASES = {tick: 'check', done: 'check', yes: 'check', no: 'cross', close: 'cross', x: 'cross', next: 'arrow', lightbulb: 'idea', bulb: 'idea', person: 'user', people: 'users', team: 'users', world: 'globe', earth: 'globe', web: 'globe', security: 'shield', safe: 'shield', graph: 'chart', stats: 'chart', bars: 'chart', goal: 'target', email: 'mail', house: 'home', location: 'pin', map: 'pin', cap: 'graduation', school: 'graduation', study: 'book', learn: 'book', nature: 'leaf', eco: 'leaf', time: 'clock', date: 'calendar', message: 'chat', talk: 'chat', settings: 'gear', launch: 'rocket', science: 'flask', lab: 'flask', price: 'money', cost: 'money', coin: 'money', award: 'trophy', win: 'trophy', video: 'play', song: 'music', computer: 'laptop', mobile: 'phone', alert: 'warning', energy: 'bolt', fast: 'bolt', love: 'heart', like: 'heart', favourite: 'star', favorite: 'star'};
+  const EMOJI = {fire: '🔥', party: '🎉', brain: '🧠', robot: '🤖', ai: '🤖', books: '📚', pencil: '✏️', microscope: '🔬', dna: '🧬', coffee: '☕', handshake: '🤝', medal: '🏅', crown: '👑', gift: '🎁', camera: '📷', film: '🎬', palette: '🎨', art: '🎨', plant: '🌱', tree: '🌳', water: '💧', recycle: '♻️', car: '🚗', bus: '🚌', plane: '✈️', train: '🚆', bike: '🚲', apple: '🍎', food: '🍽️', pizza: '🍕', sparkles: '✨', thumbsup: '👍', clap: '👏', wave: '👋', smile: '😊', question: '❓', hourglass: '⏳', battery: '🔋', wifi: '📶', key: '🔑', bell: '🔔', megaphone: '📣', news: '📰', hospital: '🏥', pill: '💊', health: '🩺', atom: '⚛️', teacher: '🧑‍🏫', student: '🧑‍🎓', building: '🏢', city: '🏙️', growth: '📈', decline: '📉', puzzle: '🧩', dart: '🎯', calculator: '🧮', ruler: '📐', magnet: '🧲', telescope: '🔭', satellite: '🛰️', mountain: '⛰️', ocean: '🌊', rain: '🌧️', snow: '❄️', thermometer: '🌡️', clipboard: '📋', folder: '📁', paperclip: '📎', scissors: '✂️', hammer: '🔨', wrench: '🔧', link: '🔗', eye: '👁️', ear: '👂', hand: '✋', muscle: '💪', baby: '👶', family: '👪', dog: '🐶', cat: '🐱', bird: '🐦', fish: '🐟', bee: '🐝', butterfly: '🦋', flower: '🌸', rainbow: '🌈', soccer: '⚽', basketball: '🏀', guitar: '🎸', piano: '🎹', ticket: '🎟️', newspaper: '🗞️', bank: '🏦', cart: '🛒', bag: '🛍️', package: '📦', truck: '🚚', factory: '🏭', solar: '☀️', wind: '🌬️', ok: '👌'};
+  const iconPaths = new Map();
+  function paintIcon(g, name, cx, cy, size, look) {
+    const raw = String(name || '').trim(), key = raw.toLowerCase(), line = LINE_ICONS[key] || LINE_ICONS[ICON_ALIASES[key]];
+    if (line) {
+      if (!iconPaths.has(line)) { try { iconPaths.set(line, new Path2D(line)); } catch { iconPaths.set(line, null); } }
+      const path = iconPaths.get(line);
+      if (path) { g.save(); g.translate(cx - size / 2, cy - size / 2); g.scale(size / 24, size / 24); g.strokeStyle = look.accent; g.lineWidth = 1.7; g.lineCap = 'round'; g.lineJoin = 'round'; g.stroke(path); g.restore(); return; }
+    }
+    const glyph = EMOJI[key] || (/\p{Extended_Pictographic}/u.test(raw) ? raw : '');
+    g.save(); g.textAlign = 'center'; g.textBaseline = 'middle';
+    if (glyph) { g.font = Math.round(size * 0.86) + 'px "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif'; g.fillText(glyph, cx, cy + size * 0.04); }
+    else { g.fillStyle = look.soft; g.beginPath(); g.arc(cx, cy, size / 2, 0, Math.PI * 2); g.fill(); g.fillStyle = look.accent; g.font = fontOf(look, size * 0.46, 800); g.fillText((raw[0] || '?').toLocaleUpperCase(lang), cx, cy + size * 0.02); }
+    g.restore();
+  }
+
+  // ---- the new blocks
+  function paintIconBlock(g, b, look, p) {
+    if (b.item.kind === 'icon') {
+      paintIcon(g, b.item.name, b.center ? b.x + b.w / 2 : b.x + b.size / 2, b.y + b.size / 2, b.size, look);
+      if (b.label) paintLines(g, b.label, look, b.center ? b.x : b.x, b.y + b.size + 12 * (b.label.size / 28), b.center ? b.w : b.label.w, b.center ? 'center' : 'left', Infinity, look.text);
+      return;
+    }
+    const n = b.item.list.length;
+    b.item.list.forEach((each, i) => {
+      const q = clamp((p * (n * 0.35 + 0.4) - i * 0.35) / 0.4, 0, 1); if (q <= 0) return;
+      const cx = b.x + b.cell * i + b.cell / 2, s = b.item.effect === 'fade' ? 1 : easeBack(q);
+      g.save(); g.globalAlpha *= easeOut(q); g.translate(cx, b.y + b.size / 2); g.scale(s, s); g.translate(-cx, -(b.y + b.size / 2));
+      paintIcon(g, each.name, cx, b.y + b.size / 2, b.size, look); g.restore();
+      if (b.labels[i]) { g.save(); g.globalAlpha *= easeOut(q); paintLines(g, b.labels[i], look, b.x + b.cell * i + 4, b.y + b.size + 14 * (b.labels[i].size / 22), b.cell - 8, 'center', Infinity, look.text); g.restore(); }
+    });
+  }
+  function paintProgress(g, b, look, p) {
+    const item = b.item, e = easeOut(p), x = b.x, w = b.w, y = b.y;
+    paintLines(g, b.label, look, x, y, w * 0.75, 'left', Infinity, look.text);
+    g.font = fontOf(look, b.label.size, 700); g.fillStyle = look.accent; g.textAlign = 'right';
+    g.fillText(item.count ? countText(item.count, item.count.value * e) : item.value, x + w, y + b.label.size * 1.05); g.textAlign = 'left';
+    const by = y + b.label.h + 12 * (b.bar / 26);
+    g.fillStyle = look.soft; roundRect(g, x, by, w, b.bar, b.bar / 2); g.fill();
+    if (item.ratio * e > 0) { g.fillStyle = look.accent; roundRect(g, x, by, Math.max(b.bar, w * item.ratio * e), b.bar, b.bar / 2); g.fill(); }
+  }
+  function paintRing(g, b, look, p) {
+    const item = b.item, e = easeOut(p), cx = b.x + b.w / 2, r = b.size / 2 - b.size * 0.06, cy = b.y + b.size / 2, thick = b.size * 0.09;
+    g.lineWidth = thick; g.lineCap = 'round';
+    g.strokeStyle = look.soft; g.beginPath(); g.arc(cx, cy, r, 0, Math.PI * 2); g.stroke();
+    g.strokeStyle = look.accent; g.beginPath(); g.arc(cx, cy, r, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * item.ratio * e); if (item.ratio * e > 0.001) g.stroke();
+    g.font = fontOf(look, b.size * 0.24, 800); g.fillStyle = look.text; g.textAlign = 'center'; g.textBaseline = 'middle';
+    g.fillText(item.count ? countText(item.count, item.count.value * e) : item.value, cx, cy); g.textAlign = 'left'; g.textBaseline = 'alphabetic';
+    if (b.label) paintLines(g, b.label, look, b.x + (b.w - b.label.w) / 2, b.y + b.size + 12 * (b.label.size / 28), b.label.w, 'center', Infinity, look.muted);
+  }
+  function paintTimeline(g, b, look, p) {
+    const marks = b.item.marks, n = marks.length, total = n * 0.45 + 0.5;
+    g.strokeStyle = look.line; g.lineWidth = 3; g.lineCap = 'round';
+    if (b.vertical) {
+      let y = b.y; const x = b.x + b.dateSize * 2.6;
+      g.beginPath(); g.moveTo(x, b.y); g.lineTo(x, b.y + (b.h) * easeOut(clamp(p * total / (total - 0.2), 0, 1))); g.stroke();
+      marks.forEach((m, i) => {
+        const q = clamp((p * total - 0.3 - i * 0.45) / 0.4, 0, 1), rowH = Math.max(b.whats[i].h, b.dateSize * 1.2) + 18 * (b.dateSize / 30);
+        if (q > 0) { g.save(); g.globalAlpha *= easeOut(q); g.fillStyle = look.accent; g.beginPath(); g.arc(x, y + b.dateSize * 0.6, b.dateSize * 0.3 * easeBack(q), 0, Math.PI * 2); g.fill(); g.font = fontOf(look, b.dateSize, 800); g.textAlign = 'right'; g.fillText(m.when, x - b.dateSize * 0.7, y + b.dateSize * 0.9); g.textAlign = 'left'; paintLines(g, b.whats[i], look, x + b.dateSize * 0.8, y, b.w * 0.6, 'left', Infinity, look.text); g.restore(); }
+        y += rowH;
+      });
+      return;
+    }
+    const lineY = b.y + b.dateSize * 1.4 + 12;
+    g.beginPath(); g.moveTo(b.x, lineY); g.lineTo(b.x + b.w * easeOut(clamp(p * total / (total - 0.2), 0, 1)), lineY); g.stroke();
+    marks.forEach((m, i) => {
+      const q = clamp((p * total - 0.3 - i * 0.45) / 0.4, 0, 1); if (q <= 0) return;
+      const cx = b.x + b.cell * i + b.cell / 2;
+      g.save(); g.globalAlpha *= easeOut(q);
+      g.fillStyle = look.accent; g.beginPath(); g.arc(cx, lineY, b.dateSize * 0.32 * easeBack(q), 0, Math.PI * 2); g.fill();
+      g.font = fontOf(look, b.dateSize, 800); g.textAlign = 'center'; g.fillText(m.when, cx, b.y + b.dateSize); g.textAlign = 'left';
+      paintLines(g, b.whats[i], look, b.x + b.cell * i + 6, lineY + 22, b.cell - 12, 'center', Infinity, look.text);
+      g.restore();
+    });
+  }
+  function paintCompare(g, b, look, p) {
+    const total = b.rows.length * 0.35 + 0.7, gapX = (b.w - b.col * 2), headH = Math.max(b.heads[0].h, b.heads[1].h);
+    [0, 1].forEach(side => {
+      const q = easeOut(clamp(p * total / 0.6, 0, 1)), x = b.x + side * (b.col + gapX), shift = (1 - q) * 40 * (side ? 1 : -1);
+      g.save(); g.globalAlpha *= q; g.translate(shift, 0);
+      g.fillStyle = side ? look.accent : look.soft; g.globalAlpha *= side ? 0.12 : 1; roundRect(g, x, b.y, b.col, b.h, 18); g.fill(); g.globalAlpha /= side ? 0.12 : 1;
+      paintLines(g, b.heads[side], look, x + 20, b.y + 14, b.col - 40, 'left', Infinity, side ? look.accent : look.text);
+      let y = b.y + headH + 22;
+      b.rows.forEach((row, r) => {
+        const rq = clamp((p * total - 0.6 - r * 0.35) / 0.35, 0, 1);
+        if (rq > 0) { g.save(); g.globalAlpha *= easeOut(rq); g.strokeStyle = side ? look.accent : look.muted; g.lineWidth = 2.5; g.lineCap = 'round'; const iy = y + row[side].size * 0.75, ix = x + 26; g.beginPath(); if (side) { g.moveTo(ix - 7, iy); g.lineTo(ix - 2, iy + 5); g.lineTo(ix + 7, iy - 6); } else { g.moveTo(ix - 6, iy - 6); g.lineTo(ix + 6, iy + 6); g.moveTo(ix + 6, iy - 6); g.lineTo(ix - 6, iy + 6); } g.stroke(); paintLines(g, row[side], look, x + 46, y, b.col - 66, 'left', Infinity, look.text); g.restore(); }
+        y += b.rowH[r];
+      });
+      g.restore();
+    });
+  }
+  function paintQuote(g, b, look, p, kinetic) {
+    const markSize = 90 * (b.size / 44);
+    g.save(); g.globalAlpha *= easeOut(clamp(p * 3, 0, 1)); g.fillStyle = look.accent; g.font = fontOf(look, markSize, 800); g.textAlign = b.center ? 'center' : 'left'; g.fillText('“', b.center ? b.x + b.w / 2 : b.x, b.y + markSize * 0.7); g.restore();
+    const top = b.y + markSize * 0.55;
+    paintLines(g, b, look, b.x + (b.center ? b.w * 0.05 : 0), top, b.w * 0.9, b.center ? 'center' : 'left', Infinity, look.text, kinetic);
+    if (b.who) { g.save(); g.globalAlpha *= clamp(p * 2 - 1, 0, 1); paintLines(g, b.who, look, b.x + (b.center ? b.w * 0.05 : 0), top + b.lines.length * b.size * b.lead + 10, b.w * 0.9, b.center ? 'center' : 'left', Infinity, look.muted); g.restore(); }
+  }
+  function paintBadge(g, b, look) {
+    const x = b.center ? b.x + (b.w0 ? 0 : 0) : b.x;
+    g.fillStyle = look.accent; roundRect(g, x, b.y, b.w, b.h, b.h / 2); g.fill();
+    g.fillStyle = look.onAccent; g.font = fontOf(look, b.size, 700); g.textAlign = 'center'; g.fillText(b.item.text.toLocaleUpperCase(lang), x + b.w / 2, b.y + b.h * 0.66); g.textAlign = 'left';
+  }
+
+  // ---- what sits behind and over a scene: patterns, shapes, particles
+  function seeded(seed) { let a = seed >>> 0; return () => { a = (a + 0x6D2B79F5) >>> 0; let t = Math.imul(a ^ (a >>> 15), 1 | a); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
+  function paintPattern(g, look, kind, W, H, t, base) {
+    if (!kind || kind === 'none') return;
+    g.save(); g.strokeStyle = look.line; g.fillStyle = look.line; g.lineWidth = 1;
+    const step = 64 * base, drift = (t * 8 * base) % step;
+    if (kind === 'grid') { g.globalAlpha *= 0.7; g.beginPath(); for (let x = -step + drift; x < W + step; x += step) { g.moveTo(x, 0); g.lineTo(x, H); } for (let y = -step + drift; y < H + step; y += step) { g.moveTo(0, y); g.lineTo(W, y); } g.stroke(); }
+    else if (kind === 'dots') { g.globalAlpha *= 0.9; const d = 36 * base; for (let x = d / 2 + drift % d; x < W; x += d) for (let y = d / 2; y < H; y += d) { g.beginPath(); g.arc(x, y, 1.6 * base, 0, Math.PI * 2); g.fill(); } }
+    else if (kind === 'lines') { g.globalAlpha *= 0.6; const d = 40 * base; g.beginPath(); for (let x = -H + (t * 20 * base) % d; x < W; x += d) { g.moveTo(x, H); g.lineTo(x + H, 0); } g.stroke(); }
+    else if (kind === 'waves') { g.globalAlpha *= 0.8; g.lineWidth = 2; for (let k = 0; k < 5; k++) { g.beginPath(); for (let x = 0; x <= W; x += 12) { const y = H * (0.55 + k * 0.09) + Math.sin(x / (W / 4) + t * 0.9 + k) * 18 * base; x ? g.lineTo(x, y) : g.moveTo(x, y); } g.stroke(); } }
+    else if (kind === 'rings') { g.globalAlpha *= 0.7; g.lineWidth = 1.5; const max = Math.hypot(W, H); for (let r = (t * 30 * base) % (80 * base); r < max; r += 80 * base) { g.beginPath(); g.arc(W, H, r, 0, Math.PI * 2); g.stroke(); } }
+    else if (kind === 'blobs') { g.fillStyle = look.accent; for (let k = 0; k < 3; k++) { const x = W * (0.2 + 0.3 * k) + Math.sin(t * 0.4 + k * 2) * W * 0.05, y = H * (k % 2 ? 0.8 : 0.2) + Math.cos(t * 0.35 + k) * H * 0.05, r = Math.min(W, H) * (0.22 + 0.06 * k); const grad = g.createRadialGradient(x, y, 0, x, y, r); grad.addColorStop(0, look.accent); grad.addColorStop(1, 'rgba(0,0,0,0)'); g.globalAlpha = 0.16; g.fillStyle = grad; g.beginPath(); g.arc(x, y, r, 0, Math.PI * 2); g.fill(); } }
+    g.restore();
+  }
+  const PLACE = {'top-left': [0.13, 0.17], top: [0.5, 0.12], 'top-right': [0.87, 0.17], left: [0.1, 0.5], center: [0.5, 0.5], right: [0.9, 0.5], 'bottom-left': [0.13, 0.83], bottom: [0.5, 0.88], 'bottom-right': [0.87, 0.83]};
+  function paintShapes(g, scene, look, W, H, local, base) {
+    scene.shapes.forEach((shape, i) => {
+      const q = easeOut(clamp((local - 0.05 - i * 0.12) / 0.6, 0, 1)); if (q <= 0) return;
+      const [fx, fy] = PLACE[shape.place] || PLACE.center, size = {small: 60, medium: 120, large: 230, huge: 400}[shape.size] * base;
+      const big = shape.size === 'large' || shape.size === 'huge';
+      let x = W * fx, y = H * fy, s = shape.effect === 'pop' || !shape.effect ? easeBack(q) : 1, angle = 0;
+      if (shape.motion === 'spin') angle = local * 0.7; if (shape.motion === 'float') y += Math.sin(local * 1.6 + i) * 12 * base; if (shape.motion === 'pulse') s *= 1 + Math.sin(local * 3) * 0.06;
+      const draw = shape.motion === 'draw' ? q : 1;
+      g.save(); g.globalAlpha *= (big ? 0.22 : 0.85) * (shape.effect === 'fade' ? q : Math.min(1, q * 1.5)); g.translate(x, y); g.rotate(angle); g.scale(s, s);
+      const color = shape.color || look.accent, r = size / 2; g.fillStyle = color; g.strokeStyle = color; g.lineWidth = Math.max(3, size * 0.06); g.lineCap = 'round';
+      g.beginPath();
+      if (shape.kind === 'circle') { g.arc(0, 0, r, 0, Math.PI * 2 * draw); draw < 1 ? g.stroke() : g.fill(); }
+      else if (shape.kind === 'ring') { g.arc(0, 0, r * 0.85, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * draw); g.stroke(); }
+      else if (shape.kind === 'square') { roundRect(g, -r, -r, size, size, size * 0.12); g.fill(); }
+      else if (shape.kind === 'triangle') { g.moveTo(0, -r); g.lineTo(r * 0.95, r * 0.75); g.lineTo(-r * 0.95, r * 0.75); g.closePath(); g.fill(); }
+      else if (shape.kind === 'star') { for (let k = 0; k < 10; k++) { const a = -Math.PI / 2 + k * Math.PI / 5, rr = k % 2 ? r * 0.45 : r; g.lineTo(Math.cos(a) * rr, Math.sin(a) * rr); } g.closePath(); g.fill(); }
+      else if (shape.kind === 'blob') { for (let k = 0; k <= 24; k++) { const a = k / 24 * Math.PI * 2, rr = r * (0.82 + 0.18 * Math.sin(a * 3 + local * 1.2 + i)); g.lineTo(Math.cos(a) * rr, Math.sin(a) * rr); } g.closePath(); g.fill(); }
+      else if (shape.kind === 'line') { g.moveTo(-r, 0); g.lineTo(-r + size * draw, 0); g.stroke(); }
+      else if (shape.kind === 'arrow') { g.moveTo(-r, 0); g.lineTo(-r + size * draw, 0); g.stroke(); if (draw >= 1) { g.beginPath(); g.moveTo(r - size * 0.2, -size * 0.18); g.lineTo(r, 0); g.lineTo(r - size * 0.2, size * 0.18); g.stroke(); } }
+      else if (shape.kind === 'plus') { g.moveTo(-r * 0.7, 0); g.lineTo(r * 0.7, 0); g.moveTo(0, -r * 0.7); g.lineTo(0, r * 0.7); g.stroke(); }
+      else if (shape.kind === 'dots') { for (let a = 0; a < 4; a++) for (let c = 0; c < 4; c++) { g.moveTo(-r + c * size / 3 + 4, -r + a * size / 3); g.arc(-r + c * size / 3, -r + a * size / 3, size * 0.035, 0, Math.PI * 2); } g.fill(); }
+      g.restore();
+    });
+  }
+  const PARTICLE_COLORS = ['#f43f5e', '#f59e0b', '#22c55e', '#3b82f6', '#a855f7', '#ec4899', '#14b8a6'];
+  function paintParticles(g, kind, look, W, H, local, seed, base) {
+    if (!kind || kind === 'none') return;
+    const rand = seeded(seed * 7919 + 17), count = {confetti: 70, sparkles: 36, snow: 80, bokeh: 16, bubbles: 24}[kind] || 0;
+    g.save();
+    for (let i = 0; i < count; i++) {
+      const x0 = rand() * W, y0 = rand() * H, speed = 0.6 + rand() * 0.8, phase = rand() * Math.PI * 2, size = rand();
+      if (kind === 'confetti') { const y = (y0 + local * H * 0.35 * speed) % (H + 40) - 20, x = x0 + Math.sin(local * 2 + phase) * 30 * base; g.save(); g.translate(x, y); g.rotate(local * 3 * speed + phase); g.fillStyle = PARTICLE_COLORS[i % PARTICLE_COLORS.length]; g.globalAlpha = clamp(local * 2, 0, 1) * 0.9; g.fillRect(-5 * base, -3 * base, 10 * base, 6 * base); g.restore(); }
+      else if (kind === 'sparkles') { const a = Math.max(0, Math.sin(local * 3 * speed + phase)); if (a <= 0.05) continue; const r = (4 + size * 8) * base * a; g.save(); g.translate(x0, y0); g.globalAlpha = a * 0.9; g.fillStyle = look.accent; g.beginPath(); for (let k = 0; k < 8; k++) { const ang = k * Math.PI / 4, rr = k % 2 ? r * 0.25 : r; g.lineTo(Math.cos(ang) * rr, Math.sin(ang) * rr); } g.closePath(); g.fill(); g.restore(); }
+      else if (kind === 'snow') { const y = (y0 + local * H * 0.12 * speed) % (H + 10), x = x0 + Math.sin(local + phase) * 20 * base; g.globalAlpha = 0.85; g.fillStyle = '#ffffff'; g.beginPath(); g.arc(x, y, (1.5 + size * 3) * base, 0, Math.PI * 2); g.fill(); }
+      else if (kind === 'bokeh') { const y = (y0 - local * 25 * speed * base + H * 2) % H, r = (40 + size * 90) * base; const grad = g.createRadialGradient(x0, y, 0, x0, y, r); grad.addColorStop(0, look.accent); grad.addColorStop(1, 'rgba(0,0,0,0)'); g.globalAlpha = 0.14 + 0.08 * Math.sin(local + phase); g.fillStyle = grad; g.beginPath(); g.arc(x0, y, r, 0, Math.PI * 2); g.fill(); }
+      else if (kind === 'bubbles') { const y = H - ((local * H * 0.18 * speed + (H - y0)) % (H + 60)) + 30, r = (8 + size * 22) * base; g.globalAlpha = 0.5; g.strokeStyle = look.accent; g.lineWidth = 2; g.beginPath(); g.arc(x0 + Math.sin(local * 1.5 + phase) * 14 * base, y, r, 0, Math.PI * 2); g.stroke(); }
+    }
+    g.restore();
+  }
+  // A slow camera move over the whole scene
+  function cameraOf(scene, local, W, H) {
+    const q = clamp(local / Math.max(0.1, scene.duration), 0, 1), e = q * q * (3 - 2 * q);
+    switch (scene.camera) {
+      case 'zoom-in': return {s: 1 + 0.08 * e, x: 0, y: 0};
+      case 'zoom-out': return {s: 1.08 - 0.08 * e, x: 0, y: 0};
+      case 'pan-left': return {s: 1.08, x: (0.5 - e) * W * 0.05, y: 0};
+      case 'pan-right': return {s: 1.08, x: (e - 0.5) * W * 0.05, y: 0};
+      case 'pan-up': return {s: 1.08, x: 0, y: (0.5 - e) * H * 0.05};
+      case 'pan-down': return {s: 1.08, x: 0, y: (e - 0.5) * H * 0.05};
+      case 'drift': return {s: 1.04, x: Math.sin(q * Math.PI * 2) * W * 0.01, y: Math.cos(q * Math.PI * 2) * H * 0.01};
+      default: return null;
+    }
+  }
   function paintBlock(g, b, look, model, local) {
     const p = b.enter > 0 ? clamp((local - b.start) / b.enter, 0, 1) : (local >= b.start ? 1 : 0);
     if (p <= 0) return;
     const item = b.item, e = easeOut(p), d = Math.min(model.w, model.h) * 0.06;
     g.save();
-    const effect = b.effect;
-    if (effect !== 'type' && effect !== 'none' && !(item.kind === 'chart' && effect === 'fade') && item.kind !== 'steps') g.globalAlpha *= e;
+    const effect = b.effect, perPart = ['words', 'letters', 'scramble', 'wave'].includes(effect);
+    if (effect !== 'type' && effect !== 'none' && !perPart && !(item.kind === 'chart' && effect === 'fade') && item.kind !== 'steps' && item.kind !== 'icons') g.globalAlpha *= e;
+    if (effect === 'blur' && p < 1 && 'filter' in g) g.filter = 'blur(' + ((1 - e) * 14).toFixed(1) + 'px)';
+    if (effect === 'drop') g.translate(0, -(1 - easeBack(p)) * d * 2.5);
+    if (look.glow && (item.kind === 'title' || item.kind === 'number')) { g.shadowColor = look.accent; g.shadowBlur = (b.size || 40) * 0.45; }
     const cx = b.x + b.w / 2, cy = b.y + b.h / 2;
     if (effect === 'up') g.translate(0, (1 - e) * d);
     else if (effect === 'down') g.translate(0, -(1 - e) * d);
@@ -3584,30 +3995,73 @@ try{mermaid.initialize({startOnLoad:false,securityLevel:'strict',htmlLabels:fals
     } else if (item.kind === 'chart') paintChart(g, b, look, p);
     else if (item.kind === 'steps') paintSteps(g, b, look, p);
     else if (item.kind === 'image') paintImage(g, b, look, model);
+    else if (item.kind === 'icon' || item.kind === 'icons') paintIconBlock(g, b, look, p);
+    else if (item.kind === 'progress') paintProgress(g, b, look, p);
+    else if (item.kind === 'ring') paintRing(g, b, look, p);
+    else if (item.kind === 'timeline') paintTimeline(g, b, look, p);
+    else if (item.kind === 'compare') paintCompare(g, b, look, p);
+    else if (item.kind === 'quote') paintQuote(g, b, look, p, perPart ? {kind: effect, p} : null);
+    else if (item.kind === 'badge') paintBadge(g, b, look);
     else {
       const reveal = effect === 'type' ? Math.floor([...item.text].length * p) : Infinity;
       if (item.kind === 'bullet') { g.fillStyle = look.accent; g.beginPath(); g.arc(b.x + b.size * 0.3, b.y + b.size * b.lead / 2 + b.size * 0.05, b.size * 0.17, 0, Math.PI * 2); g.fill(); }
       if (item.kind === 'callout') { g.fillStyle = look.soft; roundRect(g, b.x, b.y, b.w, b.h, b.size * 0.4); g.fill(); g.fillStyle = look.accent; g.fillRect(b.x, b.y + b.size * 0.3, Math.max(4, b.size * 0.16), b.h - b.size * 0.6); }
       const color = item.kind === 'subtitle' || item.kind === 'callout' ? look.text : item.kind === 'text' && !b.center ? look.muted : look.text;
-      paintLines(g, b, look, b.x + b.indent + (item.kind === 'callout' ? b.size * 0.3 : 0), b.y + b.pad, b.w - b.indent - (item.kind === 'callout' ? b.size * 0.6 : 0), align, reveal, item.kind === 'text' && b.center ? look.muted : color);
+      paintLines(g, b, look, b.x + b.indent + (item.kind === 'callout' ? b.size * 0.3 : 0), b.y + b.pad, b.w - b.indent - (item.kind === 'callout' ? b.size * 0.6 : 0), align, reveal, item.kind === 'text' && b.center ? look.muted : color, perPart ? {kind: effect, p} : null);
+      // Corporate and editorial titles get a rule drawn under them
+      if (item.kind === 'title' && look.bar) { g.shadowBlur = 0; g.fillStyle = look.accent; const w = 90 * (b.size / 64) * easeOut(clamp(p * 1.4 - 0.2, 0, 1)), bx = b.center ? b.x + b.w / 2 - 45 * (b.size / 64) : b.x; g.fillRect(bx, b.y + b.h + b.size * 0.12, w, Math.max(4, b.size * 0.08)); }
     }
     g.restore();
   }
-  function paintScene(g, model, scene, local) {
-    const layout = layoutScene(g, model, scene), look = layout.look;
-    paintBackground(g, look, model.w, model.h);
-    g.textBaseline = 'alphabetic';
-    for (const b of layout.blocks) paintBlock(g, b, look, model, local);
-    if (layout.say) {
-      const q = easeOut(clamp((local - 0.2) / 0.5, 0, 1)), sb = layout.say.block, lineW = Math.max(...sb.lines.map(l => l.reduce((s, p) => s + p.w, 0)), 0);
-      if (q > 0 && sb.lines.length) {
-        g.save(); g.globalAlpha *= q;
-        const bw = Math.min(model.w * 0.86, lineW + sb.size * 1.6), bh = sb.h + sb.size * 0.8, bx = (model.w - bw) / 2, by = layout.say.y - bh / 2;
-        g.fillStyle = 'rgba(0,0,0,0.62)'; roundRect(g, bx, by, bw, bh, sb.size * 0.5); g.fill();
-        paintLines(g, sb, look, (model.w - model.w * 0.8) / 2, by + sb.size * 0.4, model.w * 0.8, 'center', Infinity, '#ffffff');
-        g.restore();
+  // Captions: plain, or karaoke, where each word lights up as it is said (in time with the narration when there is one)
+  function paintCaption(g, model, scene, layout, local) {
+    const look = layout.look, q = easeOut(clamp((local - 0.2) / 0.5, 0, 1)), sb = layout.say.block, lineW = Math.max(...sb.lines.map(l => l.reduce((sum, p) => sum + p.w, 0)), 0);
+    if (q <= 0 || !sb.lines.length) return;
+    g.save(); g.globalAlpha *= q;
+    const W = model.w, bw = Math.min(W * 0.86, lineW + sb.size * 1.6), bh = sb.h + sb.size * 0.8, bx = (W - bw) / 2, by = layout.say.y - bh / 2;
+    g.fillStyle = 'rgba(0,0,0,0.66)'; roundRect(g, bx, by, bw, bh, sb.size * 0.5); g.fill();
+    if (model.settings.captions !== 'karaoke' || sb.rtl) { paintLines(g, sb, look, (W - W * 0.8) / 2, by + sb.size * 0.4, W * 0.8, 'center', Infinity, '#ffffff'); g.restore(); return; }
+    const words = sb.lines.flat().filter(pc => /\S/.test(pc.text)).length, speaking = scene.spoken || Math.max(0.6, scene.duration - 0.6);
+    const said = clamp((local - 0.25) / speaking, 0, 1) * words;
+    let k = 0;
+    sb.lines.forEach((line, i) => {
+      const lw = line.reduce((sum, piece) => sum + piece.w, 0), baseY = by + sb.size * 0.4 + i * sb.size * sb.lead + sb.size * (sb.lead - 1) / 2 + sb.size * 0.82;
+      let cx = (W - lw) / 2;
+      for (const piece of line) {
+        g.font = fontOf(look, sb.size, piece.bold ? 800 : 600, piece.italic);
+        if (/\S/.test(piece.text)) { g.fillStyle = k < said - 1 ? '#ffffff' : k < said ? '#facc15' : 'rgba(255,255,255,0.55)'; k++; }
+        g.fillText(piece.text, cx, baseY); cx += piece.w;
       }
-    }
+    });
+    g.restore();
+  }
+  // A lower third: a name and a role sliding in from the left
+  function paintLower(g, model, layout, local) {
+    const lower = layout.lower, look = layout.look, q = easeOut(clamp((local - 0.35) / 0.6, 0, 1)); if (q <= 0) return;
+    const base = layout.base, pad = 18 * base, x = model.w * 0.06, nameW = Math.max(...lower.name.lines.map(l => l.reduce((sum, p) => sum + p.w, 0)), 0), roleW = lower.role ? Math.max(...lower.role.lines.map(l => l.reduce((sum, p) => sum + p.w, 0)), 0) : 0;
+    const w = Math.max(nameW, roleW) + pad * 2.5, h = lower.name.h + (lower.role ? lower.role.h : 0) + pad * 1.4;
+    g.save(); g.globalAlpha *= q; g.translate(-(1 - q) * 60 * base, 0);
+    g.fillStyle = look.text; g.globalAlpha *= 0.92; roundRect(g, x, lower.y, w * q, h, 10 * base); g.fill(); g.globalAlpha /= 0.92;
+    g.fillStyle = look.accent; g.fillRect(x, lower.y, 8 * base, h);
+    g.beginPath(); g.rect(x, lower.y, w * q, h); g.clip();
+    paintLines(g, lower.name, look, x + pad * 1.4, lower.y + pad * 0.7, w, 'left', Infinity, look.bg.split(',')[0].trim());
+    if (lower.role) paintLines(g, lower.role, look, x + pad * 1.4, lower.y + pad * 0.7 + lower.name.h, w, 'left', Infinity, look.accent);
+    g.restore();
+  }
+  function paintScene(g, model, scene, local) {
+    const layout = layoutScene(g, model, scene), look = layout.look, W = model.w, H = model.h;
+    paintBackground(g, look, W, H);
+    g.textBaseline = 'alphabetic';
+    const camera = cameraOf(scene, local, W, H);
+    g.save();
+    if (camera) { g.translate(W / 2 + camera.x, H / 2 + camera.y); g.scale(camera.s, camera.s); g.translate(-W / 2, -H / 2); }
+    paintPattern(g, look, look.pattern, W, H, scene.start + local, layout.base);
+    if (scene.shapes.length) paintShapes(g, scene, look, W, H, local, layout.base);
+    for (const b of layout.blocks) paintBlock(g, b, look, model, local);
+    g.restore();
+    paintParticles(g, scene.particles, look, W, H, local, scene.part + 1, layout.base);
+    if (layout.lower) paintLower(g, model, layout, local);
+    if (layout.say) paintCaption(g, model, scene, layout, local);
   }
   // One frame of the video at time t, drawn at any scale; the same function makes the preview and the export
   function paintMotion(g, model, t, scale = 1) {
@@ -3622,8 +4076,16 @@ try{mermaid.initialize({startOnLoad:false,securityLevel:'strict',htmlLabels:fals
       const prev = scenes[i - 1], q = easeOut(local / span);
       if (kind === 'slide') { g.save(); g.translate(-q * W * 0.35, 0); paintScene(g, model, prev, prev.duration); g.restore(); g.save(); g.translate((1 - q) * W, 0); paintScene(g, model, scene, local); g.restore(); }
       else if (kind === 'wipe') { paintScene(g, model, prev, prev.duration); g.save(); g.beginPath(); g.rect(0, 0, W * q, H); g.clip(); paintScene(g, model, scene, local); g.restore(); }
+      else if (kind === 'iris') { paintScene(g, model, prev, prev.duration); g.save(); g.beginPath(); g.arc(W / 2, H / 2, Math.hypot(W, H) / 2 * q, 0, Math.PI * 2); g.clip(); paintScene(g, model, scene, local); g.restore(); }
+      else if (kind === 'rise') { g.save(); g.translate(0, -q * H * 0.3); paintScene(g, model, prev, prev.duration); g.restore(); g.save(); g.translate(0, (1 - q) * H); paintScene(g, model, scene, local); g.restore(); }
+      else if (kind === 'flash') { const linear = local / span; if (linear < 0.5) paintScene(g, model, prev, prev.duration); else paintScene(g, model, scene, local); g.save(); g.fillStyle = '#ffffff'; g.globalAlpha = 1 - Math.abs(linear * 2 - 1); g.fillRect(0, 0, W, H); g.restore(); }
+      else if (kind === 'blur' && 'filter' in g) { g.save(); g.filter = 'blur(' + (q * 16).toFixed(1) + 'px)'; paintScene(g, model, prev, prev.duration); g.restore(); g.save(); g.globalAlpha = q; g.filter = 'blur(' + ((1 - q) * 16).toFixed(1) + 'px)'; paintScene(g, model, scene, local); g.restore(); }
       else { paintScene(g, model, prev, prev.duration); g.save(); g.globalAlpha = q; if (kind === 'zoom') { const s = 1.12 - 0.12 * q; g.translate(W / 2, H / 2); g.scale(s, s); g.translate(-W / 2, -H / 2); } paintScene(g, model, scene, local); g.restore(); }
     } else paintScene(g, model, scene, local);
+    // Over every scene: the logo in a corner, and a bar showing how far the video has got
+    const s = model.settings, logo = s.logo ? model.images?.get(s.logo) : null;
+    if (logo && logo.naturalWidth) { const h = H * 0.07, w = Math.min(W * 0.22, h * logo.naturalWidth / logo.naturalHeight); g.save(); g.globalAlpha = 0.92; g.drawImage(logo, W - w - W * 0.035, H * 0.04, w, w * logo.naturalHeight / logo.naturalWidth); g.restore(); }
+    if (s.progress) { const look = lookOf(model, scene); g.fillStyle = look.accent; g.fillRect(0, H - Math.max(4, H * 0.007), W * (t / Math.max(0.001, model.total)), Math.max(4, H * 0.007)); }
     g.restore();
   }
   // Pictures: from this site or as data only (or any https site when the network valve is open, asked for without
@@ -3631,7 +4093,8 @@ try{mermaid.initialize({startOnLoad:false,securityLevel:'strict',htmlLabels:fals
   function motionImages(model) {
     model.images = model.images || new Map();
     const waits = [];
-    for (const item of model.scenes.flatMap(scene => scene.items).filter(item => item.kind === 'image')) {
+    const logo = model.settings.logo ? [{src: model.settings.logo, line: 1, kind: 'image'}] : [];
+    for (const item of [...logo, ...model.scenes.flatMap(scene => scene.items).filter(item => item.kind === 'image')]) {
       if (model.images.has(item.src)) continue;
       let ok = /^data:image\/(png|jpe?g|gif|webp);base64,/i.test(item.src), cross = false;
       try { const u = new URL(item.src, location.href); if (u.origin === location.origin && /^https?:$/.test(u.protocol)) ok = true; else if (CONFIG.network === 'open' && u.protocol === 'https:') { ok = true; cross = true; } } catch {}
@@ -3643,10 +4106,80 @@ try{mermaid.initialize({startOnLoad:false,securityLevel:'strict',htmlLabels:fals
     }
     return Promise.all(waits);
   }
-  // Everything a frame needs: its fonts and its pictures
-  async function motionReady(model) {
+  /* ---- motion: sound ---- */
+  // Music and narration are decoded once per page and kept: a spoken line is only asked for once (Open WebUI also caches it)
+  const soundCache = new Map();
+  async function pool(list, size, worker) { let next = 0; const run = async () => { while (next < list.length) await worker(list[next++]); }; await Promise.all(Array.from({length: Math.min(size, list.length)}, run)); }
+  let soundDecoder = null;
+  const decodeSound = bytes => { soundDecoder = soundDecoder || new OfflineAudioContext(2, 1, 48000); return soundDecoder.decodeAudioData(bytes); };
+  const note = (model, line, key, vars = {}) => { if (!model.warnings.some(w => w.key === key && w.line === line)) model.warnings.push({line, key, vars}); };
+  const fromResponse = async response => { if (!response.ok) { const e = new Error('HTTP ' + response.status); e.status = response.status; throw e; } return response.arrayBuffer(); };
+  // A data: address is decoded here; anything else goes through request(), to this site only
+  const dataBytes = url => { const bin = atob(url.slice(url.indexOf(',') + 1)), out = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i); return out.buffer; };
+  function loadSound(key, bytes) {
+    if (!soundCache.has(key)) { const promise = Promise.resolve().then(bytes).then(decodeSound); soundCache.set(key, promise); promise.catch(() => soundCache.delete(key)); }
+    return soundCache.get(key);
+  }
+  async function motionSound(model, onStatus) {
+    const s = model.settings, music = s.music;
+    if (music) {
+      let own = false, ok = /^data:audio\/[\w.+-]+;base64,/i.test(music);
+      try { const u = new URL(music, location.href); if (u.origin === location.origin && /^https?:$/.test(u.protocol)) { ok = true; own = true; } } catch {}
+      if (!ok) note(model, 1, 'mw_music_site');
+      else { try { model.music = await loadSound('music:' + music, () => own ? request(music).then(fromResponse) : dataBytes(music)); } catch { note(model, 1, 'mw_music'); } }
+    }
+    if (s.voice) {
+      const spoken = model.scenes.filter(scene => scene.say);
+      let done = 0, refused = false;
+      onStatus?.(spoken.length ? 0 : 1);
+      await pool(spoken, 3, async scene => {
+        if (refused) return;
+        try {
+          scene.voice = await loadSound('say:' + scene.say, () => request('/api/v1/audio/speech', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({input: scene.say})}, 60000).then(fromResponse));
+          scene.spoken = scene.voice.duration;
+        } catch (error) { refused = true; if (!model.warnings.some(w => w.key === 'mw_voice')) note(model, scene.line, 'mw_voice'); }
+        onStatus?.(++done / spoken.length);
+      });
+      timeScenes(model);
+    }
+    model.sounding = !!(model.music || model.scenes.some(scene => scene.voice));
+  }
+  // What plays when: the music under everything (quieter while someone speaks, fading out at the end), each scene's voice
+  function soundPlan(model) {
+    const voices = model.scenes.filter(scene => scene.voice).map(scene => ({buffer: scene.voice, at: scene.start + 0.25}));
+    return {music: model.music ? {buffer: model.music, volume: model.settings.volume} : null, voices, total: model.total};
+  }
+  function scheduleSound(audio, destination, plan, from, now) {
+    const sources = [];
+    if (plan.music) {
+      const src = audio.createBufferSource(), gain = audio.createGain();
+      src.buffer = plan.music.buffer; src.loop = true; src.connect(gain); gain.connect(destination);
+      const v = plan.music.volume, rel = t => now + Math.max(0, t - from);
+      gain.gain.setValueAtTime(from < 0.8 ? 0 : v, now); if (from < 0.8) gain.gain.linearRampToValueAtTime(v, rel(0.8));
+      for (const voice of plan.voices) { const a = voice.at, b = voice.at + voice.buffer.duration; if (b <= from) continue; gain.gain.setTargetAtTime(v * 0.35, rel(a - 0.15), 0.08); gain.gain.setTargetAtTime(v, rel(b), 0.25); }
+      const end = plan.total - from; if (end > 1.6) { gain.gain.setValueAtTime(v, now + end - 1.5); gain.gain.linearRampToValueAtTime(0, now + end); }
+      src.start(now, from % plan.music.buffer.duration); src.stop(now + Math.max(0, plan.total - from)); sources.push(src);
+    }
+    for (const voice of plan.voices) {
+      const end = voice.at + voice.buffer.duration; if (end <= from) continue;
+      const src = audio.createBufferSource(); src.buffer = voice.buffer; src.connect(destination);
+      if (voice.at >= from) src.start(now + voice.at - from); else src.start(now, from - voice.at);
+      sources.push(src);
+    }
+    return sources;
+  }
+  // The whole soundtrack as one stereo buffer, for the video file
+  async function mixSound(model) {
+    if (!model.sounding || model.total <= 0) return null;
+    const audio = new OfflineAudioContext(2, Math.ceil(model.total * 48000), 48000);
+    scheduleSound(audio, audio.destination, soundPlan(model), 0, 0);
+    return audio.startRendering();
+  }
+  // Everything a frame needs: its fonts and its pictures, and the sound when it has any
+  async function motionReady(model, onStatus) {
     try { await Promise.race([Promise.all([400, 500, 600, 700, 800].map(w => document.fonts.load(w + ' 32px ' + model.family))), pause(3000)]); } catch {}
     await motionImages(model);
+    await motionSound(model, onStatus);
     model.layouts?.clear();
   }
   const motionModel = text => { const model = motionOf(text); model.family = getComputedStyle(document.body).fontFamily || 'system-ui, sans-serif'; return model; };
@@ -3678,7 +4211,19 @@ try{mermaid.initialize({startOnLoad:false,securityLevel:'strict',htmlLabels:fals
     const seek = el('input', 'ar-motionseek'); seek.type = 'range'; seek.min = '0'; seek.max = String(Math.round(model.total * 1000)); seek.step = String(Math.round(1000 / 30)); setLabel(seek, t('m_seek'));
     seek.addEventListener('input', () => { setTime(+seek.value / 1000); if (player.is('ended')) player.send('seek'); });
     const full = iconButton(t('m_full'), 'expand', () => stage.requestFullscreen?.().catch(() => {}));
-    const bar = el('div', 'ar-subbar'); bar.append(playButton, timeLabel, sceneLabel, el('span', 'ar-spacer'));
+    // Sound plays in time with the frames; it starts only once someone presses play, as browsers require
+    let audio = null, sources = [], muted = false;
+    const muteButton = iconButton(t('m_mute'), 'sound', () => { muted = !muted; paintMute(); if (player.is('playing')) { stopSound(); startSound(); } });
+    muteButton.hidden = true;
+    const paintMute = () => { muteButton.replaceChildren(svgIcon(muted ? 'mute' : 'sound')); setLabel(muteButton, t(muted ? 'm_unmute' : 'm_mute')); muteButton.setAttribute('aria-pressed', String(muted)); };
+    function startSound() {
+      if (!model.sounding || muted) return;
+      try { audio = audio || new (window.AudioContext || window.webkitAudioContext)(); audio.resume?.(); } catch { return; }
+      sources = scheduleSound(audio, audio.destination, soundPlan(model), time, audio.currentTime + 0.03);
+    }
+    function stopSound() { for (const src of sources) { try { src.stop(); } catch {} } sources = []; }
+    const status = el('span', 'ar-muted ar-small ar-motionstatus');
+    const bar = el('div', 'ar-subbar'); bar.append(playButton, timeLabel, sceneLabel, status, el('span', 'ar-spacer'), muteButton);
     const editor = el('div', 'ar-slideedit'); editor.hidden = true;
     // Each change says where the player should be afterwards (ctx.motionTime) before it is saved
     const rewrite = apply => { const parts = motionParts(text); apply(parts.scenes); commit(motionText(parts)); };
@@ -3687,7 +4232,21 @@ try{mermaid.initialize({startOnLoad:false,securityLevel:'strict',htmlLabels:fals
       const add = iconButton(t('m_add'), 'plus', () => { const scene = model.scenes[sceneAt(model, time)]; ctx.motionTime = scene.start + scene.duration + 0.01; rewrite(scenes => scenes.splice(scene.part + 1, 0, {head: '--- 3s fade', lines: ['# ' + t('untitled'), '']})); });
       const remove = iconButton(t('m_del'), 'row_del', () => { if (model.scenes.length < 2) return; const scene = model.scenes[sceneAt(model, time)]; ctx.motionTime = scene.start; rewrite(scenes => scenes.splice(scene.part, 1)); });
       remove.disabled = model.scenes.length < 2;
-      bar.append(edit, add, remove);
+      // The soundtrack: a music file from your device (kept in your Open WebUI files), and narration of the captions
+      const setting = (key, value) => { const parts = motionParts(text), re = new RegExp('^\\s*' + key + '\\s*:', 'i'), at = parts.prefix.findIndex(l => re.test(l)); if (value == null) { if (at >= 0) parts.prefix.splice(at, 1); } else if (at >= 0) parts.prefix[at] = key + ': ' + value; else { let last = -1; parts.prefix.forEach((l, k) => { if (SETTING_RE.test(l) || MARKER_RE.test(l)) last = k; }); parts.prefix.splice(last + 1, 0, key + ': ' + value); } ctx.motionTime = time; commit(motionText(parts)); };
+      const picker = el('input'); picker.type = 'file'; picker.accept = 'audio/*'; picker.hidden = true;
+      picker.addEventListener('change', async () => {
+        const file = picker.files?.[0]; picker.value = ''; if (!file) return;
+        if (file.size > 25 * 1048576) { toast(t('m_music_big')); return; }
+        toast(t('m_music_adding'));
+        try { const form = new FormData(); form.append('file', file); const made = await api('/api/v1/files/?process=false', null, {method: 'POST', body: form}, 120000); if (!made?.id) throw new Error('upload'); setting('music', '/api/v1/files/' + made.id + '/content | ' + model.settings.volume); }
+        catch { toast(t('m_music_failed')); }
+      });
+      const musicButton = iconButton(model.settings.music ? t('m_music_remove') : t('m_music'), 'music', () => { if (model.settings.music) setting('music', null); else picker.click(); });
+      musicButton.setAttribute('aria-pressed', String(!!model.settings.music));
+      const voiceButton = iconButton(model.settings.voice ? t('m_voice_off') : t('m_voice_on'), 'voice', () => setting('voice', model.settings.voice ? null : 'on'));
+      voiceButton.setAttribute('aria-pressed', String(!!model.settings.voice)); voiceButton.disabled = !model.scenes.some(scene => scene.say) && !model.settings.voice;
+      bar.append(edit, add, remove, musicButton, voiceButton, picker);
     }
     bar.append(full);
     function openEditor() {
@@ -3739,21 +4298,21 @@ try{mermaid.initialize({startOnLoad:false,securityLevel:'strict',htmlLabels:fals
       stage.dataset.time = time.toFixed(3);
       ctx.motionTime = time;
     }
-    function setTime(value) { time = clamp(value, 0, model.total); draw(); }
+    function setTime(value) { time = clamp(value, 0, model.total); draw(); if (player.is('playing')) { stopSound(); startSound(); } }
     function tick(now) {
       frame = 0;
-      if (!canvas.isConnected) { player.send('pause'); return; }
+      if (!canvas.isConnected) { player.send('pause'); stopSound(); return; }
       if (!player.is('playing')) return;
       // A hidden tab or a slow frame doesn't make the video jump ahead
       const delta = Math.min(0.1, (now - last) / 1000); last = now;
       time = Math.min(model.total, time + delta);
       draw();
-      if (time >= model.total) { player.send('end'); paintButton(); return; }
+      if (time >= model.total) { player.send('end'); stopSound(); paintButton(); return; }
       frame = requestAnimationFrame(tick);
     }
     function paintButton() { const playing = player.is('playing'); playButton.replaceChildren(svgIcon(playing ? 'pause' : 'play')); setLabel(playButton, t(playing ? 'm_pause' : 'm_play')); }
-    function play() { if (!ready) return; if (player.is('ended') || time >= model.total - 1e-3) time = 0; if (player.send('play')) { last = performance.now(); frame = requestAnimationFrame(tick); } paintButton(); }
-    function pauseIt() { if (player.send('pause')) cancelAnimationFrame(frame); paintButton(); }
+    function play() { if (!ready) return; if (player.is('ended') || time >= model.total - 1e-3) time = 0; if (player.send('play')) { last = performance.now(); frame = requestAnimationFrame(tick); startSound(); } paintButton(); }
+    function pauseIt() { if (player.send('pause')) { cancelAnimationFrame(frame); stopSound(); } paintButton(); }
     function toggle() { player.is('playing') ? pauseIt() : play(); }
     stage.addEventListener('keydown', event => {
       if (event.target !== stage) return;
@@ -3771,7 +4330,12 @@ try{mermaid.initialize({startOnLoad:false,securityLevel:'strict',htmlLabels:fals
     wrap.append(bar, stage, seekRow, editor, strip, notes);
     paintButton(); paintNotes(); draw();
     // Fonts and pictures first; then it plays by itself, unless the person prefers less motion or came back to it
-    motionReady(model).then(() => {
+    if (model.settings.voice) status.textContent = t('m_voice_wait');
+    motionReady(model, value => { if (model.settings.voice) status.textContent = t('m_voice_wait') + ' ' + Math.round(value * 100) + '%'; }).then(() => {
+      status.textContent = '';
+      // Narration may have made scenes longer
+      seek.max = String(Math.round(model.total * 1000)); thumbs.forEach(th => th.b.dataset.start = th.scene.start);
+      muteButton.hidden = !model.sounding; paintMute(); stage.dataset.sound = model.sounding ? 'yes' : 'no';
       ready = true; paintNotes(); draw(); paintThumbs();
       const still = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
       if (!still && first && canvas.isConnected) play();
@@ -3785,7 +4349,7 @@ try{mermaid.initialize({startOnLoad:false,securityLevel:'strict',htmlLabels:fals
   /* ---- motion: making the video ---- */
   // An MP4 file written by hand around the H.264 samples the browser's own encoder made: one track, one chunk,
   // its index (moov) first so the video starts playing before it has fully loaded.
-  function mp4Of(samples, avcC, W, H, fps) {
+  function mp4Of(samples, avcC, W, H, fps, sound = null) {
     const timescale = fps * 1000, delta = 1000, count = samples.length, msDuration = Math.round(count * 1000 / fps);
     const u32 = v => [(v >>> 24) & 255, (v >>> 16) & 255, (v >>> 8) & 255, v & 255], u16 = v => [(v >>> 8) & 255, v & 255];
     const ascii = s => [...s].map(c => c.charCodeAt(0));
@@ -3794,9 +4358,35 @@ try{mermaid.initialize({startOnLoad:false,securityLevel:'strict',htmlLabels:fals
     const full = (type, version, flags, ...parts) => box(type, [version, (flags >> 16) & 255, (flags >> 8) & 255, flags & 255], ...parts);
     const matrix = [...u32(0x10000), ...u32(0), ...u32(0), ...u32(0), ...u32(0x10000), ...u32(0), ...u32(0), ...u32(0), ...u32(0x40000000)];
     const keys = samples.map((s, i) => s.key ? i + 1 : 0).filter(Boolean);
+    // The sound track: AAC (with its esds descriptor) or Opus (with dOps), each packet's length in samples
+    const rate = sound?.rate || 48000, packets = sound?.chunks || [];
+    const lengths = packets.map(c => Math.max(1, Math.round((c.dur || 0) * rate / 1e6)) || (sound?.codec === 'aac' ? 1024 : 960));
+    const soundSamples = lengths.reduce((sum, n) => sum + n, 0), soundMs = Math.round(soundSamples * 1000 / rate);
+    const runs = []; for (const n of lengths) { const last = runs[runs.length - 1]; if (last && last[1] === n) last[0]++; else runs.push([1, n]); }
+    const descriptor = (tag, bytes) => [tag, bytes.length, ...bytes];
+    const entry = () => {
+      const head = [new Array(6).fill(0), u16(1), u32(0), u32(0), u16(2), u16(16), u16(0), u16(0), u32(rate << 16 >>> 0)];
+      if (sound.codec === 'aac') return box('mp4a', ...head, full('esds', 0, 0, descriptor(0x03, [...u16(0), 0, ...descriptor(0x04, [0x40, 0x15, 0, 0, 0, ...u32(128000), ...u32(128000), ...descriptor(0x05, [...sound.description])]), ...descriptor(0x06, [0x02])])));
+      return box('Opus', ...head, box('dOps', [0, 2, ...u16(sound.preskip ?? 312), ...u32(rate), ...u16(0), 0]));
+    };
+    const soundTrak = offset => box('trak',
+      full('tkhd', 0, 3, u32(0), u32(0), u32(2), u32(0), u32(soundMs), u32(0), u32(0), u16(0), u16(1), u16(0x0100), u16(0), matrix, u32(0), u32(0)),
+      box('mdia',
+        full('mdhd', 0, 0, u32(0), u32(0), u32(rate), u32(soundSamples), u16(0x55c4), u16(0)),
+        full('hdlr', 0, 0, u32(0), ascii('soun'), u32(0), u32(0), u32(0), ascii('SoundHandler'), [0]),
+        box('minf',
+          full('smhd', 0, 0, u16(0), u16(0)),
+          box('dinf', full('dref', 0, 0, u32(1), full('url ', 0, 1))),
+          box('stbl',
+            full('stsd', 0, 0, u32(1), entry()),
+            full('stts', 0, 0, u32(runs.length), ...runs.map(([n, d]) => [...u32(n), ...u32(d)])),
+            full('stsc', 0, 0, u32(1), u32(1), u32(packets.length), u32(1)),
+            full('stsz', 0, 0, u32(0), u32(packets.length), ...packets.map(c => u32(c.data.length))),
+            full('stco', 0, 0, u32(1), u32(offset))))));
     const ftyp = box('ftyp', ascii('isom'), u32(512), ascii('isom'), ascii('iso2'), ascii('avc1'), ascii('mp41'));
+    const videoBytes = samples.reduce((sum, s) => sum + s.data.length, 0);
     const moovWith = offset => box('moov',
-      full('mvhd', 0, 0, u32(0), u32(0), u32(1000), u32(msDuration), u32(0x00010000), u16(0x0100), u16(0), u32(0), u32(0), matrix, new Array(24).fill(0), u32(2)),
+      full('mvhd', 0, 0, u32(0), u32(0), u32(1000), u32(Math.max(msDuration, soundMs)), u32(0x00010000), u16(0x0100), u16(0), u32(0), u32(0), matrix, new Array(24).fill(0), u32(sound ? 3 : 2)),
       box('trak',
         full('tkhd', 0, 3, u32(0), u32(0), u32(1), u32(0), u32(msDuration), u32(0), u32(0), u16(0), u16(0), u16(0), u16(0), matrix, u32(W << 16), u32(H << 16)),
         box('mdia',
@@ -3811,17 +4401,49 @@ try{mermaid.initialize({startOnLoad:false,securityLevel:'strict',htmlLabels:fals
               full('stss', 0, 0, u32(keys.length), ...keys.map(u32)),
               full('stsc', 0, 0, u32(1), u32(1), u32(count), u32(1)),
               full('stsz', 0, 0, u32(0), u32(count), ...samples.map(s => u32(s.data.length))),
-              full('stco', 0, 0, u32(1), u32(offset)))))));
+              full('stco', 0, 0, u32(1), u32(offset)))))),
+      ...(sound ? [soundTrak(offset + videoBytes)] : []));
     const probeMoov = moovWith(0);
-    const dataSize = samples.reduce((sum, s) => sum + s.data.length, 0);
+    const dataSize = videoBytes + packets.reduce((sum, c) => sum + c.data.length, 0);
     const moov = moovWith(ftyp.length + probeMoov.length + 8);
-    return new Blob([ftyp, moov, Uint8Array.from([...u32(dataSize + 8), ...ascii('mdat')]), ...samples.map(s => s.data)], {type: 'video/mp4'});
+    return new Blob([ftyp, moov, Uint8Array.from([...u32(dataSize + 8), ...ascii('mdat')]), ...samples.map(s => s.data), ...packets.map(c => c.data)], {type: 'video/mp4'});
   }
   const abortError = () => new DOMException('Cancelled', 'AbortError');
+  const bytesOf = d => new Uint8Array(ArrayBuffer.isView(d) ? d.buffer.slice(d.byteOffset, d.byteOffset + d.byteLength) : d.slice(0));
+  async function encodeSound(buffer, signal) {
+    if (!buffer || typeof AudioEncoder !== 'function' || typeof AudioData !== 'function') return null;
+    for (const [codec, kind] of [['mp4a.40.2', 'aac'], ['opus', 'opus']]) {
+      const config = {codec, sampleRate: 48000, numberOfChannels: 2, bitrate: 128000};
+      try { if (!(await AudioEncoder.isConfigSupported(config)).supported) continue; } catch { continue; }
+      const chunks = []; let description = null, failure = null;
+      const encoder = new AudioEncoder({output: (chunk, meta) => { const data = new Uint8Array(chunk.byteLength); chunk.copyTo(data); chunks.push({data, ts: chunk.timestamp, dur: chunk.duration}); const d = meta?.decoderConfig?.description; if (d && !description) description = bytesOf(d); }, error: error => { failure = error; }});
+      encoder.configure(config);
+      const L = buffer.getChannelData(0), R = buffer.numberOfChannels > 1 ? buffer.getChannelData(1) : L, step = 48000;
+      try {
+        for (let at = 0; at < buffer.length; at += step) {
+          if (signal.aborted) throw abortError();
+          const n = Math.min(step, buffer.length - at), planar = new Float32Array(n * 2); planar.set(L.subarray(at, at + n), 0); planar.set(R.subarray(at, at + n), n);
+          const data = new AudioData({format: 'f32-planar', sampleRate: 48000, numberOfFrames: n, numberOfChannels: 2, timestamp: Math.round(at / 48 * 1000), data: planar});
+          encoder.encode(data); data.close();
+          while (encoder.encodeQueueSize > 4 && !failure) await pause(2);
+        }
+        await encoder.flush();
+      } finally { try { encoder.close(); } catch {} }
+      if (failure || !chunks.length) continue;
+      if (kind === 'aac' && !description) continue;
+      // Opus' own header (OpusHead) says how many samples to skip at the start
+      let preskip = 312; if (kind === 'opus' && description?.length >= 12 && String.fromCharCode(...description.slice(0, 8)) === 'OpusHead') preskip = description[10] | (description[11] << 8);
+      return {codec: kind, chunks, description, preskip, rate: 48000};
+    }
+    return null;
+  }
   // Faster than real time and frame-exact: every frame is drawn, encoded to H.264 by the browser, and written into an MP4.
   // Needs WebCodecs, which browsers offer only on secure (https or localhost) pages.
-  async function encodeMotion(model, W, H, fps, signal, progress) {
+  async function encodeMotion(model, W, H, fps, signal, progress, mix = null) {
     if (typeof VideoEncoder !== 'function' || typeof VideoFrame !== 'function' || !window.isSecureContext) return null;
+    // With a soundtrack, the sound is encoded first; a browser that can't encode sound records in real time instead
+    const sound = mix ? await encodeSound(mix, signal) : null;
+    if (mix && !sound) return null;
     let config = null;
     for (const codec of ['avc1.640028', 'avc1.4d0028', 'avc1.42e028', 'avc1.42001f']) {
       const want = {codec, width: W, height: H, bitrate: W * H > 1e6 ? 8e6 : 4e6, framerate: fps, avc: {format: 'avc'}};
@@ -3858,24 +4480,29 @@ try{mermaid.initialize({startOnLoad:false,securityLevel:'strict',htmlLabels:fals
     // This writer keeps samples in the order they come; a stream that reorders frames goes to the other way
     if (!description || samples.length !== frames || samples.some((s, i) => i && s.ts <= samples[i - 1].ts)) return null;
     progress(1);
-    return mp4Of(samples, description, W, H, fps);
+    return mp4Of(samples, description, W, H, fps, sound);
   }
   // The other way: the browser records the canvas while the video plays once, in real time (MP4 where it can, else WebM)
-  async function recordMotion(model, W, H, fps, signal, progress) {
+  async function recordMotion(model, W, H, fps, signal, progress, mix = null) {
     if (typeof MediaRecorder !== 'function') throw new Error('recorder');
-    const type = ['video/mp4;codecs=avc1', 'video/mp4', 'video/webm;codecs=vp9', 'video/webm;codecs=vp8', 'video/webm'].find(each => { try { return MediaRecorder.isTypeSupported(each); } catch { return false; } });
+    const types = mix ? ['video/mp4;codecs=avc1,mp4a.40.2', 'video/mp4;codecs=avc1,opus', 'video/webm;codecs=vp9,opus', 'video/webm;codecs=vp8,opus', 'video/webm'] : ['video/mp4;codecs=avc1', 'video/mp4', 'video/webm;codecs=vp9', 'video/webm;codecs=vp8', 'video/webm'];
+    const type = types.find(each => { try { return MediaRecorder.isTypeSupported(each); } catch { return false; } });
     if (!type) throw new Error('recorder');
     const canvas = document.createElement('canvas'); canvas.width = W; canvas.height = H;
     const g = canvas.getContext('2d', {alpha: false}), scale = W / model.w;
     paintMotion(g, model, 0, scale);
     const stream = canvas.captureStream(0), track = stream.getVideoTracks()[0];
     const manual = typeof track?.requestFrame === 'function';
-    const live = manual ? stream : canvas.captureStream(fps);
-    const recorder = new MediaRecorder(live, {mimeType: type, videoBitsPerSecond: W * H > 1e6 ? 8e6 : 4e6});
+    let live = manual ? stream : canvas.captureStream(fps);
+    // The soundtrack plays into the recording, not out of the speakers
+    let audio = null, soundSource = null;
+    if (mix) { try { audio = new (window.AudioContext || window.webkitAudioContext)(); await audio.resume?.(); const out = audio.createMediaStreamDestination(); soundSource = audio.createBufferSource(); soundSource.buffer = mix; soundSource.connect(out); live = new MediaStream([...live.getVideoTracks(), ...out.stream.getAudioTracks()]); } catch { audio = null; } }
+    const recorder = new MediaRecorder(live, {mimeType: type, videoBitsPerSecond: W * H > 1e6 ? 8e6 : 4e6, audioBitsPerSecond: 128000});
     const parts = [];
     recorder.ondataavailable = event => { if (event.data?.size) parts.push(event.data); };
     const stopped = new Promise((resolve, reject) => { recorder.onstop = resolve; recorder.onerror = event => reject(event.error || new Error('recorder')); });
     recorder.start(1000);
+    soundSource?.start();
     const began = performance.now();
     try {
       for (;;) {
@@ -3892,6 +4519,7 @@ try{mermaid.initialize({startOnLoad:false,securityLevel:'strict',htmlLabels:fals
       if (recorder.state !== 'inactive') recorder.stop();
       await stopped.catch(() => {});
       for (const each of [stream, live]) each.getTracks().forEach(tr => tr.stop());
+      try { soundSource?.stop(); } catch {} audio?.close?.();
     }
     if (signal.aborted) throw abortError();
     return new Blob(parts, {type: type.split(';')[0]});
@@ -3915,9 +4543,10 @@ try{mermaid.initialize({startOnLoad:false,securityLevel:'strict',htmlLabels:fals
     panel.append(box); box.showModal();
     const progress = value => { const p = Math.round(clamp(value, 0, 1) * 100); meter.value = clamp(value, 0, 1); heading.textContent = t('m_making', {p}); };
     try {
-      await motionReady(model);
-      let blob = await encodeMotion(model, W, Hh, 30, controller.signal, progress);
-      if (!blob) { note.textContent = t('m_realtime'); blob = await recordMotion(model, W, Hh, 30, controller.signal, progress); }
+      await motionReady(model, value => { if (model.settings.voice) heading.textContent = t('m_voice_wait') + ' ' + Math.round(value * 100) + '%'; });
+      const mix = model.sounding ? await mixSound(model) : null;
+      let blob = await encodeMotion(model, W, Hh, 30, controller.signal, progress, mix);
+      if (!blob) { note.textContent = t('m_realtime'); blob = await recordMotion(model, W, Hh, 30, controller.signal, progress, mix); }
       const ext = /mp4/.test(blob.type) ? 'mp4' : 'webm';
       save(blob, baseName(a) + '.' + ext);
       toast(ext === 'mp4' ? t('m_made') : t('m_webm'));

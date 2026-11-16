@@ -4,6 +4,10 @@ This repository contains independently versioned Open WebUI extensions. Plugin-s
 
 ## 2026-11-16
 
+### Artifacts 1.4.0
+
+Motion grows into a motion-graphics tool modelled on what HyperFrames offers, without running generated code: eight styles, kinetic type, icons, progress bars and rings, timelines, comparisons, quotes, badges, lower thirds, donut, horizontal-bar and bar-race charts, patterns, particles, shapes, camera moves, four more transitions, a logo and progress bar, karaoke captions, narration through Open WebUI's text-to-speech and music, all in the MP4. The browser suite passed 192 of 192 checks on Open WebUI 0.13.0 and 0.13.3, alone and with the other event functions; videos and their soundtracks were checked with ffprobe and ffmpeg.
+
 ### Artifacts 1.3.0
 
 Adds Motion, short animated explainers in the spirit of Claude Motion: the model describes scenes in plain lines (headings, text, bullets, counting numbers, growing charts, steps, pictures, captions, transitions) and the panel plays them, lets people edit a scene's words, length and transition, and downloads an MP4 video made in the browser, with H.264 through WebCodecs faster than real time, or recorded in real time where that isn't available. Anything it couldn't use as written is listed with its line. The browser suite passed 178 of 178 checks on Open WebUI 0.13.0 and 0.13.3, alone and with the other event functions; the videos were checked with ffprobe and ffmpeg.

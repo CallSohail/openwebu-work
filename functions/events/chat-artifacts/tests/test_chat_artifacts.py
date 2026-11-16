@@ -420,6 +420,31 @@ assert.deepStrictEqual([mparts.prefix.length, mparts.scenes.map(sc => sc.head)],
 mparts.scenes[1] = {head: '--- 4s cut', lines: ['# Deux', '']};
 assert.strictEqual(motionText(mparts), '<!-- artifact: M -->\nsize: 1:1\n\n--- 3s\n# One\n\n--- 4s cut\n# Deux\n');
 assert.strictEqual(motionText(motionParts(motionSource)), motionSource, 'read and written back unchanged');
+// Motion graphics: styles, sound, decorations and the newer blocks
+mo = motionOf('style: neon\nlogo: /logo.png\nprogress: on\ncaptions: plain\nmusic: /api/v1/files/a/content | 30%\nvoice: yes\nfont: serif\n--- 3s iris\npattern: grid\nparticles: confetti\ncamera: pan-left\nshape: star #f00 top-right large {spin pop}\nshape: hexagon\nicon: rocket | Launch\nicons: book Library, users Clubs\nprogress: 3/4 | Done {zoom}\nring: 72% | Rate\nbadge: New\nlower: Ada | Teacher\n--- 4s flash\ntimeline: 2019 Founded; 2021 Labs | 2025 Now\ncompare: Old | New\n- paper | online\n- queue | instant\nquote: "Be curious." | Ada {words}\nchart: race\nName,2023,2024\nA,1,5\nB,4,2\n--- 2s rise\nchart: donut\nK,V\nx,1\n--- blur\nchart: hbar\nK,V\ny,2');
+assert.deepStrictEqual([mo.settings.style, mo.settings.logo, mo.settings.progress, mo.settings.captions, mo.settings.music, mo.settings.volume, mo.settings.voice, mo.settings.font], ['neon', '/logo.png', true, 'plain', '/api/v1/files/a/content', 0.3, true, 'serif']);
+const [s1, s2, s3, s4] = mo.scenes;
+assert.deepStrictEqual([s1.transition, s1.pattern, s1.particles, s1.camera, s1.lower], ['fade', 'grid', 'confetti', 'pan-left', {name: 'Ada', role: 'Teacher'}], 'the first scene still fades in');
+assert.deepStrictEqual(s1.shapes.map(x => [x.kind, x.color, x.place, x.size, x.motion, x.effect]), [['star', '#f00', 'top-right', 'large', 'spin', 'pop']]);
+assert.deepStrictEqual(s1.items.map(i => i.kind), ['icon', 'icons', 'progress', 'ring', 'badge']);
+assert.deepStrictEqual([s1.items[0].name, s1.items[0].label, s1.items[1].list], ['rocket', 'Launch', [{name: 'book', label: 'Library'}, {name: 'users', label: 'Clubs'}]]);
+assert.deepStrictEqual([s1.items[2].ratio, s1.items[2].effect, s1.items[3].ratio, countText(s1.items[3].count, 72)], [0.75, 'zoom', 0.72, '72%']);
+assert.deepStrictEqual([s2.transition, s2.items.map(i => i.kind)], ['flash', ['timeline', 'compare', 'quote', 'chart']]);
+assert.deepStrictEqual(s2.items[0].marks, [{when: '2019', what: 'Founded'}, {when: '2021', what: 'Labs'}, {when: '2025', what: 'Now'}]);
+assert.deepStrictEqual([s2.items[1].left, s2.items[1].right, s2.items[1].rows], ['Old', 'New', [['paper', 'online'], ['queue', 'instant']]]);
+assert.deepStrictEqual([s2.items[2].text, s2.items[2].author, s2.items[2].effect], ['Be curious.', 'Ada', 'words']);
+assert.deepStrictEqual([s2.items[3].type, s2.items[3].data.series.map(x => x.name)], ['race', ['2023', '2024']], 'each column of a race is a moment');
+assert.deepStrictEqual([s3.transition, s3.items[0].type, s4.transition, s4.items[0].type], ['rise', 'donut', 'blur', 'hbar']);
+assert.deepStrictEqual(mo.warnings.map(w => w.line + ':' + w.key + ':' + (w.vars.value || '')), ['13:mw_value:hexagon'], 'an unknown shape is said once');
+// Unknown settings and decorations are said, and ignored
+mo = motionOf('style: wild\ncaptions: loud\n--- 2s\npattern: zigzag\ncamera: wobble\nparticles: lasers\nprogress: lots\n# T');
+assert.deepStrictEqual(mo.warnings.map(w => w.vars.what), ['style', 'captions', 'pattern', 'camera', 'particles', 'progress']);
+assert.deepStrictEqual([mo.settings.style, mo.settings.captions, mo.scenes[0].pattern], ['', 'karaoke', '']);
+// Narration makes a scene as long as it needs, and the video stops at its limit
+mo = motionOf('--- 2s\n# A\nsay: hello\n--- 3s\n# B');
+mo.scenes[0].spoken = 6.2; timeScenes(mo);
+assert.deepStrictEqual(mo.scenes.map(sc => [sc.start, sc.duration]), [[0, 6.8], [6.8, 3]]); assert.strictEqual(mo.total, 9.8);
+mo.scenes[0].spoken = 99; timeScenes(mo); assert.strictEqual(mo.scenes[0].duration, 30, 'never longer than 30 seconds');
 // Charts
 const spec = chartSpec('# artifact: C\ntype: line\ntitle: Sales\nMonth,A,B\nJan,1,2\n');
 assert.deepStrictEqual(spec.spec, {type: 'line', title: 'Sales'}); assert.strictEqual(spec.body.split('\n')[0], 'Month,A,B');

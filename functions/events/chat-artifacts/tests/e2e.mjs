@@ -7,7 +7,7 @@ import { createRequire } from 'module';
 import fs from 'fs';
 import os from 'os';
 import path from 'path';
-import { execFileSync } from 'child_process';
+import { execFileSync, spawnSync } from 'child_process';
 
 const { chromium } = createRequire(import.meta.url)('playwright');
 const seed = JSON.parse(fs.readFileSync(process.argv[2], 'utf8'));
@@ -65,9 +65,9 @@ const panelText = page => page.locator('#owui-chat-artifacts').innerText().catch
 const head = page => page.locator('#owui-chat-artifacts .ar-head').innerText().catch(() => '');
 const foot = page => page.locator('#owui-chat-artifacts .ar-foot').innerText().catch(() => '');
 const mode = (page, label) => page.locator('#owui-chat-artifacts .ar-mode', { hasText: label }).click();
-async function download(page, trigger, label) {
+async function download(page, trigger, label, timeout = 8000) {
   await page.locator('#owui-chat-artifacts .ar-head [aria-label="' + trigger + '"]').click();
-  const wait = page.waitForEvent('download', { timeout: 8000 });
+  const wait = page.waitForEvent('download', { timeout });
   await page.locator('#owui-chat-artifacts .ar-menuitem', { hasText: label }).first().click();
   const item = await wait;
   const file = path.join(os.tmpdir(), 'ar-' + Date.now() + '-' + item.suggestedFilename());
@@ -433,7 +433,7 @@ console.log('Motion');
   check('and deleted', /5 scenes · 0:14/.test(await foot(page)), await foot(page));
   // Downloads: a real MP4, a frame, the scenes as pictures, the text
   const probe = file => { try { return execFileSync('ffprobe', ['-v', 'error', '-show_entries', 'stream=codec_name,width,height,nb_frames:format=duration', '-of', 'json', file]).toString(); } catch (error) { return 'ffprobe: ' + error.message; } };
-  const video = await download(page, 'Download', 'Video, 720p');
+  const video = await download(page, 'Download', 'Video, 720p', 60000);
   const info = JSON.parse(probe(video.file).replace(/^ffprobe:.*/s, '{}'));
   const stream = info.streams?.[0] || {};
   check('the video downloads as an H.264 MP4 of the right size, length and frame count', video.name === 'Enrolment 2025.mp4' && stream.codec_name === 'h264' && stream.width === 1280 && stream.height === 720 && Math.abs(+info.format?.duration - 14.5) < 0.05 && +stream.nb_frames === 435, JSON.stringify(info));
@@ -473,6 +473,73 @@ console.log('Motion');
   })();
   const info = (() => { try { return JSON.parse(execFileSync('ffprobe', ['-v', 'error', '-show_entries', 'stream=codec_name,width,height:format=duration', '-of', 'json', video.file]).toString()); } catch { return {}; } })();
   check('without WebCodecs the video is recorded in real time, still a playable video', /Making the video/.test(video.dialog) && /real time/.test(video.dialog) && /\.(mp4|webm)$/.test(video.name) && Math.abs(+info.format?.duration - 12.5) < 1 && info.streams?.[0]?.width === 1280 && (Date.now() - started) > 11000, JSON.stringify({ name: video.name, dialog: video.dialog, info }));
+  check('no page errors', s.state.errors.length === 0, s.state.errors.slice(0, 3).join(' | '));
+  await s.context.close();
+}
+
+console.log('Motion graphics: styles, kinetic type, charts, sound');
+{
+  const tts = async on => {
+    const config = (await api(A, 'GET', '/api/v1/audio/config')).json;
+    // The fake model also speaks: its address is the chat connection Open WebUI already has
+    const fake = (await api(A, 'GET', '/openai/config')).json?.OPENAI_API_BASE_URLS?.[0] || '';
+    const body = { tts: { ...config.tts, ENGINE: on ? 'openai' : '', OPENAI_API_BASE_URL: on ? fake : config.tts.OPENAI_API_BASE_URL, OPENAI_API_KEY: 'test-key', MODEL: 'tts-1', VOICE: 'alloy' }, stt: { ...config.stt, ENGINE: 'openai' } };
+    return (await api(A, 'POST', '/api/v1/audio/config/update', body)).status;
+  };
+  await tts(false);
+  let s = await session(U), { page } = s;
+  const stage = '#owui-chat-artifacts .ar-motionstage';
+  const readyNow = () => page.waitForFunction(sel => document.querySelector(sel)?.dataset.sound, stage, { timeout: 60000 }).catch(() => {});
+  const seekMax = () => page.evaluate(() => +document.querySelector('#owui-chat-artifacts .ar-motionseek').max);
+  const notes = () => page.locator('#owui-chat-artifacts .ar-motionwarn').innerText().catch(() => '');
+  await s.open('/c/' + U.showcase); await s.openCard(-1); await readyNow();
+  check('without text-to-speech, the showcase says narration isn’t available and still has its music', /narration isn’t available/.test(await notes()) && await page.evaluate(sel => document.querySelector(sel).dataset.sound, stage) === 'yes' && await seekMax() === 26500, await notes());
+  check('a camera move it doesn’t know is listed with its line', /Line 57: “wobble” isn’t a camera/.test(await notes()));
+  await s.context.close();
+  const ttsStatus = await tts(true);
+  s = await session(U); page = s.page;
+  await s.open('/c/' + U.showcase); await s.openCard(-1); await readyNow();
+  await page.click('#owui-chat-artifacts .ar-subbar [aria-label="Pause"]').catch(() => {});
+  check('with text-to-speech, every caption is narrated and a scene grows to fit its narration (26.5 s → 31.5 s)', ttsStatus === 200 && await seekMax() === 31500 && !/narration isn’t available/.test(await notes()), `${ttsStatus} ${await seekMax()} ${await notes()}`);
+  check('sound brings a mute button; music and narration have their own buttons, switched on', await page.locator('#owui-chat-artifacts .ar-subbar [aria-label="Mute"]').isVisible() && await page.locator('#owui-chat-artifacts [aria-label="Remove the music"][aria-pressed="true"]').count() === 1 && await page.locator('#owui-chat-artifacts [aria-label="Stop narrating"][aria-pressed="true"]').count() === 1);
+  await page.click('#owui-chat-artifacts .ar-subbar [aria-label="Mute"]');
+  check('mute can be switched', await page.locator('#owui-chat-artifacts .ar-subbar [aria-label="Unmute"][aria-pressed="true"]').count() === 1);
+  // Every scene draws something of its own
+  const frame = () => page.evaluate(sel => { const c = document.querySelector(sel + ' canvas'), g = c.getContext('2d'), d = g.getImageData(0, 0, c.width, c.height).data; let ink = 0, sum = 0, yellow = 0; for (let i = 0; i < d.length; i += 4 * 41) { sum = (sum * 31 + d[i] + 3 * d[i + 1] + 7 * d[i + 2]) % 1000000007; if (d[i] + d[i + 1] + d[i + 2] > 240) ink++; } const cap = g.getImageData(0, Math.round(c.height * 0.8), c.width, Math.round(c.height * 0.2)).data; for (let i = 0; i < cap.length; i += 4) if (cap[i] > 200 && cap[i + 1] > 160 && cap[i + 2] < 90) yellow++; return { ink, sum, yellow }; }, stage);
+  const sums = new Set(); let empty = 0;
+  const thumbs = await page.locator('#owui-chat-artifacts .ar-motionthumbs .ar-thumb').count();
+  for (let i = 0; i < thumbs; i++) { await page.locator('#owui-chat-artifacts .ar-motionthumbs .ar-thumb').nth(i).click(); await page.keyboard.press('ArrowRight'); await page.keyboard.press('ArrowRight'); const f = await frame(); sums.add(f.sum); if (f.ink < 200) empty++; }
+  check('all eight scenes draw, each differently: badge, icons and lower third, chart race, ring and bar, timeline, comparison, quote and donut, the end', thumbs === 8 && sums.size === 8 && empty === 0, `${thumbs} ${sums.size} ${empty}`);
+  await page.locator('#owui-chat-artifacts .ar-motionthumbs .ar-thumb').first().click(); await page.focus(stage); await page.keyboard.press('ArrowRight');
+  check('karaoke captions light up the word being said', (await frame()).yellow > 20, JSON.stringify(await frame()));
+  // The video has the sound in it
+  const video = await download(page, 'Download', 'Video, 720p', 120000);
+  const info = (() => { try { return JSON.parse(execFileSync('ffprobe', ['-v', 'error', '-show_entries', 'stream=codec_type,codec_name,channels,duration,nb_frames', '-of', 'json', video.file]).toString()); } catch { return {}; } })();
+  const [v, a] = [info.streams?.find(x => x.codec_type === 'video'), info.streams?.find(x => x.codec_type === 'audio')];
+  check('the video carries a stereo soundtrack (music and narration) as long as the picture', v?.codec_name === 'h264' && +v.nb_frames === 945 && ['aac', 'opus'].includes(a?.codec_name) && a.channels === 2 && Math.abs(+a.duration - 31.5) < 0.1, JSON.stringify(info));
+  // ffmpeg reports the loudness on stderr
+  const loud = String(spawnSync('ffmpeg', ['-v', 'info', '-i', video.file, '-map', '0:a', '-af', 'volumedetect', '-f', 'null', '-']).stderr || '');
+  const mean = +((/mean_volume: (-?[\d.]+) dB/.exec(loud) || [])[1] ?? -99);
+  check('and the soundtrack is not silent', mean > -40, String(mean));
+  check('and it decodes without an error', (() => { try { execFileSync('ffmpeg', ['-v', 'error', '-xerror', '-i', video.file, '-f', 'null', '-']); return true; } catch { return false; } })());
+  // Narration off: a setting, as your edit
+  await page.click('#owui-chat-artifacts [aria-label="Stop narrating"]'); await readyNow(); await page.waitForTimeout(500);
+  check('narration can be switched off, as your edit, and the scenes go back to their own lengths', await seekMax() === 26500 && /Your edit/.test(await foot(page)), `${await seekMax()} ${await foot(page)}`);
+  check('no page errors', s.state.errors.length === 0, s.state.errors.slice(0, 3).join(' | '));
+  await s.context.close();
+}
+{
+  // A browser that can encode pictures but not sound records the video, soundtrack included, in real time
+  const s = await session(U), { page } = s;
+  await s.context.addInitScript(() => { try { delete window.AudioEncoder; delete window.AudioData; } catch {} });
+  await s.open('/c/' + U.showcase); await s.openCard(-1);
+  await page.waitForFunction(() => document.querySelector('#owui-chat-artifacts .ar-motionstage')?.dataset.sound, null, { timeout: 60000 }).catch(() => {});
+  await page.locator('#owui-chat-artifacts .ar-head [aria-label="Download"]').click();
+  const wait = page.waitForEvent('download', { timeout: 90000 });
+  await page.locator('#owui-chat-artifacts .ar-menuitem', { hasText: 'Video, 720p' }).first().click();
+  const item = await wait; const file = path.join(os.tmpdir(), 'ar-sound-' + Date.now() + '.mp4'); await item.saveAs(file);
+  const info = (() => { try { return JSON.parse(execFileSync('ffprobe', ['-v', 'error', '-show_entries', 'stream=codec_type,codec_name:format=duration', '-of', 'json', file]).toString()); } catch { return {}; } })();
+  check('recorded in real time, the video still has its sound', info.streams?.some(x => x.codec_type === 'audio') && info.streams?.some(x => x.codec_type === 'video') && Math.abs(+info.format?.duration - 31.5) < 1.5, JSON.stringify(info));
   check('no page errors', s.state.errors.length === 0, s.state.errors.slice(0, 3).join(' | '));
   await s.context.close();
 }

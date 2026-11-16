@@ -33,6 +33,20 @@ Press the button to count."""
 FIXED = PAGE.replace("Built while you watched.", "Fixed version.").replace("Here is the page.", "Here is the fixed page.")
 
 
+def tone(seconds, rate=24000):
+    """A mono 16-bit WAV of a soft 220 Hz tone that fades in and out."""
+    import math
+    import struct
+
+    count = int(seconds * rate)
+    frames = bytearray()
+    for i in range(count):
+        envelope = min(1.0, i / (0.05 * rate), (count - i) / (0.05 * rate))
+        frames += struct.pack("<h", int(9000 * envelope * math.sin(2 * math.pi * 220 * i / rate)))
+    header = b"RIFF" + struct.pack("<I", 36 + len(frames)) + b"WAVEfmt " + struct.pack("<IHHIIHH", 16, 1, 1, rate, rate * 2, 2, 16) + b"data" + struct.pack("<I", len(frames))
+    return header + bytes(frames)
+
+
 class Handler(BaseHTTPRequestHandler):
     def log_message(self, *args):
         pass
@@ -52,6 +66,16 @@ class Handler(BaseHTTPRequestHandler):
 
     def do_POST(self):
         body = json.loads(self.rfile.read(int(self.headers.get("Content-Length") or 0)) or b"{}")
+        # Text to speech for Artifacts' narrated animations: a tone as long as the words would take to say
+        if self.path.rstrip("/").endswith("/audio/speech"):
+            words = max(1, len(str(body.get("input", "")).split()))
+            data = tone(max(0.8, 0.32 * words))
+            self.send_response(200)
+            self.send_header("Content-Type", "audio/wav")
+            self.send_header("Content-Length", str(len(data)))
+            self.end_headers()
+            self.wfile.write(data)
+            return
         messages = body.get("messages") or []
         last = next((m for m in reversed(messages) if m.get("role") == "user"), {})
         text = last.get("content") if isinstance(last.get("content"), str) else json.dumps(last.get("content"))
