@@ -2,6 +2,12 @@
 
 This repository contains independently versioned Open WebUI extensions. Plugin-specific release notes live next to each implementation when they need more detail.
 
+## 2026-11-16
+
+### Artifacts 1.3.0
+
+Adds Motion, short animated explainers in the spirit of Claude Motion: the model describes scenes in plain lines (headings, text, bullets, counting numbers, growing charts, steps, pictures, captions, transitions) and the panel plays them, lets people edit a scene's words, length and transition, and downloads an MP4 video made in the browser, with H.264 through WebCodecs faster than real time, or recorded in real time where that isn't available. Anything it couldn't use as written is listed with its line. The browser suite passed 178 of 178 checks on Open WebUI 0.13.0 and 0.13.3, alone and with the other event functions; the videos were checked with ffprobe and ffmpeg.
+
 ## 2026-11-12
 
 ### Chat Files 2.0.0

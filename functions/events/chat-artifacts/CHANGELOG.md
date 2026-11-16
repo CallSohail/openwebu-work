@@ -5,6 +5,17 @@ This project follows [Semantic Versioning](https://semver.org/).
 
 Released as `chat-artifacts-v<version>`. See [RELEASING.md](../../../RELEASING.md) for the release process.
 
+## [1.3.0] - 2026-11-16
+
+### Added
+
+- **Motion**, a new kind: a short animated explainer written as a ```` ```motion ```` block of settings and scenes (`--- 4s fade`), never as code. Scenes hold headings, text, bullets, callouts, numbers that count up keeping their format, bar, line, area and pie charts that grow, steps that appear one by one, pictures and captions; lines may choose their entrance (`{fade}`, `{up}`, `{left}`, `{zoom}`, `{pop}`, `{type}`) and time (`{up at 1.5s}`); scenes change with fade, slide, zoom, wipe or cut. Sizes 16:9, 9:16, 1:1, 4:3 and 4:5; light, dark or any background and accent colour, gradients included.
+- A player in the panel: play, pause, a timeline, a picture of each scene, keyboard control, full screen; it plays by itself unless the person prefers less motion.
+- Editing a scene's text, length and transition, and adding or deleting scenes, as your edit.
+- Downloads: an MP4 video at 1080p or 720p, made faster than real time with the browser's H.264 encoder and written into an MP4 by the panel itself, or recorded in real time where that encoder isn't available; this frame as PNG; every scene as pictures in a zip; the motion text.
+- What couldn't be used as written is listed under the video with its line: unknown transitions, effects, sizes and colours, lengths outside 0.5 to 30 seconds, charts without numbers, pictures from other sites, lines over 300 characters, more than 40 scenes, 12 things a scene or 180 seconds.
+- Artifacts mode describes the format, and tells the model never to write animation code or a script that makes a video. *New* offers a Motion request.
+
 ## [1.2.0] - 2026-11-12
 
 ### Added

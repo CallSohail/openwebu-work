@@ -388,6 +388,95 @@ console.log('Correcting cells and slides');
 }
 
 /* ---- the sandbox ---- */
+console.log('Motion');
+{
+  const s = await session(U), { page } = s;
+  await s.open('/c/' + U.motion); await s.openCard(-1);
+  const stage = '#owui-chat-artifacts .ar-motionstage';
+  const time = () => page.evaluate(sel => +document.querySelector(sel)?.dataset.time || 0, stage);
+  const motion = () => page.evaluate(() => document.documentElement.dataset.arMotion);
+  const seekTo = seconds => page.evaluate(ms => { const r = document.querySelector('#owui-chat-artifacts .ar-motionseek'); r.value = String(ms); r.dispatchEvent(new Event('input', { bubbles: true })); }, seconds * 1000);
+  const pixels = () => page.evaluate(sel => { const c = document.querySelector(sel + ' canvas'), d = c.getContext('2d').getImageData(0, 0, c.width, c.height).data; let ink = 0, sum = 0; for (let i = 0; i < d.length; i += 4 * 53) { const v = d[i] + d[i + 1] + d[i + 2]; sum = (sum * 31 + v) % 1000000007; if (v < 720) ink++; } return { ink, sum }; }, stage);
+  check('a ```motion block is a Motion artifact: 5 scenes, 12 seconds', /Motion/.test(await page.locator('#owui-chat-artifacts .ar-meta').innerText()) && /5 scenes · 0:12/.test(await foot(page)), await foot(page));
+  await page.waitForFunction(sel => +document.querySelector(sel)?.dataset.time > 0.8, stage, { timeout: 10000 }).catch(() => {});
+  check('it plays by itself when opened', await motion() === 'playing' && await time() > 0.8, `${await motion()} ${await time()}`);
+  await page.click('#owui-chat-artifacts .ar-subbar [aria-label="Pause"]');
+  const held = await time(); await page.waitForTimeout(600);
+  check('Pause stops it where it is', await motion() === 'paused' && Math.abs(await time() - held) < 0.05);
+  await seekTo(0.1); const early = await pixels(); await seekTo(2.4); const later = await pixels();
+  check('the frames move: things come in over time', later.ink > early.ink && later.sum !== early.sum, JSON.stringify({ early, later }));
+  await seekTo(7.5); const chart = await pixels();
+  check('the chart scene draws its bars', chart.ink > later.ink, JSON.stringify(chart));
+  const notes = await page.locator('#owui-chat-artifacts .ar-motionwarn').innerText();
+  check('what was adjusted is listed with its line: an unknown transition, a length too short, a picture from elsewhere', /Line 23: .*wobble/.test(notes) && /Line 27: .*0\.1s.*0\.5 s/.test(notes) && /Line 30: a picture from another site/.test(notes), notes);
+  check('the picture from another site is never fetched', !s.state.outside.some(url => /example\.com/.test(url)), s.state.outside.join());
+  await page.locator('#owui-chat-artifacts .ar-motionthumbs .ar-thumb').nth(2).click();
+  check('each scene has a picture; choosing one goes to its start', await page.locator('#owui-chat-artifacts .ar-motionthumbs .ar-thumb').count() === 5 && /Scene 3 of 5/.test(await page.locator('#owui-chat-artifacts .ar-subbar').innerText()) && Math.abs(await time() - 6) < 0.1, String(await time()));
+  await page.focus(stage); await page.keyboard.press('End');
+  check('End goes to the end', Math.abs(await time() - 12.5) < 0.01);
+  await page.keyboard.press(' ');
+  await page.waitForTimeout(400);
+  check('Space at the end plays again from the start', await motion() === 'playing' && await time() < 1.5, `${await motion()} ${await time()}`);
+  await page.keyboard.press(' ');
+  await page.keyboard.press('Home'); await page.keyboard.press('ArrowRight'); await page.keyboard.press('ArrowRight');
+  check('arrows step through it, a second at a time', Math.abs(await time() - 2) < 0.01, String(await time()));
+  // One scene can be edited, added or deleted, as your edit
+  await page.click('#owui-chat-artifacts [aria-label="Edit this scene"]');
+  await page.fill('#owui-chat-artifacts .ar-motionlen', '5');
+  await page.fill('#owui-chat-artifacts .ar-slidearea', '# A different start\nsay: Read this.');
+  await page.click('#owui-chat-artifacts .ar-slideedit .ar-primary');
+  await page.waitForTimeout(500);
+  check('a scene can be edited, its length too, as your edit', /5 scenes · 0:14/.test(await foot(page)) && /Your edit/.test(await foot(page)) && await motion() === 'paused', await foot(page));
+  await page.click('#owui-chat-artifacts [aria-label="Add a scene after this one"]'); await page.waitForTimeout(400);
+  check('a scene can be added', /6 scenes/.test(await foot(page)), await foot(page));
+  await page.click('#owui-chat-artifacts [aria-label="Delete this scene"]'); await page.waitForTimeout(400);
+  check('and deleted', /5 scenes · 0:14/.test(await foot(page)), await foot(page));
+  // Downloads: a real MP4, a frame, the scenes as pictures, the text
+  const probe = file => { try { return execFileSync('ffprobe', ['-v', 'error', '-show_entries', 'stream=codec_name,width,height,nb_frames:format=duration', '-of', 'json', file]).toString(); } catch (error) { return 'ffprobe: ' + error.message; } };
+  const video = await download(page, 'Download', 'Video, 720p');
+  const info = JSON.parse(probe(video.file).replace(/^ffprobe:.*/s, '{}'));
+  const stream = info.streams?.[0] || {};
+  check('the video downloads as an H.264 MP4 of the right size, length and frame count', video.name === 'Enrolment 2025.mp4' && stream.codec_name === 'h264' && stream.width === 1280 && stream.height === 720 && Math.abs(+info.format?.duration - 14.5) < 0.05 && +stream.nb_frames === 435, JSON.stringify(info));
+  check('and decodes without an error', (() => { try { execFileSync('ffmpeg', ['-v', 'error', '-i', video.file, '-f', 'null', '-']); return true; } catch { return false; } })());
+  check('only one video is made at a time, and none is running now', await page.evaluate(() => document.documentElement.dataset.arExport) === 'idle');
+  const frame = await download(page, 'Download', 'This frame');
+  const png = fs.readFileSync(frame.file);
+  check('this frame downloads as a 1920 × 1080 PNG', png.slice(1, 4).toString() === 'PNG' && png.readUInt32BE(16) === 1920 && png.readUInt32BE(20) === 1080, `${png.readUInt32BE(16)}×${png.readUInt32BE(20)}`);
+  const zip = await download(page, 'Download', 'Each scene as a picture');
+  const zipNames = (fs.readFileSync(zip.file).toString('latin1').match(/scene-\d\d\.png/g) || []);
+  check('each scene downloads as a picture, in one zip', new Set(zipNames).size === 5, zipNames.join());
+  const source = await download(page, 'Download', 'Motion file');
+  check('the motion file downloads as text, with the edit', /# A different start/.test(source.text) && /--- 5s fade/.test(source.text), source.text.slice(0, 200));
+  // The platform's language reaches the player
+  await page.evaluate(() => document.documentElement.setAttribute('lang', 'fr-FR')); await page.waitForTimeout(400);
+  check('in French the player says Lire and Scène', await page.locator('#owui-chat-artifacts .ar-subbar [aria-label="Lire"]').count() === 1 && /Scène \d sur 5/.test(await page.locator('#owui-chat-artifacts .ar-subbar').innerText()));
+  await page.evaluate(() => document.documentElement.setAttribute('lang', 'en-US')); await page.waitForTimeout(400);
+  check('no page errors', s.state.errors.length === 0, s.state.errors.slice(0, 3).join(' | '));
+  await s.context.close();
+}
+{
+  // Without the fast encoder (an http page, an older browser) the video is recorded in real time instead
+  const s = await session(U, { extra: { reducedMotion: 'reduce' } }), { page } = s;
+  await s.context.addInitScript(() => { try { delete window.VideoEncoder; delete window.VideoFrame; } catch {} });
+  await s.open('/c/' + U.motion); await s.openCard(-1);
+  await page.waitForTimeout(1500);
+  check('for someone who prefers less motion it waits to be played', await page.evaluate(() => document.documentElement.dataset.arMotion) === 'paused' && +(await page.evaluate(() => document.querySelector('#owui-chat-artifacts .ar-motionstage').dataset.time)) === 0);
+  const started = Date.now();
+  const video = await (async () => {
+    await page.locator('#owui-chat-artifacts .ar-head [aria-label="Download"]').click();
+    const wait = page.waitForEvent('download', { timeout: 60000 });
+    await page.locator('#owui-chat-artifacts .ar-menuitem', { hasText: 'Video, 720p' }).first().click();
+    await page.waitForFunction(() => /real time/.test(document.querySelector('dialog.ar-progressdialog')?.innerText || ''), null, { timeout: 8000 }).catch(() => {});
+    const dialog = await page.locator('dialog.ar-progressdialog').innerText().catch(() => '');
+    const item = await wait; const file = path.join(os.tmpdir(), 'ar-' + Date.now() + '.mp4'); await item.saveAs(file);
+    return { file, name: item.suggestedFilename(), dialog };
+  })();
+  const info = (() => { try { return JSON.parse(execFileSync('ffprobe', ['-v', 'error', '-show_entries', 'stream=codec_name,width,height:format=duration', '-of', 'json', video.file]).toString()); } catch { return {}; } })();
+  check('without WebCodecs the video is recorded in real time, still a playable video', /Making the video/.test(video.dialog) && /real time/.test(video.dialog) && /\.(mp4|webm)$/.test(video.name) && Math.abs(+info.format?.duration - 12.5) < 1 && info.streams?.[0]?.width === 1280 && (Date.now() - started) > 11000, JSON.stringify({ name: video.name, dialog: video.dialog, info }));
+  check('no page errors', s.state.errors.length === 0, s.state.errors.slice(0, 3).join(' | '));
+  await s.context.close();
+}
+
 console.log('Security');
 {
   const s = await session(U), { page } = s;
@@ -514,7 +603,7 @@ console.log('New artifacts');
   await s.open('/c/' + U.plain);
   await page.click('#owui-chat-artifacts-header'); await s.ready();
   await page.locator('#owui-chat-artifacts .ar-head button', { hasText: 'New' }).click();
-  check('New offers ten kinds', await page.locator('dialog.ar-newdialog .ar-newitem').count() === 10);
+  check('New offers eleven kinds, Motion among them', await page.locator('dialog.ar-newdialog .ar-newitem').count() === 11 && /Motion/.test(await page.locator('dialog.ar-newdialog').innerText()));
   const countBefore = await page.locator('#messages-container [id^="message-"]').count();
   await page.locator('dialog.ar-newdialog .ar-newitem', { hasText: 'Slides' }).click();
   await page.waitForFunction(() => /```slides/.test(document.getElementById('chat-input')?.innerText || ''), null, { timeout: 5000 }).catch(() => {});

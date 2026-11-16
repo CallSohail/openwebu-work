@@ -143,7 +143,18 @@ AI_APP = """<!doctype html>
 </script>
 </body></html>"""
 DOC = "<!-- artifact: Guide to the library -->\n" + DOC_ANSWER + "\n> [!TIP]\n> Book rooms a week ahead.\n\nThe ==quiet floor== is on level 3.\n\n" + F + "mermaid\nflowchart LR\n  A[Find book] --> B[Borrow] --> C[Return]\n" + F + "\n\n" + F + "chart\ntype: bar\ntitle: Visits per day\nDay,Visits\nMon,120\nTue,98\nWed,143\n" + F + "\n"
+# An animation with every kind of thing a scene can hold, and the mistakes a model might make: an unknown
+# transition, a length too short to use, a picture from another site
+MOTION_LINES = [
+    "<!-- artifact: Enrolment 2025 -->", "size: 16:9", "theme: light", "accent: #4338ca", "",
+    "--- 3s", "# Enrolment grew ==12%==", "Across **all** faculties in 2025", "say: In 2025, enrolment grew by twelve percent.", "",
+    "--- 3s slide", "number: 1,350 | students in Science {zoom}", "- Up from 1,200 {left at 1s}", "",
+    "--- 3.5s", "## Students per faculty", "chart: bar", "Faculty,2024,2025", "Science,1200,1350", "Arts,900,980", "Law,600,640", "",
+    "--- 2.5s wobble", "## How admission works", "steps: Apply -> Review -> Interview -> Offer", "",
+    "--- 0.1s zoom", "# مرحبا بالجميع", "![A pixel](PIXEL_HERE)", "![Elsewhere](https://example.com/spy.png)",
+]
 PIXEL = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=="
+MOTION = "\n".join(MOTION_LINES).replace("PIXEL_HERE", PIXEL)
 RICH_DECK = ("<!-- artifact: Research methods -->\n<!-- layout: title -->\n# Research methods\nA ==short== guide\n\n---\n\n# How it flows\n" + F + "mermaid\nflowchart LR\n  Q[Question] --> D[Data] --> R[Result]\n" + F
              + "\n\n---\n\n# Results\n" + F + "chart\ntype: line\ntitle: Responses\nWeek,Online,Paper\n1,10,4\n2,25,6\n3,40,5\n" + F
              + "\n\n---\n\n# Two sides\n- Fast\n- Cheap\n|||\n- Slow\n- ==Costly==\n\n---\n\n<!-- layout: section -->\n# Part two\n\n---\n\n# Shapes\n> [!WARNING]\n> Check your sample.\n\n" + F + "svg\n<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 10 10\"><rect width=\"10\" height=\"10\" fill=\"#16a34a\"/></svg>\n" + F
@@ -167,6 +178,7 @@ def seed(token):
         "doc": make_chat(token, "Doc chat", [("user", "Library guide"), ("assistant", "Here it is.\n\n" + F4 + "markdown\n" + DOC + "\n" + F4)]),
         "answer": make_chat(token, "Long answer chat", [("user", "Library guide"), ("assistant", DOC_ANSWER)]),
         "general": make_chat(token, "General chat", [("user", "How should I study?"), ("assistant", GENERAL)]),
+        "motion": make_chat(token, "Motion chat", [("user", "Animate our enrolment"), ("assistant", "Here it is.\n\n" + F4 + "motion\n" + MOTION + "\n" + F4)]),
         "rich": make_chat(token, "Rich deck chat", [("user", "Slides on research"), ("assistant", F4 + "slides\n" + RICH_DECK + "\n" + F4)]),
         "chart": make_chat(token, "Chart chat", [("user", "Budget chart"), ("assistant", F + "chart\n" + CHART + "\n" + F)]),
         "code": make_chat(token, "Code chat", [("user", "Grading code"), ("assistant", F + "python\n" + CODE + "\n" + F)]),

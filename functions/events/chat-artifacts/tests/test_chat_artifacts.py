@@ -184,7 +184,7 @@ def test_every_word_has_a_translation(plugin):
     used = set(re.findall(r"\bt\('(\w+)'(?=[,)])", script))
     assert used <= keys(english), sorted(used - keys(english))
     # Keys built from a prefix: every kind has a name, a description and a ready request
-    for kind in ("document", "slides", "sheet", "diagram", "html", "react", "svg", "data", "code", "design"):
+    for kind in ("document", "slides", "motion", "sheet", "diagram", "html", "react", "svg", "data", "code", "design"):
         assert {"t_" + kind, "d_" + kind, "tp_" + kind} <= keys(english), kind
 
 
@@ -274,6 +274,7 @@ def logic(script):
         + "\n" + take("  function parseDelimited(", "  function sheetView(")
         + "\n" + take("  function deckParts(", "  function slidesOf(")
         + "\n" + take("  function machine(", "\n  }\n") + "\n  }\n"
+        + "\n" + take("  /* ---- motion: reading ---- */", "  /* ---- motion: drawing ---- */")
     )
 
 
@@ -376,6 +377,49 @@ assert.strictEqual(m.send('pick', null), false, 'a rule may refuse a move'); ass
 assert.ok(m.send('reset')); assert.strictEqual(m.state, 'closed');
 assert.deepStrictEqual(seen, ['closed>list:open', 'list>viewer:pick', 'viewer>viewer:pick', 'viewer>closed:reset']);
 assert.strictEqual(document.documentElement.dataset.arTest, 'closed');
+// Motion: settings, scenes, lengths, effects, and what a model may get wrong
+CONFIG.detect = 'rich';
+assert.deepStrictEqual(kinds(FENCE + 'motion\n--- 3s\n# Hi\n' + FENCE), ['motion']);
+assert.deepStrictEqual(kinds(FENCE + 'animation\n# Hi\n' + FENCE), ['motion'], 'an alias');
+let mo = motionOf('<!-- artifact: Demo -->\nsize: 9:16\ntheme: dark\naccent: #e11d48\n\n--- 2s slide\n# One {pop}\n- a\n- b {left at 1.5s}\nsay: Hello there\n\n--- 4.5s\nnumber: €1,350.5M | revenue\nchart: line Sales\nMonth,A,B\nJan,1,=B2*2\nFeb,3,4\n\nsteps: Plan -> Build → Ship | Learn\n![Pic](/api/v1/files/x/content)\n> a callout\n> continued\nplain words');
+assert.deepStrictEqual([mo.settings.size, mo.w, mo.h, mo.settings.theme, mo.settings.accent, mo.settings.title], ['9:16', 720, 1280, 'dark', '#e11d48', 'One']);
+assert.deepStrictEqual(mo.scenes.map(sc => [sc.start, sc.duration, sc.transition]), [[0, 2, 'fade'], [2, 4.5, 'fade']], 'the first scene always fades in');
+assert.deepStrictEqual(mo.scenes[0].items.map(i => [i.kind, i.effect, i.at]), [['title', 'pop', null], ['bullet', '', null], ['bullet', 'left', 1.5]]);
+assert.strictEqual(mo.scenes[0].say, 'Hello there');
+const second = mo.scenes[1].items;
+assert.deepStrictEqual(second.map(i => i.kind), ['number', 'chart', 'steps', 'image', 'callout', 'text']);
+assert.strictEqual(second[0].label, 'revenue'); assert.strictEqual(countText(second[0].count, 1350.5), '€1,350.5M'); assert.strictEqual(countText(second[0].count, 0), '€0.0M');
+assert.deepStrictEqual([second[1].type, second[1].title, second[1].data.labels, second[1].data.series.map(x => [x.name, x.values])], ['line', 'Sales', ['Jan', 'Feb'], [['A', [1, 3]], ['B', [2, 4]]]], 'formulas in chart data are worked out');
+assert.deepStrictEqual(second[2].steps, ['Plan', 'Build', 'Ship', 'Learn']);
+assert.strictEqual(second[4].text, 'a callout continued', 'a callout over two lines is one');
+assert.strictEqual(mo.total, 6.5); assert.deepStrictEqual(mo.warnings, []);
+// Numbers as people write them count up keeping their look
+for (const [raw, end, zero] of [['12%', '12%', '0%'], ['1 234,5 €', '1 234,5 €', '0,0 €'], ['$3.2B', '$3.2B', '$0.0B'], ['1.350', '1.350', '0.000'], ['2025', '2025', '0']]) {
+  const spec = countOf(raw); assert.ok(spec, raw); assert.strictEqual(countText(spec, spec.value), end, raw); assert.strictEqual(countText(spec, 0), zero, raw);
+}
+assert.strictEqual(countOf('Q3'), null, 'no number, no counting');
+// Everything that goes wrong is said, with its line, and something sensible is drawn instead
+mo = motionOf('size: huge\ntheme: purpleish\n--- 0.1s spin\n# A {wiggle}\nchart: radar\nx,y\n--- 99s\n# B\nchart: bar\nName,Note\nA,x\n');
+const said = mo.warnings.map(w => w.line + ':' + w.key);
+assert.deepStrictEqual(said, ['1:mw_size', '2:mw_color', '3:mw_transition', '4:mw_effect', '5:mw_chart_type', '5:mw_chart', '9:mw_chart', '3:mw_duration', '7:mw_duration'], said.join(' '));
+assert.deepStrictEqual([mo.w, mo.h, mo.settings.theme, mo.scenes.map(sc => sc.duration)], [1280, 720, 'light', [0.5, 30]]);
+// Limits: scenes, length, items, line length
+mo = motionOf(Array.from({length: 45}, (_, i) => '--- 5s\n# S' + i).join('\n'));
+assert.strictEqual(mo.scenes.length, 36, '180 seconds at most'); assert.strictEqual(mo.total, 180); assert.ok(mo.warnings.some(w => w.key === 'mw_scenes') && mo.warnings.some(w => w.key === 'mw_total'));
+mo = motionOf('--- 3s\n' + Array.from({length: 20}, (_, i) => 'line ' + i).join('\n') + '\n' + '- b\n'.repeat(3) + 'x'.repeat(400));
+assert.strictEqual(mo.scenes[0].items.length, 12); assert.ok(mo.warnings.some(w => w.key === 'mw_items'));
+mo = motionOf('--- 3s\n' + 'y'.repeat(400)); assert.strictEqual(mo.scenes[0].items[0].text.length, 300); assert.ok(mo.warnings.some(w => w.key === 'mw_long'));
+// No separators at all is one scene; empty is no scene; a length comes from what a scene holds
+assert.deepStrictEqual(motionOf('# Only\nsome words').scenes.map(sc => sc.items.length), [2]);
+assert.deepStrictEqual(motionOf('').scenes, []); assert.deepStrictEqual(motionOf('size: 1:1\n\n---\n\n').scenes, []);
+assert.ok(motionOf('# T\nsay: ' + 'word '.repeat(26)).scenes[0].duration >= 11, 'long enough to read its caption');
+// Editing one scene leaves every other line as it was
+const motionSource = '<!-- artifact: M -->\nsize: 1:1\n\n--- 3s\n# One\n\n--- 2s zoom\n# Two\n';
+const mparts = motionParts(motionSource);
+assert.deepStrictEqual([mparts.prefix.length, mparts.scenes.map(sc => sc.head)], [3, ['--- 3s', '--- 2s zoom']]);
+mparts.scenes[1] = {head: '--- 4s cut', lines: ['# Deux', '']};
+assert.strictEqual(motionText(mparts), '<!-- artifact: M -->\nsize: 1:1\n\n--- 3s\n# One\n\n--- 4s cut\n# Deux\n');
+assert.strictEqual(motionText(motionParts(motionSource)), motionSource, 'read and written back unchanged');
 // Charts
 const spec = chartSpec('# artifact: C\ntype: line\ntitle: Sales\nMonth,A,B\nJan,1,2\n');
 assert.deepStrictEqual(spec.spec, {type: 'line', title: 'Sales'}); assert.strictEqual(spec.body.split('\n')[0], 'Month,A,B');
@@ -432,7 +476,7 @@ def test_mode_formats_match_what_the_panel_reads(plugin):
     # Every kind the instructions offer is one the panel recognises
     instructions = load_mode().INSTRUCTIONS
     script = plugin.LOADER_SCRIPT
-    for fence in ("```markdown", "```slides", "```chart", "```csv", "```mermaid", "```html", "```jsx", "```svg", "```json"):
+    for fence in ("```markdown", "```slides", "```motion", "```chart", "```csv", "```mermaid", "```html", "```jsx", "```svg", "```json"):
         assert fence in instructions, fence
     for marker in ("<!-- artifact:", "// artifact:", "%% artifact:", "# artifact:"):
         assert marker in instructions
