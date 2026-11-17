@@ -4,6 +4,10 @@ This repository contains independently versioned Open WebUI extensions. Plugin-s
 
 ## 2026-11-17
 
+### Rich Visuals 1.1.0
+
+Fixes visuals that failed with "Uncaught SyntaxError: Failed to execute 'replaceWith'": an icon was being put into a JavaScript string inside the visual's script. The filter now waits for the complete tool call and only puts icons into visible text, never into scripts, styles or attributes. Other tools pass through untouched. Icons take the colour of their text, and the model colours only what carries meaning, such as a warning in red. The added instructions are about 60% shorter.
+
 ### Rich Visuals 1.0.0
 
 Adds Rich Visuals, a filter for Open WebUI 0.13.4's built-in Visualization. The model places icon tokens such as `[[icon:thermometer]]` in its visual, and the filter swaps them for real Lucide SVG icons while the tool call streams, together with any emojis and the loose icon forms small models write. Greetings, thanks and small talk are left alone, emojis stay out of the text unless asked for, and it emits no events. 130 unit tests and 15 browser checks on Open WebUI 0.13.4 pass; it was also run against a real 3B model.

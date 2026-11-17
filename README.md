@@ -34,7 +34,7 @@ Event functions react to things that happen on the server: a sign-up, a login, a
 | [Rich Email Composer](tools/email-composer/) | Tool | 1.0.0 | An editable email card in the chat, with formatting, recipient checks, *Ask for changes*, copy, `.eml` export and a hand-off to the person's own mail app. |
 | [RAGFlow Advanced Connector](tools/ragflow/) | Tool | 3.0.0 | Retrieval from RAGFlow: datasets, multi-query search, document search and knowledge graphs, with sources. |
 | [Rich Responses](functions/filters/rich-responses/) | Filter | 1.0.1 | Works out what kind of answer is wanted (explain, compare, how-to, ...), asks the model for a matching structure, and adds icons to headings as they stream. |
-| [Rich Visuals](functions/filters/rich-visuals/) | Filter | 1.0.0 | Real icons in Open WebUI 0.13.4's built-in Visualization: the model places `[[icon:thermometer]]` tokens and the filter turns them, and any emojis, into SVG icons as the answer streams. Greetings are left alone and it emits no events. |
+| [Rich Visuals](functions/filters/rich-visuals/) | Filter | 1.1.0 | Real icons in Open WebUI 0.13.4's built-in Visualization: the model places `[[icon:thermometer]]` tokens and the filter turns them, and any emojis, into SVG icons in the visual's text, never in its scripts. Greetings are left alone and it emits no events. |
 | [Study Mode](functions/filters/study-mode/) | Filter | 1.1.0 | Guided learning and Socratic tutoring, with interactive quizzes built from hidden data in the answer. |
 | [Quick Actions](functions/actions/quick-actions/) | Action | 3.0.1 | A menu under each answer: rewrite, humanize, verify and more, plus actions people and teams define themselves. English and French. |
 | [Secure Dynamic Onboarding](functions/events/secure-onboarding/) | Event | 9.3.0 | One pinned welcome chat per person, showing only what they are allowed to use, in English, French, Spanish or Catalan, kept up to date as permissions change. |
@@ -76,7 +76,7 @@ Two small jobs. On the way in, it guesses the kind of answer from the question a
 
 ![Rich Visuals architecture](functions/filters/rich-visuals/diagrams/architecture.svg)
 
-Open WebUI's Visualization frame has no icons, so models used emojis. This filter lets the model write a short token instead, and swaps it for a real SVG icon while the tool call streams, before Open WebUI even sees it. It also repairs the icon attempts small models make, keeps emojis out of the text, and does nothing at all for a "bonjour".
+Open WebUI's Visualization frame has no icons, so models used emojis. This filter lets the model write a short token instead, and swaps it for a real SVG icon before Open WebUI sees the tool call. Icons only go into visible text, so a chart's script never breaks, and they take the colour of the text around them. It also repairs the icon attempts small models make, keeps emojis out of the text, and does nothing at all for a "bonjour".
 
 ### [Study Mode](functions/filters/study-mode/)
 

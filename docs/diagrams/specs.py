@@ -360,15 +360,15 @@ DIAGRAMS = [
         "name": "rich-visuals",
         "path": "functions/filters/rich-visuals/diagrams/architecture.svg",
         "title": "Rich Visuals: how it works",
-        "desc": "On the way in, the Filter decides whether a message needs anything, and asks for a visual with icon tokens. While the answer streams, it turns tokens and emojis in the Visualization tool call into real SVG icons, and removes emojis from the text. It emits no events.",
+        "desc": "On the way in, the Filter decides whether a message needs anything, and asks for a visual with icon tokens. It holds back the Visualization tool call until it is complete, then puts real SVG icons into the visible HTML only, never into scripts, styles or attributes, and removes emojis from the text. It emits no events.",
         "lanes": [BROWSER, SERVER, ("Model", "any model with native tool calling")],
         "boxes": [
             {"id": "msg", "lane": 0, "row": 0, "kind": "ui", "title": "Question", "lines": ["greetings and thanks are", "left alone"]},
             {"id": "inlet", "lane": 1, "row": 0, "title": "inlet", "lines": ["classify: skip, rich text or visual;", "add rules and the icon names"]},
             {"id": "model", "lane": 2, "row": 1, "kind": "ext", "title": "Model", "lines": ["calls render_visualization with", "[[icon:thermometer]] tokens"]},
-            {"id": "stream", "lane": 1, "row": 1, "rows": 2, "title": "stream", "lines": ["in the tool call's arguments:", "tokens, emojis and made-up icon", "images become Lucide SVG icons", "", "in the text: emojis removed"]},
+            {"id": "stream", "lane": 1, "row": 1, "rows": 2, "title": "stream", "lines": ["holds render_visualization until", "complete; icons go into visible", "text, never into scripts or styles;", "other tools pass untouched;", "in the text: emojis removed"]},
             {"id": "owui", "lane": 1, "row": 3, "kind": "server", "title": "Visualization (built in)", "lines": ["checks size and title"]},
-            {"id": "viz", "lane": 0, "row": 2, "rows": 2, "kind": "sandbox", "title": "Visual in the answer", "lines": ["sandboxed frame, no network;", "icons take the theme colour"]},
+            {"id": "viz", "lane": 0, "row": 2, "rows": 2, "kind": "sandbox", "title": "Visual in the answer", "lines": ["sandboxed frame, no network;", "icons take the text colour"]},
             {"id": "text", "lane": 0, "row": 1, "kind": "ui", "title": "Answer text", "lines": ["no emojis unless asked"]},
         ],
         "edges": [

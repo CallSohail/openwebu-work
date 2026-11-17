@@ -26,5 +26,5 @@ filters/
 | Filter | Version | Changelog | Purpose |
 | --- | --- | --- | --- |
 | [Rich Responses](rich-responses/) | 1.0.1 | [CHANGELOG](rich-responses/CHANGELOG.md) | ChatGPT-style streamed answers: intent-aware structure, live heading icons, callouts, tables and diagrams |
-| [Rich Visuals](rich-visuals/) | 1.0.0 | [CHANGELOG](rich-visuals/CHANGELOG.md) | Real icons and better visuals for Open WebUI 0.13.4's built-in Visualization; skips greetings, emits no events |
+| [Rich Visuals](rich-visuals/) | 1.1.0 | [CHANGELOG](rich-visuals/CHANGELOG.md) | Real icons and better visuals for Open WebUI 0.13.4's built-in Visualization; skips greetings, emits no events |
 | [Study Mode](study-mode/) | 1.1.0 | [CHANGELOG](study-mode/CHANGELOG.md) | Adaptive tutoring and interactive learning for existing models |

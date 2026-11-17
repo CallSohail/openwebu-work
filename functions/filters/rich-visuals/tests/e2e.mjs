@@ -15,10 +15,12 @@ const log = async () => (await fetch(fake + '/log')).json();
 const api = async (url) => (await fetch(seed.base + url, { headers: { Authorization: 'Bearer ' + seed.user } })).json();
 
 const browser = await chromium.launch();
-async function chat(model, text, theme = 'light') {
+const pageErrors = [];
+async function chat(model, text, theme = 'light', watch = false) {
   const context = await browser.newContext({ viewport: { width: 1280, height: 900 }, colorScheme: theme });
   await context.addInitScript(([token, theme]) => { try { localStorage.token = token; localStorage.theme = theme; } catch {} }, [seed.user, theme]);
   const page = await context.newPage();
+  if (watch) page.on('console', m => { if (m.type() === 'error' && /SyntaxError|replaceWith/.test(m.text())) pageErrors.push(m.text()); });
   await page.goto(seed.base + '/?models=' + model, { waitUntil: 'domcontentloaded' });
   await page.waitForSelector('#chat-input', { timeout: 60000 });
   await page.waitForTimeout(1500);
@@ -40,7 +42,7 @@ const lastAssistant = (chat) => {
 /* ---- a weather question, with Visualization on ---- */
 {
   const before = (await log()).length;
-  const { context, page, chatId } = await chat('fake-visual', 'What will the temperature be in Paris this week?');
+  const { context, page, chatId } = await chat('fake-visual', 'What will the temperature be in Paris this week?', 'light', true);
   const requests = (await log()).slice(before);
   check(requests[0]?.rich_visuals && requests[0]?.icon_rules && requests[0]?.visual_rules && requests[0]?.no_emoji_rule, 'the model is asked for a visual with icons, without emojis');
   check(requests[0]?.tools.includes('render_visualization'), 'Open WebUI offers render_visualization alongside');
@@ -54,6 +56,14 @@ const lastAssistant = (chat) => {
   check(icons.some(c => /owui-icon-sun/.test(c)), 'the emoji in the visual became a real icon');
   const frameText = await frame.locator('body').innerText().catch(() => '');
   check(!/\[\[icon/.test(frameText) && !/[☀-➿\u{1F300}-\u{1FAFF}]/u.test(frameText), 'no tokens and no emojis left inside the visual');
+  check(await frame.locator('#note').innerText().catch(() => '') === 'Script ran', "the visual's script runs, with the token in its JavaScript string removed");
+  const shownError = await section.innerText().catch(() => '');
+  check(!pageErrors.length && !/SyntaxError|Unexpected token|replaceWith/.test(shownError), 'no script error in the visual' + (pageErrors.length ? ': ' + pageErrors[0] : ''));
+  const colours = await frame.locator('svg.owui-icon').evaluateAll(nodes => nodes.map(n => [n.getAttribute('class'), getComputedStyle(n).color, getComputedStyle(n.parentElement).color]));
+  check(colours.filter(([c]) => !/triangle-alert|triangle-exclamation/.test(c)).every(([, icon, text]) => icon === text), 'icons take the colour of their text, not an accent');
+  check(colours.some(([c, icon]) => /triangle/.test(c) && icon === 'rgb(220, 38, 38)'), 'a warning the model coloured red stays red');
+  const titled = await frame.locator('.warn').getAttribute('title').catch(() => null);
+  check(titled === 'Storm', 'a token in an attribute is removed, never drawn (' + titled + ')');
   const labelled = await frame.locator('svg.owui-icon[role="img"][aria-label="Chance of rain"]').count();
   check(labelled === 1, 'a labelled icon keeps its accessible label');
   const size = await frame.locator('svg.owui-icon').first().boundingBox();
@@ -76,7 +86,7 @@ const lastAssistant = (chat) => {
   const frame = page.frameLocator('[data-visualization-call] iframe').first();
   await frame.locator('svg.owui-icon').first().waitFor({ timeout: 20000 }).catch(() => {});
   const colour = await frame.locator('svg.owui-icon').first().evaluate(n => getComputedStyle(n).color).catch(() => '');
-  check(colour && colour !== 'rgb(0, 0, 0)', 'icons take the theme colour in dark mode (' + colour + ')');
+  check(colour && colour !== 'rgb(0, 0, 0)', 'icons follow the light text in dark mode (' + colour + ')');
   if (shots) await page.screenshot({ path: path.join(shots, 'weather-dark.png') });
   await context.close();
 }
