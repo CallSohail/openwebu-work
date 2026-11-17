@@ -157,10 +157,6 @@ Released under the [MIT License](LICENSE).
 
 ## Star History
 
-<a href="https://www.star-history.com/#CallSohail/openwebu-work&Date">
-  <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/svg?repos=CallSohail/openwebu-work&type=Date&theme=dark" />
-    <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/svg?repos=CallSohail/openwebu-work&type=Date" />
-    <img alt="Star History Chart for CallSohail/openwebu-work" src="https://api.star-history.com/svg?repos=CallSohail/openwebu-work&type=Date" />
-  </picture>
-</a>
+[![Star history of CallSohail/openwebu-work](docs/star-history.svg)](https://github.com/CallSohail/openwebu-work/stargazers)
+
+The chart is drawn from this repository's own stargazer data by the [Star History workflow](.github/workflows/star-history.yml), once a day.
