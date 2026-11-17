@@ -125,6 +125,12 @@ Change format :: Convert this into {input:Format}.
 
 Blank lines and lines starting with `#` are ignored. Duplicate labels are ignored case-insensitively. Labels and prompts are bounded before entering the menu/prompt pipeline.
 
+## How it works
+
+![How Open WebUI Quick Actions v3.0 works: an architecture diagram.](diagrams/architecture.svg)
+
+Pressing the button runs the Action on the server. It reads the answer, decides what kind of text it is, and builds the menu from the built-in sections plus any custom actions from the person or the team. The menu and any input box are shown through Open WebUI's `__event_call__`. The finished prompt goes into the message box, or is sent, depending on the behaviour setting.
+
 ## Installation
 
 1. Open **Admin Panel → Functions**.

@@ -28,6 +28,12 @@ By default it opens the draft in the user's configured mail application. This ke
 
 If you need actual server-side sending, implement a separate authenticated mail Tool with an explicit confirmation step.
 
+## How it works
+
+![How Rich Email Composer works: an architecture diagram.](diagrams/architecture.svg)
+
+The model calls `compose_email` with a draft. The Tool checks the addresses against your allow and block lists and returns the card as an inline embed, which Open WebUI shows in a sandboxed iframe. Everything after that happens in the card. *Ask for changes* puts a request in the message box, and *Send* hands the draft to the person's mail app. The server never sends mail.
+
 ## Installation
 
 1. Open **Workspace > Tools** in Open WebUI.

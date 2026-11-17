@@ -28,6 +28,12 @@ Study Mode turns an existing Open WebUI model into an interactive tutor without 
 - Scoped system-prompt integration designed to coexist with existing model prompts
 - Stream/status cleanup hardening and script-safe JSON escaping
 
+## How it works
+
+![How Study Mode works: an architecture diagram.](diagrams/architecture.svg)
+
+On the way in, the Filter adds tutoring instructions, and quiz instructions when the person asks for a quiz. The model puts the quiz in its answer as hidden data. While the answer streams, the Filter keeps that data out of sight and shows progress. At the end, it turns the data into an interactive quiz and removes it from the saved message.
+
 ## Installation
 
 1. Open **Admin Panel > Functions** in Open WebUI.

@@ -99,6 +99,12 @@ Wherever Context names the platform ("tools and instructions EveGPT added", "sum
 
 Context takes its colours from Open WebUI's palette and follows light, dark, OLED black and *Her*. Every text was measured at 4.5:1 contrast or better in all four, warnings included.
 
+## How it works
+
+![How Chat Inspector works: an architecture diagram.](diagrams/architecture.svg)
+
+The Event function only serves a script. When *Context* is chosen, the script reads the chat, the model and its tools from Open WebUI's API, splits the prompt into its parts, estimates their size, and fits the estimate to the token count the model reported. It reads only and never polls. For the details, see [ARCHITECTURE.md](ARCHITECTURE.md).
+
 ## Install or upgrade
 
 1. Open **Admin Panel > Functions** as an administrator.

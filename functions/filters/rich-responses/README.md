@@ -13,6 +13,8 @@ With this filter, normal questions get structured, scannable Markdown that strea
 
 ## How it works
 
+![How Rich Responses works: an architecture diagram.](diagrams/architecture.svg)
+
 1. **`inlet`, before the model runs.** The filter reads the last user message (and whether files are attached) and detects the request type in English, French, Spanish or German: chat, quick fact, explain, summarize, compare, how-to, troubleshoot, plan, code, recommend, creative writing or general. It appends a short style guide and the matching *answer shape* to the system prompt. "Briefly" / "sans détails" makes it compact; "in detail" makes it thorough.
 2. **`stream`, while the answer streams.** If the model writes a heading or a bold label without an icon (`## Overview`, `**Pros:**`), the filter inserts one live (`## 🧭 Overview`, `✅ **Pros:**`). Only line starts that look like headings, fences or bold labels are held, for a few characters (headings until their end of line). Everything else passes through immediately, so streaming stays real time. Code blocks are never touched.
 3. **`outlet`.** Cleans up per-message stream state.

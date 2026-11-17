@@ -124,6 +124,12 @@ Mods takes its colours from Open WebUI's own grey palette, so the window, bars, 
 
 The interface is in English and French and follows Open WebUI's language. The ready-made mods speak French too.
 
+## How it works
+
+![How Mods works: an architecture diagram.](diagrams/architecture.svg)
+
+The Event function serves the Mods script and checks every mod that is saved. In the page, each mod runs in its own sandboxed frame, and the Mods host answers its requests only after checking the frame, its key and its permissions. Create sends the description to a model, then reads, checks and test-runs the answer, and sends any problem back to the model. For the details, see [ARCHITECTURE.md](ARCHITECTURE.md).
+
 ## Install
 
 1. Open **Admin Panel > Functions** as an administrator.

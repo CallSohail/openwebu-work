@@ -35,6 +35,12 @@ Where a tab row is on screen, the gallery opens as a tab: choose another tab and
 
 As a tab, the gallery has no background of its own: what the panel would show under it is hidden, so a page background image shows through. It uses Open WebUI's colors, so it follows light and dark mode and themes that recolor Open WebUI. It never writes anything into your chats.
 
+## How it works
+
+![How Chat Gallery works: an architecture diagram.](diagrams/architecture.svg)
+
+The Event function only serves a script, through the shared `/static/loader.js`. The Gallery tab then reads the open chat and the person's files through Open WebUI's API, with their own access. Generation details are read from the PNG files themselves, and zips are built in the browser. For the details, see [ARCHITECTURE.md](ARCHITECTURE.md).
+
 ## Install
 
 1. Open **Admin Panel > Functions** as an administrator.

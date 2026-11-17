@@ -53,6 +53,12 @@ Keyboard: the arrows, Home and End move through the list (in the grid, Left and 
 
 Files takes its colours from Open WebUI's palette, so it follows light mode, dark mode, the OLED black theme, the *Her* theme, and changes of theme made while it is open. Every text was measured at 4.5:1 contrast or better against what is painted under it, in all four themes, in the list, the preview and the delete box. File-type badges and warning flags use deeper tones in light mode and lighter ones in dark mode for that reason. High-contrast (forced colours) mode gets outlined controls.
 
+## How it works
+
+![How Chat Files works: an architecture diagram.](diagrams/architecture.svg)
+
+The Event function only serves a script, through the shared `/static/loader.js`. Everything else happens in the browser: the Files tab reads the chat and the person's files through Open WebUI's own API, with their own access, previews them, and builds zips locally. Rename and delete go through Open WebUI's routes too. For the details, see [ARCHITECTURE.md](ARCHITECTURE.md).
+
 ## Install
 
 1. Open **Admin Panel > Functions** as an administrator.

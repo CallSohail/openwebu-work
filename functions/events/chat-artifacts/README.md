@@ -102,6 +102,12 @@ Escape closes it; drag its left edge, or use the arrow keys on it, to change its
 
 Open WebUI has a small Artifacts view of its own, for HTML and SVG only. With `replace_builtin` on (the default), this one stands in for it: its ⋯ entry is hidden, its **Preview** button on a code block opens this panel, and its tab is closed when it opens by itself. Turn the valve off to keep both.
 
+## How it works
+
+![How Artifacts works: an architecture diagram.](diagrams/architecture.svg)
+
+Artifacts mode, a Filter, adds the instructions to the request when it is switched on. The Event function serves a script through the shared `/static/loader.js`. In the page, that script finds artifacts in the answers, keeps their versions, and opens them in a panel with a viewer for each kind. Pages and apps run in a frame without the site's origin, limited to the libraries you configure. Exports, MP4 included, are built in the browser. For the details, see [ARCHITECTURE.md](ARCHITECTURE.md).
+
 ## Install
 
 1. If Chat Canvas is installed, disable or delete it in **Admin Panel > Functions**: Artifacts does everything it did. Canvas edits kept in browsers aren't carried over.
