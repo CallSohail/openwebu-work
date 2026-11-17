@@ -103,6 +103,6 @@ See [chat-artifacts/README.md](chat-artifacts/README.md) for installation, Valve
 
 ### Mods 1.0.0
 
-Lets people add small features to Open WebUI themselves: describe one in plain words and a model writes it, or install one of 8 ready-made mods. Mods show labels, bars, panels, `/` commands, buttons under answers and styles. Each runs in a sandboxed frame without network, limited to the permissions granted at install, and administrators can publish mods to everyone. In English and French. It requires Open WebUI 0.13.0 or newer.
+Lets people add small features to Open WebUI themselves: type `/mod` and a description in the message box, and a model writes it while Mods checks the code, test-runs it in a sandbox and has the model fix what fails; or install one of 8 ready-made mods. A card explains `/mod` as it is typed, and each person can pause all their mods. Mods show labels, bars, panels, `/` commands, buttons under answers and styles. Each runs in a sandboxed frame without network, limited to the permissions granted at install, and administrators can publish mods to everyone. In English and French. It requires Open WebUI 0.13.0 or newer.
 
 See [chat-mods/README.md](chat-mods/README.md) for installation, Valves, security and limits, [chat-mods/ARCHITECTURE.md](chat-mods/ARCHITECTURE.md) for how it works, and [chat-mods/CHANGELOG.md](chat-mods/CHANGELOG.md) for the release history.

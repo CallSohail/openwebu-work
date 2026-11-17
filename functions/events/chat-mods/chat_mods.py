@@ -507,6 +507,8 @@ button.md-chip:hover{background:var(--md-soft);color:var(--md-text)}
 .md-switch:disabled{opacity:.5;cursor:default}
 .md-section{margin:1.25rem 0 .5rem;color:var(--md-muted);font-size:.75rem;font-weight:600;letter-spacing:.02em}
 .md-section:first-child{margin-top:0}
+#md-preview-head{scroll-margin-top:.75rem}
+#md-preview-head:focus{outline:none}
 .md-empty{display:flex;flex-direction:column;align-items:center;gap:.375rem;padding:2.5rem 1rem;color:var(--md-muted);text-align:center;font-size:.875rem}
 .md-empty strong{color:var(--md-text);font-weight:500}
 .md-field{display:flex;flex-direction:column;gap:.375rem;margin:0 0 .75rem;font-size:.8125rem;color:var(--md-muted)}
@@ -539,6 +541,40 @@ button.md-chip:hover{background:var(--md-soft);color:var(--md-text)}
 #owui-mods-toast{position:fixed;left:50%;bottom:1.25rem;translate:-50% 0;z-index:9999;max-width:calc(100vw - 2rem);padding:.5rem .875rem;border-radius:999px;background:var(--md-primary);color:var(--md-on-primary);font-size:.8125rem;pointer-events:none;opacity:0;transition:opacity .15s}
 #owui-mods-toast[data-show=true]{opacity:1}
 #owui-mods-menu-item svg,#owui-mods-plus svg{pointer-events:none}
+/* /mod above the message box; Open WebUI's own suggestions step aside meanwhile */
+html[data-mods-slash] [data-tippy-root]:has(#suggestions-container){display:none!important}
+.md-slash{display:flex;flex-direction:column;gap:.375rem;padding:.625rem .75rem;border:1px solid var(--md-strong-line);border-radius:1rem;background:var(--md-surface);box-shadow:0 4px 14px -6px rgb(0 0 0/.18)}
+.md-slashhead{display:flex;align-items:center;gap:.5rem;min-width:0}
+.md-slashhead svg{width:1rem;height:1rem;flex:none;color:var(--md-muted)}
+.md-slashhead strong{font-weight:600;color:var(--md-text)}
+.md-slashkeys{margin-inline-start:auto;color:var(--md-muted);font-size:.75rem;white-space:nowrap}
+.md-slash p{margin:0;color:var(--md-muted);line-height:1.45;text-wrap:pretty}
+.md-quote{color:var(--md-text);font-weight:500;overflow-wrap:anywhere}
+.md-slash .md-btn{align-self:flex-start;height:1.75rem;font-size:.75rem}
+.md-examples{display:flex;flex-wrap:wrap;gap:.375rem}
+.md-example{display:inline-flex;align-items:center;min-height:1.75rem;max-width:100%;padding:.25rem .625rem;border:1px solid var(--md-line);border-radius:.75rem;background:var(--md-soft);color:var(--md-text);font-size:.75rem;line-height:1.35;text-align:start;cursor:pointer;transition:background-color .12s,border-color .12s}
+.md-example:hover{background:var(--md-hover);border-color:var(--md-strong-line)}
+/* Create: how it works, progress, warnings */
+.md-how{margin:0 0 1rem}
+.md-howbody{display:flex;flex-direction:column;gap:.625rem;padding:.75rem .875rem .875rem}
+.md-howbody .md-note{margin:0}
+.md-steps{margin:0;padding-inline-start:1.25rem;display:flex;flex-direction:column;gap:.375rem;font-size:.8125rem;line-height:1.45;color:var(--md-text)}
+.md-label{color:var(--md-muted);font-size:.75rem;font-weight:600}
+.md-progress{margin:.75rem 0;padding:.75rem .875rem;border:1px solid var(--md-line);border-radius:.875rem;background:var(--md-soft)}
+.md-progress .md-note{margin:.5rem 0 0}
+.md-live{list-style:none;padding:0}
+.md-live li{display:flex;align-items:center;gap:.5rem;min-height:1.25rem}
+.md-live li::before{content:'';flex:none;width:.5rem;height:.5rem;border-radius:50%;background:var(--md-strong-line)}
+.md-live li[data-state=active]::before{display:none}
+.md-live li[data-state=done]::before{background:var(--md-ok)}
+.md-live li[data-state=waiting]{color:var(--md-muted)}
+.md-live .md-spin{width:.75rem;height:.75rem;border-width:2px}
+.md-warnbox{margin:.5rem 0;padding:.5rem .75rem;border-radius:.625rem;color:var(--md-warn);background:color-mix(in srgb,var(--md-warn) 10%,transparent);font-size:.8125rem;overflow-wrap:anywhere}
+/* the person's own switch for all their mods */
+.md-master{display:flex;align-items:center;gap:1rem;margin:0 0 .75rem;padding:.75rem .875rem;border:1px solid var(--md-line);border-radius:1rem;background:var(--md-soft)}
+.md-mastertext{flex:1;min-width:0;display:flex;flex-direction:column;gap:.125rem;font-size:.8125rem}
+.md-mastertext strong{font-weight:600}
+.md-mastertext span{color:var(--md-muted);line-height:1.4}
 @media (prefers-reduced-motion:reduce){.md-ui *,#owui-mods-toast{transition:none!important;animation:none!important}}
 @media (forced-colors:active){.md-btn,.md-card,.md-chip,.md-switch,.md-tab{border:1px solid CanvasText}.md-switch[aria-checked=true]{background:Highlight}}
 @media (max-width:640px){.md-dialog{width:100vw;height:100dvh;border-radius:0;border:0}.md-dbody{padding:.75rem 1rem 1rem}.md-tabs{margin:0 1rem}.md-dhead{padding:.75rem .5rem .5rem 1rem}#owui-mods-pane{width:100vw}.md-card{flex-wrap:wrap}.md-cardactions{width:100%;justify-content:flex-end}}
@@ -576,12 +612,27 @@ LOADER_SCRIPT = r"""
       not_allowed: 'This server doesn’t allow: {list}. Ask your administrator, or remove it from the mod.', too_many: 'You can have up to {n} mods. Remove one first.',
       describe: 'Describe the feature', describe_ph: 'For example: a timer above the message box that counts how long I’ve been studying…', model: 'Model',
       generate: 'Create Mod', generating: 'Creating…', change: 'Describe a change', change_ph: 'For example: make it count characters too…', apply_change: 'Change Mod',
-      no_model: 'No model is available to create mods.', gen_failed: 'The model didn’t return a mod. Try again or describe it differently.', ai_failed: 'Couldn’t reach the model: {error}',
+      no_model: 'No model is available to create mods.', gen_failed: 'The model couldn’t write a working mod in {n} tries. Last problem: {problem}. Describe it more simply, or choose a stronger model.', ai_failed: 'Couldn’t reach the model: {error}. Check that the model is available, then try again.', ai_timeout: 'The model took more than 5 minutes to answer. Try again, describe something smaller, or choose a faster model.',
       paste: 'Paste or import a mod', paste_ph: 'name: My mod\npermissions: ui.status\n---\nmod.status.set(\'Hello\');', import_file: 'Import File…', read_mod: 'Read Mod', bad_mod: 'This isn’t a mod: {error}',
       preview: 'Preview', code: 'Code', try_it: 'Try It', stop_try: 'Stop Trying', trying: 'Trying it now; nothing is saved.', save_install: 'Install', save_update: 'Save Changes',
       e_header: 'the settings must end with a line containing only ---', e_name: 'it needs a name of 1 to 60 characters', e_code: 'it has no code', e_long: 'its code is longer than {n} characters', e_perm: '“{value}” isn’t a permission', e_key: '“{value}” isn’t a setting',
       saved_failed: 'Couldn’t save your mods: {error}. Try again in a moment.', load_failed: 'Couldn’t load your mods. Reload the page to try again.', stopped_errors: '{name} was turned off: it kept failing.', stopped_escape: '{name} was turned off: it tried to leave its sandbox.',
-      cmd_taken: 'The command /{name} is already used by another mod.', cmd_mod: 'Describe a feature and create it as a mod', copied: 'Copied',
+      cmd_taken: 'The command /{name} is already used by another mod.', cmd_mod: 'Describe a feature and create it as a mod', cmd_running: 'Running /{name}…', cmd_timeout: 'it took more than 3 minutes', copied: 'Copied',
+      stop: 'Stop', stopped: 'Stopped. Nothing was changed.', busy_already: 'A mod is already being written. Open Mods to follow it.',
+      ready_closed: '“{name}” is ready. Open Mods ({keys}) to review and install it.', added_perms: 'Added because the code uses them: {list}.',
+      lint_warning: 'This mod may not work as written: {problem}.',
+      how_title: 'How Create works', how_1: 'Describe the feature in plain words: what it shows, where, and when.',
+      how_2: 'A model writes the mod. Mods checks the code and, if something is wrong, asks the model to fix it, up to 3 times.',
+      how_3: 'You see what it will be allowed to do, try it without saving anything, ask for changes, then install it.',
+      how_tip_before: 'You can also type', how_tip_after: 'and a description in the message box, then press Enter.', examples: 'Examples',
+      ex_1: 'Count the words I type and warn me above 300', ex_2: 'A 25-minute study timer above the message box with Start and Reset',
+      ex_3: 'A button under each answer that saves it to a notes panel', ex_4: 'Add a /email command that turns my text into a polite email',
+      step_choose: 'Choosing a model…', step_write: 'Writing the mod with {model}…', step_fix: 'Fixing it, try {n} of {max}…', step_check: 'Checking the code and test-running it…', unused_perms: 'In a test run it never used: {list}. It may not do everything you asked; try it before installing, or describe a change.',
+      step_problem: 'The last answer had a problem, sent back to the model: {problem}',
+      slash_title: 'Create a mod', slash_enter: 'to create', slash_busy: 'A mod is already being written.',
+      slash_empty: 'Describe a feature after /mod and press Enter. A model writes it; you see what it may do, try it, and install it. Nothing is sent to the chat.',
+      slash_ready: 'Press Enter to create a mod that:',
+      run_mine: 'Run my mods', running_note: 'Your mods run in every Open WebUI tab you open.', paused_note: 'Paused: none of your mods run and /mod is off, on every device, until you turn this back on.',
       shortcut: 'Shortcut:', for_everyone_note: 'Published mods are part of the page every signed-in person loads, so anyone can read their code.'
     },
     fr: {
@@ -607,12 +658,27 @@ LOADER_SCRIPT = r"""
       not_allowed: 'Ce serveur n’autorise pas : {list}. Demandez à votre administrateur, ou retirez-le du mod.', too_many: 'Vous pouvez avoir jusqu’à {n} mods. Supprimez-en un d’abord.',
       describe: 'Décrivez la fonction', describe_ph: 'Par exemple : un minuteur au-dessus de la zone de message qui compte depuis combien de temps j’étudie…', model: 'Modèle',
       generate: 'Créer le mod', generating: 'Création…', change: 'Décrivez une modification', change_ph: 'Par exemple : compte aussi les caractères…', apply_change: 'Modifier le mod',
-      no_model: 'Aucun modèle n’est disponible pour créer des mods.', gen_failed: 'Le modèle n’a pas renvoyé de mod. Réessayez ou décrivez-le autrement.', ai_failed: 'Impossible de joindre le modèle : {error}',
+      no_model: 'Aucun modèle n’est disponible pour créer des mods.', gen_failed: 'Le modèle n’a pas réussi à écrire un mod qui fonctionne en {n} essais. Dernier problème : {problem}. Décrivez-le plus simplement, ou choisissez un modèle plus puissant.', ai_failed: 'Impossible de joindre le modèle : {error}. Vérifiez que le modèle est disponible, puis réessayez.', ai_timeout: 'Le modèle a mis plus de 5 minutes à répondre. Réessayez, décrivez quelque chose de plus petit, ou choisissez un modèle plus rapide.',
       paste: 'Coller ou importer un mod', paste_ph: 'name: Mon mod\npermissions: ui.status\n---\nmod.status.set(\'Bonjour\');', import_file: 'Importer un fichier…', read_mod: 'Lire le mod', bad_mod: 'Ce n’est pas un mod : {error}',
       preview: 'Aperçu', code: 'Code', try_it: 'Essayer', stop_try: 'Arrêter l’essai', trying: 'Essai en cours ; rien n’est enregistré.', save_install: 'Installer', save_update: 'Enregistrer',
       e_header: 'les réglages doivent finir par une ligne contenant seulement ---', e_name: 'il faut un nom de 1 à 60 caractères', e_code: 'il n’a pas de code', e_long: 'son code dépasse {n} caractères', e_perm: '« {value} » n’est pas une permission', e_key: '« {value} » n’est pas un réglage',
       saved_failed: 'Impossible d’enregistrer vos mods : {error}. Réessayez dans un instant.', load_failed: 'Impossible de charger vos mods. Rechargez la page pour réessayer.', stopped_errors: '{name} a été désactivé : il échouait sans cesse.', stopped_escape: '{name} a été désactivé : il a tenté de sortir de son bac à sable.',
-      cmd_taken: 'La commande /{name} est déjà utilisée par un autre mod.', cmd_mod: 'Décrire une fonction et la créer comme mod', copied: 'Copié',
+      cmd_taken: 'La commande /{name} est déjà utilisée par un autre mod.', cmd_mod: 'Décrire une fonction et la créer comme mod', cmd_running: 'Exécution de /{name}…', cmd_timeout: 'cela a pris plus de 3 minutes', copied: 'Copié',
+      stop: 'Arrêter', stopped: 'Arrêté. Rien n’a été modifié.', busy_already: 'Un mod est déjà en cours d’écriture. Ouvrez Mods pour suivre.',
+      ready_closed: '« {name} » est prêt. Ouvrez Mods ({keys}) pour le vérifier et l’installer.', added_perms: 'Ajoutées car le code les utilise : {list}.',
+      lint_warning: 'Ce mod risque de ne pas fonctionner tel quel : {problem}.',
+      how_title: 'Comment fonctionne Créer', how_1: 'Décrivez la fonction simplement : ce qu’elle affiche, où, et quand.',
+      how_2: 'Un modèle écrit le mod. Mods vérifie le code et, en cas de problème, demande au modèle de le corriger, jusqu’à 3 fois.',
+      how_3: 'Vous voyez ce qu’il pourra faire, l’essayez sans rien enregistrer, demandez des changements, puis l’installez.',
+      how_tip_before: 'Vous pouvez aussi taper', how_tip_after: 'suivi d’une description dans la zone de message, puis Entrée.', examples: 'Exemples',
+      ex_1: 'Compte les mots que je tape et préviens-moi au-delà de 300', ex_2: 'Un minuteur d’étude de 25 minutes au-dessus de la zone de message, avec Démarrer et Réinitialiser',
+      ex_3: 'Un bouton sous chaque réponse qui l’enregistre dans un panneau de notes', ex_4: 'Ajoute une commande /email qui transforme mon texte en e-mail poli',
+      step_choose: 'Choix du modèle…', step_write: 'Écriture du mod avec {model}…', step_fix: 'Correction, essai {n} sur {max}…', step_check: 'Vérification du code et essai…', unused_perms: 'Lors d’un essai, il n’a jamais utilisé : {list}. Il ne fait peut-être pas tout ce que vous avez demandé ; essayez-le avant de l’installer, ou décrivez une modification.',
+      step_problem: 'La dernière réponse avait un problème, renvoyé au modèle : {problem}',
+      slash_title: 'Créer un mod', slash_enter: 'pour créer', slash_busy: 'Un mod est déjà en cours d’écriture.',
+      slash_empty: 'Décrivez une fonction après /mod et appuyez sur Entrée. Un modèle l’écrit ; vous voyez ce qu’il pourra faire, l’essayez et l’installez. Rien n’est envoyé dans la conversation.',
+      slash_ready: 'Appuyez sur Entrée pour créer un mod qui :',
+      run_mine: 'Exécuter mes mods', running_note: 'Vos mods fonctionnent dans chaque onglet Open WebUI que vous ouvrez.', paused_note: 'En pause : aucun de vos mods ne fonctionne et /mod est désactivé, sur tous vos appareils, jusqu’à ce que vous le réactiviez.',
       shortcut: 'Raccourci :', for_everyone_note: 'Les mods publiés font partie de la page que chaque personne connectée charge : tout le monde peut lire leur code.'
     }
   };
@@ -667,6 +733,8 @@ LOADER_SCRIPT = r"""
     let own = false; try { own = new URL(url, location.href).origin === location.origin; } catch {}
     if (!own) throw new Error('Refusing a request to another site');
     const timer = new AbortController(), clock = setTimeout(() => timer.abort(), timeout);
+    const outer = options.signal;
+    if (outer) { if (outer.aborted) timer.abort(); else outer.addEventListener('abort', () => timer.abort(), {once: true}); }
     try { return await fetch(url, {...options, headers: {...(options.headers || {}), ...(token() ? {Authorization: 'Bearer ' + token()} : {})}, credentials: 'same-origin', signal: timer.signal}); }
     finally { clearTimeout(clock); }
   }
@@ -686,40 +754,219 @@ LOADER_SCRIPT = r"""
   const CODE_LIMIT = 60000;
   const permLabel = perm => t('perm_' + perm.replace('.', '_'));
   const slug = name => String(name).normalize('NFKD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 40) || 'mod';
-  function parseMod(text) {
-    const lines = String(text || '').replace(/\r\n?/g, '\n').split('\n');
-    const fence = lines.findIndex(line => /^\s*(```|~~~)\s*mod\b/i.test(line));
+  // Permission names models also write, read only when reading a model's answer (lenient)
+  const PERM_ALIASES = {status: 'ui.status', label: 'ui.status', 'ui.label': 'ui.status', band: 'ui.band', bar: 'ui.band', 'ui.bar': 'ui.band', pane: 'ui.pane', panel: 'ui.pane', 'ui.panel': 'ui.pane', style: 'ui.style', styles: 'ui.style', css: 'ui.style', command: 'commands', 'slash.commands': 'commands', buttons: 'message.buttons', 'message.button': 'message.buttons', 'messages.button': 'message.buttons', 'messages.buttons': 'message.buttons', 'chat.write': 'chat.send', downloads: 'download', 'ai.complete': 'ai'};
+  const ALWAYS_ALLOWED = new Set(['storage', 'toast', 'theme', 'log', 'none']);
+  // What the code calls, and the permission each call needs
+  const NEEDS = [[/\bmod\.status\./, 'ui.status'], [/\bmod\.band\./, 'ui.band'], [/\bmod\.pane\./, 'ui.pane'], [/\bmod\.style\s*\(/, 'ui.style'], [/\bmod\.commands\./, 'commands'], [/\bmod\.messages\./, 'message.buttons'], [/\bmod\.ai\./, 'ai'], [/\bmod\.download\s*\(/, 'download'], [/\bmod\.composer\.get\b|\bmod\.on\(\s*['"`]composer['"`]/, 'composer.read'], [/\bmod\.composer\.(set|insert)\b/, 'composer.write'], [/\bmod\.chat\.(current|goto)\b|\bmod\.on\(\s*['"`]message['"`]/, 'chat.read'], [/\bmod\.chat\.send\b/, 'chat.send']];
+  function neededPermissions(code) {
+    const found = NEEDS.filter(([pattern]) => pattern.test(code)).map(([, perm]) => perm);
+    // A command's text goes into the message box, which needs composer.write unless it sends instead
+    if (found.includes('commands') && !found.includes('composer.write') && !found.includes('chat.send')) found.push('composer.write');
+    return found;
+  }
+  const fenceOpen = line => /^\s*(`{3,}|~{3,})\s*\S/.test(line), fenceClose = line => /^\s*(`{3,}|~{3,})\s*$/.test(line);
+  const KEY_LINE = /^\s*(?:[-*]\s+)?[*_]{0,2}([a-z]+)[*_]{0,2}\s*:\s*(.*?)\s*$/i;
+  function parseMod(text, {lenient = false} = {}) {
+    let source = String(text || '').replace(/\r\n?/g, '\n');
+    // Reasoning models may think aloud first, sometimes with a draft inside
+    if (lenient) source = source.replace(/<(think|thinking|reasoning)>[\s\S]*?<\/\1>/gi, '');
+    const lines = source.split('\n');
+    let start = lines.findIndex(line => /^\s*(`{3,}|~{3,})\s*mod\b/i.test(line));
+    if (start < 0 && lenient) start = lines.findIndex((line, i) => fenceOpen(line) && lines.slice(i + 1, i + 8).some(next => /^\s*(?:[-*]\s+)?[*_]{0,2}name[*_]{0,2}\s*:/i.test(next)));
     let body = lines;
-    if (fence >= 0) { const end = lines.findIndex((line, i) => i > fence && /^\s*(```|~~~)\s*$/.test(line)); body = lines.slice(fence + 1, end > fence ? end : undefined); }
-    const split = body.findIndex(line => /^\s*---\s*$/.test(line));
+    if (start >= 0) {
+      // A block may hold a ```js block of its own; it ends at the fence that closes it, not the inner one
+      let depth = 0, end = -1;
+      for (let i = start + 1; i < lines.length; i++) {
+        if (fenceOpen(lines[i])) depth++;
+        else if (fenceClose(lines[i])) { if (depth) depth--; else { end = i; break; } }
+      }
+      body = lines.slice(start + 1, end > start ? end : undefined);
+    } else if (lenient) {
+      const first = body.findIndex(line => /^\s*(?:[-*]\s+)?[*_]{0,2}name[*_]{0,2}\s*:/i.test(line));
+      if (first > 0) body = body.slice(first);
+    }
+    let split = body.findIndex(line => /^\s*-{3,}\s*$/.test(line));
+    if (split < 0 && lenient) {
+      // Settings without the --- line: the code starts at the first line that isn't a setting
+      let i = 0;
+      while (i < body.length && (!body[i].trim() || KEY_LINE.test(body[i]))) i++;
+      if (i > 0 && i < body.length) { body = [...body.slice(0, i), '---', ...body.slice(i)]; split = i; }
+    }
     if (split < 0) throw new Error(t('e_header'));
-    const spec = {name: '', description: '', permissions: [], version: 1, icon: '', id: ''};
+    const spec = {name: '', description: '', permissions: [], added: [], version: 1, icon: '', id: ''};
     for (const line of body.slice(0, split)) {
       if (!line.trim() || /^\s*(\/\/|#)/.test(line)) continue;
-      const m = /^\s*([a-z]+)\s*:\s*(.*?)\s*$/i.exec(line);
-      if (!m) throw new Error(t('e_key', {value: clip(line.trim(), 40)}));
-      const key = m[1].toLowerCase(), value = m[2];
+      const m = KEY_LINE.exec(line);
+      if (!m) { if (lenient) continue; throw new Error(t('e_key', {value: clip(line.trim(), 40)})); }
+      const key = m[1].toLowerCase(), value = m[2].replace(/^[*_\s]+/, '').replace(/^(["'`])(.*)\1$/, '$2').trim();
       if (key === 'name') spec.name = value;
       else if (key === 'description') spec.description = clip(value, 200);
       else if (key === 'version') spec.version = clamp(parseInt(value, 10) || 1, 1, 100000);
       else if (key === 'icon') spec.icon = [...value].slice(0, 2).join('');
       else if (key === 'id') spec.id = slug(value);
       else if (key === 'permissions' || key === 'permission') {
-        for (const each of value.split(/[\s,]+/).filter(Boolean)) { const perm = each.toLowerCase(); if (!PERMS[perm]) throw new Error(t('e_perm', {value: clip(each, 30)})); if (!spec.permissions.includes(perm)) spec.permissions.push(perm); }
-      } else throw new Error(t('e_key', {value: clip(key, 30)}));
+        for (const each of value.replace(/[\[\]"'`()]/g, ' ').split(/[\s,;]+/).filter(word => word && word.toLowerCase() !== 'and')) {
+          let perm = each.toLowerCase().replace(/[.]+$/, '');
+          if (lenient && !PERMS[perm]) {
+            // Models list things that need no permission (storage.set, toast) or invent names; what the code really
+            // uses is found by reading it, below, so an unknown name is skipped rather than refused
+            if (ALWAYS_ALLOWED.has(perm.split('.')[0])) continue;
+            perm = PERM_ALIASES[perm] || perm;
+            if (!PERMS[perm]) continue;
+          }
+          if (!PERMS[perm]) throw new Error(t('e_perm', {value: clip(each, 30)}));
+          if (!spec.permissions.includes(perm)) spec.permissions.push(perm);
+        }
+      } else if (!lenient) throw new Error(t('e_key', {value: clip(key, 30)}));
     }
     spec.name = spec.name.trim();
     if (!spec.name || spec.name.length > 60) throw new Error(t('e_name'));
-    const code = body.slice(split + 1).join('\n').replace(/^\s*\n|\s*$/g, '');
+    let codeLines = body.slice(split + 1);
+    if (lenient) {
+      // The code itself wrapped in ```js … ```
+      const first = codeLines.findIndex(line => line.trim()), last = codeLines.length - 1 - [...codeLines].reverse().findIndex(line => line.trim());
+      if (first >= 0 && fenceOpen(codeLines[first]) && fenceClose(codeLines[last]) && last > first) codeLines = codeLines.slice(first + 1, last);
+    }
+    const code = codeLines.join('\n').replace(/^\s*\n|\s*$/g, '');
     if (!code) throw new Error(t('e_code'));
     if (code.length > CODE_LIMIT) throw new Error(t('e_long', {n: CODE_LIMIT.toLocaleString(lang)}));
     spec.code = code; spec.id = spec.id || slug(spec.name);
+    // Permissions the code clearly needs but forgot to ask for are added, and shown before anything is installed
+    if (lenient) for (const perm of neededPermissions(code)) if (!spec.permissions.includes(perm)) { spec.permissions.push(perm); spec.added.push(perm); }
     return spec;
+  }
+  // Mistakes models make that would only show up once the mod runs; each is sent back to the model to fix
+  const API = {on: 1, toast: 1, log: 1, style: 1, download: 1, theme: 1, status: ['set', 'clear'], band: ['set', 'clear'], pane: ['open', 'close'], composer: ['get', 'set', 'insert'], chat: ['current', 'send', 'goto'], commands: ['add'], messages: ['button'], ai: ['complete'], storage: ['get', 'set', 'remove']};
+  const EVENTS = ['composer', 'message', 'chat', 'theme', 'pane'];
+  const LINT = [
+    [/\bfetch\s*\(|\bXMLHttpRequest\b|\bWebSocket\b|\bEventSource\b|\bsendBeacon\b/, 'it uses the network (fetch, XMLHttpRequest, WebSocket), which mods cannot reach; use mod.ai.complete() to ask the model'],
+    [/\blocalStorage\b|\bsessionStorage\b|\bindexedDB\b|\bdocument\.cookie\b/, 'it uses browser storage, which mods cannot reach; use mod.storage.get/set'],
+    [/\bwindow\.(parent|top|opener)\b|\bparent\.document\b|\btop\.document\b/, 'it reaches for the Open WebUI page, which mods cannot see; use the mod API'],
+    [/document\.(querySelector(All)?|getElementById|getElementsBy\w+)\s*\(\s*['"`][^'"`]*(chat-input|messages-container|sidebar|message-input|response-content)/, 'it looks for Open WebUI elements in document, but a mod\'s document is only its own panel; use mod.composer, mod.chat, mod.status or mod.style instead'],
+    [/\beval\s*\(|\bnew\s+Function\s*\(/, 'it uses eval or new Function, which mods cannot use'],
+    [/^\s*import\s|\bimport\s*\(|\brequire\s*\(/m, 'it imports a library; mods must be self-contained JavaScript'],
+    [/\balert\s*\(|\bconfirm\s*\(|\bprompt\s*\(/, 'it uses alert, confirm or prompt, which are blocked; use mod.toast or build the question in a panel']
+  ];
+  // Calls whose answer the code needs: used without await (or .then), the code gets a promise instead of the value
+  function missingAwait(code) {
+    for (const match of code.matchAll(/\bmod\.(chat\.current|composer\.get|storage\.get|ai\.complete)\s*\(/g)) {
+      const before = code.slice(Math.max(0, match.index - 40), match.index), after = code.slice(match.index + match[0].length, match.index + match[0].length + 300);
+      if (/\b(await|return)\s*\(?\s*$/.test(before) || /^[^;\n]*?\)\s*\.(then|catch|finally)\b/.test(after) || /Promise\.(all|race|allSettled)\(\s*\[?[^;]*$/.test(before)) continue;
+      return 'it uses mod.' + match[1] + '() without await; it returns a promise, so write await mod.' + match[1] + '(…) inside an async function';
+    }
+    return '';
+  }
+  function lintMod(code) {
+    const problems = [];
+    for (const [pattern, problem] of LINT) if (pattern.test(code)) problems.push(problem);
+    const awaitProblem = missingAwait(code); if (awaitProblem) problems.push(awaitProblem);
+    for (const [, top, member] of code.matchAll(/\bmod\.([A-Za-z_$][\w$]*)(?:\.([A-Za-z_$][\w$]*))?/g)) {
+      const known = API[top];
+      if (!known) problems.push(`mod.${top} does not exist (available: ${Object.keys(API).join(', ')})`);
+      else if (member && Array.isArray(known) && !known.includes(member)) problems.push(`mod.${top}.${member} does not exist (mod.${top} has ${known.join(', ')})`);
+    }
+    for (const [, name] of code.matchAll(/\bmod\.on\(\s*['"`]([^'"`]*)['"`]/g)) if (!EVENTS.includes(name)) problems.push(`mod.on("${name}") is not an event (events: ${EVENTS.join(', ')})`);
+    return [...new Set(problems)].slice(0, 4).join('; ');
+  }
+  // A test run before anyone sees a mod: the code runs for a moment in a throwaway sandbox, as it will for real,
+  // against a stand-in API. It gets sample typing, a sample chat and answer, its panel opened and closed, and its
+  // commands, buttons and actions pressed. Errors go back to the model; permissions it never used are reported.
+  const SAMPLE_CHAT = {id: 'sample-chat', title: 'Sample chat', messages: [{id: 'sample-q', role: 'user', text: 'What is photosynthesis?'}, {id: 'sample-a', role: 'assistant', text: 'Photosynthesis is how plants turn light, water and carbon dioxide into sugar and oxygen. It happens in the chloroplasts of leaves.'}]};
+  const SAMPLE_LONG = Array.from({length: 360}, (x, i) => ['the', 'study', 'of', 'plants', 'and', 'light'][i % 6]).join(' ');
+  function smokeStub(NONCE, THEME, CHAT, LONG) {
+    'use strict';
+    const problems = [], used = new Set(), handlers = {}, calls = [];
+    let starting = true, buttons = 0, commands = 0;
+    const report = error => { const text = String((error && (error.message || error)) || error).slice(0, 240); if (!problems.includes(text)) problems.push(text); };
+    addEventListener('error', event => { report(event.error || event.message); event.preventDefault(); });
+    addEventListener('unhandledrejection', event => { report(event.reason); event.preventDefault(); });
+    const ok = value => Promise.resolve(value);
+    // Each callback is kept with what it is given: a command gets text, a button gets an answer, an action nothing
+    const keep = (fn, kind) => { if (typeof fn === 'function') calls.push([fn, kind]); };
+    const once = what => { if (!starting) throw new Error(what + ' was called inside an event handler; call it once when the mod starts, at the top level'); };
+    const mod = {
+      on(name, fn) { if (typeof fn !== 'function') throw new TypeError('mod.on needs a function'); (handlers[name] = handlers[name] || []).push(fn); },
+      toast: () => { used.add('toast'); return ok(); }, log() {},
+      status: {set(text, options) { if (!['string', 'number'].includes(typeof text)) throw new TypeError('mod.status.set(text) needs text'); used.add('ui.status'); keep(options && options.onClick, 'action'); return ok(); }, clear: () => ok()},
+      band: {set(spec) { if (!spec || typeof spec !== 'object' || !Array.isArray(spec.actions || [])) throw new TypeError('mod.band.set({text, actions}) needs an object'); for (const action of spec.actions || []) { if (!action || typeof action.onClick !== 'function') throw new TypeError('each band action needs {label, onClick: function}'); keep(action.onClick, 'action'); } used.add('ui.band'); return ok(); }, clear: () => ok()},
+      pane: {open() { used.add('ui.pane'); return ok(); }, close: () => ok()},
+      composer: {get: () => ok('hello world'), set() { used.add('composer.write'); return ok(); }, insert() { used.add('composer.write'); return ok(); }},
+      chat: {current: () => ok(JSON.parse(JSON.stringify(CHAT))), send(text) { if (!String(text ?? '').trim()) return Promise.reject(new Error('mod.chat.send() was given nothing to send')); used.add('chat.send'); return ok(); }, goto: () => ok(true)},
+      commands: {add(name, description, fn) { if (typeof description === 'function') fn = description; if (typeof name !== 'string' || typeof fn !== 'function') throw new TypeError('mod.commands.add(name, description, fn) needs a name and a function'); once('mod.commands.add'); if (++commands > 8) throw new Error('a mod can add up to 8 commands'); used.add('commands'); keep(fn, 'command'); return ok(); }},
+      messages: {button(label, fn) { if (!['string', 'number'].includes(typeof label) || typeof fn !== 'function') throw new TypeError('mod.messages.button(label, fn) needs a text label and a function'); once('mod.messages.button'); if (++buttons > 3) throw new Error('a mod can add up to 3 buttons'); used.add('message.buttons'); keep(fn, 'button'); return ok(); }},
+      style(css) { used.add('ui.style'); window.__smokeCss = (window.__smokeCss || '') + '\n' + String(css || ''); return ok(); },
+      ai: {complete() { used.add('ai'); return ok('A short answer from the model.'); }},
+      storage: {get: () => ok(null), set: () => ok(), remove: () => ok()},
+      download() { used.add('download'); return ok(); },
+      theme: () => JSON.parse(JSON.stringify(THEME))
+    };
+    Object.defineProperty(window, 'mod', {value: Object.freeze(mod)});
+    window.__smokeReport = report;
+    const fire = async (name, payload) => { for (const fn of handlers[name] || []) { try { await fn(payload); } catch (error) { report(error); } } };
+    const pause = ms => new Promise(resolve => setTimeout(resolve, ms));
+    setTimeout(async () => {
+      const answer = Object.assign({chatId: CHAT.id}, CHAT.messages[1]);
+      starting = false;
+      await fire('chat', {id: CHAT.id}); await fire('theme', THEME);
+      for (const text of ['', 'hello world', 'Hi, my email is student@example.edu and my phone is 06 12 34 56 78. Can you check https://example.org by Friday 14:30?', LONG]) await fire('composer', text);
+      await fire('message', answer); await fire('pane', {open: true});
+      for (const [fn, kind] of calls.slice(0, 30)) { try { await (kind === 'command' ? fn('hello world') : kind === 'button' ? fn(Object.assign({}, answer)) : fn()); } catch (error) { report(error); } }
+      await fire('pane', {open: false});
+      await pause(400);
+      parent.postMessage({__modcheck: NONCE, problems, used: [...used], css: String(window.__smokeCss || '').slice(0, 30000)}, '*');
+    }, 350);
+  }
+  function testRun(mod) {
+    return new Promise(resolve => {
+      const nonce = randomId(), frame = el('iframe');
+      frame.setAttribute('sandbox', SANDBOX); frame.setAttribute('aria-hidden', 'true'); frame.tabIndex = -1;
+      frame.style.cssText = 'position:fixed;width:0;height:0;border:0;left:-9999px;top:0';
+      let done = false;
+      const finish = result => { if (done) return; done = true; removeEventListener('message', listen); clearTimeout(clock); frame.remove(); resolve(result); };
+      const listen = event => { if (event.source === frame.contentWindow && event.data?.__modcheck === nonce) finish({problems: (event.data.problems || []).map(p => clip(p, 240)).slice(0, 4), used: event.data.used || [], css: String(event.data.css || '')}); };
+      // A mod that never finishes its first moment (an endless loop) is a problem too
+      const clock = setTimeout(() => finish({problems: ['it did not finish starting within 5 seconds (an endless loop?)'], used: []}), 5000);
+      addEventListener('message', listen);
+      const stub = '(' + smokeStub.toString() + ')(' + [nonce, themeNow(), SAMPLE_CHAT, SAMPLE_LONG].map(v => JSON.stringify(v)).join(',') + ');';
+      const run = '(async function(mod){"use strict";\n' + mod.code + '\n})(window.mod).catch(function(e){window.__smokeReport(e)});';
+      frame.srcdoc = '<!doctype html><html><head><meta charset="utf-8"><meta http-equiv="Content-Security-Policy" content="' + FRAME_CSP + '"><script>' + scriptSafe(stub) + '</script></head><body><script>' + scriptSafe(run) + '</script></body></html>';
+      document.body.append(frame);
+    });
+  }
+  // A style whose selectors match nothing on Open WebUI's page does nothing; models often invent class names
+  function unmatchedSelectors(css) {
+    const rules = [];
+    const clean = String(css || '').replace(/\/\*[\s\S]*?\*\//g, '').replace(/@media[^{]*\{/g, '').replace(/@supports[^{]*\{/g, '');
+    for (const [, selectors] of clean.matchAll(/([^{}@]+)\{[^{}]*\}/g)) for (const selector of selectors.split(',')) { const sel = selector.trim(); if (sel) rules.push(sel); }
+    if (!rules.length) return '';
+    const matches = sel => { try { return !!document.querySelector(sel.replace(/::?(before|after|placeholder|selection|hover|focus|focus-visible|active|visited|first-line|first-letter|-webkit-scrollbar[\w-]*)\b/g, '').trim() || '*'); } catch { return true; } };
+    // Variables on :root, html and body always apply; a rule counts when what it selects exists here
+    const live = rules.filter(sel => /^(:root|html|body|\*)\b/.test(sel) || matches(sel));
+    if (live.length) return '';
+    return 'its CSS selectors match nothing in Open WebUI (' + clip(rules.slice(0, 4).join(', '), 160) + '); use real ones: #messages-container (the conversation), #response-content-container (the text of an answer), #chat-input (the message box), #sidebar, html.dark for dark mode, or the --color-gray-50 … --color-gray-950 variables on html';
+  }
+  // What a test run says about a mod: problems the model must fix, and permissions asked for but never used
+  async function checkMod(mod, lastTry = false) {
+    const lint = lintMod(mod.code);
+    if (lint) return {problem: lint, unused: []};
+    const result = await testRun(mod);
+    if (result.problems.length) return {problem: 'it fails when run: ' + result.problems.join('; '), unused: []};
+    const deadCss = unmatchedSelectors(result.css);
+    if (deadCss) return {problem: deadCss, unused: []};
+    const shown = ['ui.status', 'ui.band', 'ui.pane', 'ui.style', 'commands', 'message.buttons'];
+    const unused = mod.permissions.filter(p => shown.includes(p) && !result.used.includes(p));
+    // A panel, buttons or commands it asked for but never made, even with everything pressed, means it can't do
+    // what was asked: the model fixes that, except on its last try, where the person is warned instead
+    const missing = unused.filter(p => ['ui.pane', 'commands', 'message.buttons'].includes(p));
+    if (missing.length && !lastTry) return {problem: 'it asks for ' + missing.join(', ') + ' but never calls ' + missing.map(p => ({'ui.pane': 'mod.pane.open()', commands: 'mod.commands.add()', 'message.buttons': 'mod.messages.button()'})[p]).join(' or ') + ', so the person can never see or use it', unused: []};
+    return {problem: '', unused};
   }
   const modText = mod => ['name: ' + mod.name, mod.description ? 'description: ' + mod.description : '', 'version: ' + (mod.version || 1), mod.icon ? 'icon: ' + mod.icon : '', 'permissions: ' + (mod.permissions || []).join(', '), '---', mod.code, ''].filter((line, i) => line || i >= 5).join('\n');
 
   /* ---- the person and their mods ---- */
-  let me = null, data = {mods: [], dismissed: []}, loaded = false;
+  let me = null, data = {mods: [], dismissed: [], paused: false}, loaded = false;
   const store = machine('store', 'idle', {'*': {load: 'loading'}, loading: {done: 'ready', fail: 'failed'}, ready: {save: 'saving'}, saving: {done: 'ready', fail: 'ready'}});
   let saving = Promise.resolve();
   const valvesUrl = '/api/v1/functions/id/' + encodeURIComponent(CONFIG.functionId) + '/valves';
@@ -729,7 +976,7 @@ LOADER_SCRIPT = r"""
       me = me || await api('/api/v1/auths/');
       const valves = await api(valvesUrl + '/user');
       const parsed = valves?.mods ? JSON.parse(valves.mods) : null;
-      data = {mods: Array.isArray(parsed?.mods) ? parsed.mods : [], dismissed: Array.isArray(parsed?.dismissed) ? parsed.dismissed : []};
+      data = {mods: Array.isArray(parsed?.mods) ? parsed.mods : [], dismissed: Array.isArray(parsed?.dismissed) ? parsed.dismissed : [], paused: parsed?.paused === true};
       loaded = true; store.send('done');
     } catch { store.send('fail'); }
   }
@@ -813,18 +1060,18 @@ LOADER_SCRIPT = r"""
       toast: message => call('toast', text(message)),
       log: (...parts) => post('log', {message: parts.map(text).join(' ').slice(0, 500)}),
       status: {
-        set(label, options = {}) { if (typeof options.onClick === 'function') actions.set('status', options.onClick); else actions.delete('status'); return call('status.set', {text: text(label), tone: text(options.tone), clickable: typeof options.onClick === 'function'}); },
+        set(label, options = {}) { if (!['string', 'number'].includes(typeof label)) throw new TypeError('mod.status.set(text) needs text'); options = options || {}; if (typeof options.onClick === 'function') actions.set('status', options.onClick); else actions.delete('status'); return call('status.set', {text: text(label), tone: text(options.tone), clickable: typeof options.onClick === 'function'}); },
         clear: () => call('status.clear')
       },
       band: {
-        set(spec = {}) { const list = (spec.actions || []).slice(0, 3).map((action, i) => { actions.set('band' + i, typeof action.onClick === 'function' ? action.onClick : () => {}); return {id: 'band' + i, label: text(action.label)}; }); return call('band.set', {text: text(spec.text), actions: list}); },
+        set(spec = {}) { if (!spec || typeof spec !== 'object' || !Array.isArray(spec.actions || [])) throw new TypeError('mod.band.set({text, actions}) needs an object'); for (const action of spec.actions || []) if (!action || typeof action.onClick !== 'function') throw new TypeError('each band action needs {label, onClick: function}'); const list = (spec.actions || []).slice(0, 3).map((action, i) => { actions.set('band' + i, typeof action.onClick === 'function' ? action.onClick : () => {}); return {id: 'band' + i, label: text(action.label)}; }); return call('band.set', {text: text(spec.text), actions: list}); },
         clear: () => call('band.clear')
       },
       pane: {open: (options = {}) => call('pane.open', {title: text(options.title)}), close: () => call('pane.close')},
       composer: {get: () => call('composer.get'), set: value => call('composer.set', text(value)), insert: value => call('composer.insert', text(value))},
       chat: {current: () => call('chat.current'), send: value => call('chat.send', text(value)), goto: id => call('chat.goto', text(id))},
-      commands: {add(name, description, fn) { if (typeof description === 'function') { fn = description; description = ''; } const key = text(name).replace(/^\//, '').toLowerCase(); commands.set(key, fn); return call('commands.add', {name: key, description: text(description)}); }},
-      messages: {button(label, fn) { const id = 'b' + buttons.size; buttons.set(id, fn); return call('messages.button', {id, label: text(label)}); }},
+      commands: {add(name, description, fn) { if (typeof description === 'function') { fn = description; description = ''; } if (typeof name !== 'string' || typeof fn !== 'function') throw new TypeError('mod.commands.add(name, description, fn) needs a name and a function'); const key = text(name).replace(/^\//, '').toLowerCase(); commands.set(key, fn); return call('commands.add', {name: key, description: text(description)}); }},
+      messages: {button(label, fn) { if (!['string', 'number'].includes(typeof label) || typeof fn !== 'function') throw new TypeError('mod.messages.button(label, fn) needs a text label and a function'); const id = 'b' + buttons.size; buttons.set(id, fn); return call('messages.button', {id, label: text(label)}); }},
       style: css => call('style.set', text(css)),
       ai: {complete: prompt => call('ai.complete', text(prompt))},
       storage: {get: key => call('storage.get', text(key)), set: (key, value) => call('storage.set', {key: text(key), value}), remove: key => call('storage.remove', text(key))},
@@ -861,7 +1108,7 @@ LOADER_SCRIPT = r"""
   // A mod's frame never moves once made (moving a frame reloads it); its panel shows it where it already is
   function start(mod, {preview = false} = {}) {
     if (runners.has(mod.id)) stop(mod.id);
-    if (!CONFIG.enabled || safeMode || !permitted(mod)) return null;
+    if (!CONFIG.enabled || safeMode || !permitted(mod) || (data.paused && !preview)) return null;
     ensureFramesHost();
     const nonce = randomId();
     const frame = el('iframe', 'md-frame'); frame.setAttribute('sandbox', SANDBOX); frame.setAttribute('referrerpolicy', 'no-referrer'); frame.setAttribute('allow', '');
@@ -897,13 +1144,13 @@ LOADER_SCRIPT = r"""
   }
   const can = (runner, perm) => runner.granted.has(perm);
   function send(runner, type, payload) { try { runner.frame.contentWindow?.postMessage({__mods: runner.nonce, type, data: payload}, '*'); } catch {} }
-  function emit(runner, name, payload, wantResult = false) {
+  function emit(runner, name, payload, wantResult = false, timeout = 15000) {
     if (!wantResult) { send(runner, 'event', {name, payload}); return Promise.resolve(); }
     const id = ++runner.seq;
     return new Promise((resolve, reject) => {
       runner.pending.set(id, {resolve, reject});
       send(runner, 'event', {name, payload, reply: id});
-      setTimeout(() => { if (runner.pending.delete(id)) reject(new Error('timeout')); }, 15000);
+      setTimeout(() => { if (runner.pending.delete(id)) reject(new Error(t('cmd_timeout'))); }, timeout);
     });
   }
   const tooOften = (list, max, ms) => { const now = Date.now(); while (list.length && now - list[0] > ms) list.shift(); if (list.length >= max) return true; list.push(now); return false; };
@@ -943,8 +1190,8 @@ LOADER_SCRIPT = r"""
     const models = (Array.isArray(list?.data) ? list.data : Array.isArray(list) ? list : []).filter(m => m?.id && !/^arena/i.test(m.id));
     return models;
   }
-  async function complete(model, messages, timeout = 120000) {
-    const answer = await api('/api/chat/completions', {method: 'POST', body: JSON.stringify({model, messages, stream: false})}, timeout);
+  async function complete(model, messages, timeout = 120000, signal) {
+    const answer = await api('/api/chat/completions', {method: 'POST', body: JSON.stringify({model, messages, stream: false}), signal}, timeout);
     return String(answer?.choices?.[0]?.message?.content ?? '');
   }
   const HANDLERS = {
@@ -1021,16 +1268,19 @@ LOADER_SCRIPT = r"""
     const bands = [...runners.values()].filter(r => r.band && can(r, 'ui.band'));
     const statuses = [...runners.values()].filter(r => r.status && can(r, 'ui.status'));
     const typed = composerText(), hint = /^\/[a-z0-9-]*$/i.test(typed.trim()) ? typed.trim().slice(1).toLowerCase() : null;
-    const own = canCreate() ? [{name: 'mod', description: t('cmd_mod')}] : [];
+    const slash = /^\/mod(?:\s([\s\S]*))?$/i.test(typed.trim()) && slashOn() ? typed.trim().slice(4).trim() : null;
+    const own = slashOn() && slash == null ? [{name: 'mod', description: t('cmd_mod')}] : [];
     const commands = hint == null ? [] : [...own, ...[...runners.values()].filter(r => can(r, 'commands')).flatMap(r => r.commands)].filter(c => c.name.startsWith(hint)).slice(0, 6);
-    if (!form || (!bands.length && !statuses.length && !commands.length)) { bar?.remove(); return; }
+    if (slash == null) delete document.documentElement.dataset.modsSlash;
+    if (!form || (!bands.length && !statuses.length && !commands.length && slash == null)) { bar?.remove(); return; }
     if (!bar) { bar = el('div', 'md-ui'); bar.id = 'owui-mods-bar'; bar.setAttribute('role', 'region'); setLabel(bar, t('mods')); bar.removeAttribute('title'); }
     const nodes = [];
     for (const r of bands.slice(0, 3)) {
       const band = el('div', 'md-band'); band.dataset.mod = r.mod.id;
       const text = el('span', 'md-bandtext', r.band.text); text.dir = 'auto';
-      // The mod's icon, or its name, says whose bar it is, unless its text already starts with that icon
-      if (!(r.mod.icon && r.band.text.startsWith(r.mod.icon))) band.append(el('span', 'md-bandname', r.mod.icon || r.mod.name));
+      // The mod's icon or name says whose bar it is, unless its text already starts with it
+      const own = r.mod.icon || r.mod.name;
+      if (!r.band.text.toLowerCase().startsWith(own.toLowerCase())) band.append(el('span', 'md-bandname', own));
       band.append(text);
       for (const action of r.band.actions) band.append(button(action.label, () => emit(r, 'action', {id: action.id})));
       nodes.push(band);
@@ -1050,8 +1300,32 @@ LOADER_SCRIPT = r"""
       }
       nodes.push(chips);
     }
+    if (slash != null) nodes.unshift(slashHelp(slash));
+    // Open WebUI offers its own /model when /mod is typed; while the card explains /mod, that offer steps aside
+    if (slash != null) document.documentElement.dataset.modsSlash = '1'; else delete document.documentElement.dataset.modsSlash;
     bar.replaceChildren(...nodes);
     if (bar.parentElement !== form || form.firstElementChild !== bar) form.prepend(bar);
+  }
+  // Shown while the message box starts with /mod: what will happen on Enter, with examples to start from
+  function slashHelp(text) {
+    const card = el('div', 'md-slash'); card.id = 'owui-mods-slash'; card.setAttribute('role', 'status'); card.setAttribute('aria-live', 'polite');
+    const head = el('div', 'md-slashhead');
+    const keys = el('span', 'md-slashkeys'); const enter = el('kbd', 'md-kbd', 'Enter'); enter.translate = false; keys.append(enter, ' ' + t('slash_enter'));
+    head.append(svgIcon('sparkle'), el('strong', null, t('slash_title')), keys);
+    card.append(head);
+    if (writingNow()) {
+      card.append(el('p', null, t('slash_busy')), button(t('open_mods'), () => openDialog(), 'md-btn'));
+    } else if (!text) {
+      card.append(el('p', null, t('slash_empty')));
+      const examples = el('div', 'md-examples');
+      for (const key of ['ex_1', 'ex_2', 'ex_3']) examples.append(button(t(key), () => { setComposer('/mod ' + t(key)); setTimeout(() => document.getElementById('chat-input')?.focus(), 60); }, 'md-example'));
+      card.append(examples);
+    } else {
+      const p = el('p'); const quote = el('span', 'md-quote', clip(text, 160)); quote.dir = 'auto';
+      p.append(t('slash_ready') + ' ', quote);
+      card.append(p);
+    }
+    return card;
   }
   function showPane(runner, title) {
     ensureFramesHost();
@@ -1115,7 +1389,7 @@ LOADER_SCRIPT = r"""
     if (!m) return;
     const name = m[1].toLowerCase();
     // "/mod <what you want>" is Mods' own: it opens Create with that description and starts writing the mod
-    if (name === 'mod' && canCreate()) {
+    if (name === 'mod' && slashOn()) {
       event.preventDefault(); event.stopImmediatePropagation();
       const ask = clip((m[2] || '').trim(), 4000);
       setComposer('');
@@ -1126,7 +1400,9 @@ LOADER_SCRIPT = r"""
     if (!runner) return;
     event.preventDefault(); event.stopImmediatePropagation();
     try {
-      const result = await emit(runner, 'command', {name, args: clip(m[2] || '', 20000)}, true);
+      // A command may ask the model, which can take a while: say so if it isn't instant
+      const notice = setTimeout(() => toast(t('cmd_running', {name})), 800);
+      const result = await emit(runner, 'command', {name, args: clip(m[2] || '', 20000)}, true, 180000).finally(() => clearTimeout(notice));
       if (typeof result === 'string' && result) { if (!can(runner, 'composer.write')) throw new Error('Not allowed: composer.write'); setComposer(result); }
       else if (result && typeof result.send === 'string') { if (!can(runner, 'chat.send')) throw new Error('Not allowed: chat.send'); setComposer(result.send, true); }
       else setComposer('');
@@ -1185,18 +1461,29 @@ LOADER_SCRIPT = r"""
     event.preventDefault(); event.stopImmediatePropagation(); openDialog();
   }, true);
 
-  const canCreate = () => CONFIG.enabled && !safeMode && loaded && (CONFIG.allowUserMods || isAdmin());
+  const canCreate = () => CONFIG.enabled && !safeMode && (CONFIG.allowUserMods || isAdmin());
+  // /mod in the message box: allowed by the administrator, and not while the person has paused their mods
+  const slashOn = () => canCreate() && CONFIG.slashCommand && !data.paused;
   // Opens Create with a description; with one, starts writing the mod at once
   function createFrom(description) {
     tab = 'create';
-    if (description) { studio.description = description; studio.change = ''; studio.editing = null; }
+    if (writingNow()) { toast(t('busy_already')); if (dialog?.open) paintDialog(); else openDialog(); return; }
+    if (description) { studio.description = description; studio.change = ''; studio.editing = null; studio.result = null; studio.error = ''; studio.warning = ''; }
     if (dialog?.open) paintDialog(); else openDialog();
     if (description) generate();
     else dialog?.querySelector('[data-focus="describe"]')?.focus();
   }
 
   /* ---- the Mods window ---- */
-  let dialog = null, tab = 'installed', studio = {description: '', model: '', result: null, error: '', busy: false, change: '', editing: null, paste: ''};
+  let dialog = null, tab = 'installed', studio = {description: '', model: '', result: null, error: '', change: '', editing: null, paste: '', attempt: 0, problem: '', modelName: '', abort: null, warning: ''};
+  // Writing a mod: the model writes, Mods checks, and a problem goes back to the model up to MAX_TRIES times
+  const MAX_TRIES = 3;
+  const phase = machine('studio', 'idle', {
+    '*': {write: 'writing'},
+    writing: {check: 'checking', fail: 'failed', cancel: data => data?.had ? 'ready' : 'idle'},
+    checking: {repair: 'writing', ok: 'ready', fail: 'failed', cancel: data => data?.had ? 'ready' : 'idle'}
+  });
+  const writingNow = () => phase.is('writing', 'checking');
   const repaintDialog = () => { if (dialog?.open) paintDialog(); };
   function openDialog() {
     if (dialog?.open) { dialog.focus(); return; }
@@ -1247,14 +1534,29 @@ LOADER_SCRIPT = r"""
     card.append(icon, text, box);
     return card;
   }
+  // One switch for all of a person's mods, kept with them on the server
+  async function setPaused(paused) {
+    data.paused = paused;
+    if (paused) { for (const id of [...runners.keys()]) if (!id.startsWith('preview:')) stop(id); }
+    else for (const mod of data.mods) if (mod.enabled && !runners.has(mod.id)) start(mod);
+    repaintDialog(); paintBar();
+    await saveMine().catch(() => {});
+  }
   function paintInstalled(body) {
     const intro = el('p', 'md-note', t('intro') + ' '); const keys = el('kbd', 'md-kbd', SHORTCUT); keys.translate = false;
     intro.append(t('shortcut') + ' ', keys); body.append(intro);
+    const master = el('div', 'md-master');
+    const label = el('div', 'md-mastertext'); label.append(el('strong', null, t('run_mine')), el('span', null, t(data.paused ? 'paused_note' : 'running_note')));
+    const toggle = el('button', 'md-switch'); toggle.type = 'button'; toggle.setAttribute('role', 'switch'); toggle.setAttribute('aria-checked', String(!data.paused)); setLabel(toggle, t('run_mine')); toggle.dataset.focus = 'pause'; toggle.id = 'md-run-mine';
+    toggle.disabled = !CONFIG.enabled || store.is('saving');
+    toggle.addEventListener('click', () => setPaused(!data.paused));
+    master.append(label, toggle);
+    body.append(master);
     if (!data.mods.length) { const empty = el('div', 'md-empty'); empty.append(el('strong', null, t('none_installed')), el('span', null, t('none_installed_hint')), button(t('discover'), () => { tab = 'discover'; paintDialog(); }, 'md-btn md-primary')); body.append(empty); return; }
     const list = el('ul', 'md-list');
     for (const mod of data.mods) {
       const toggle = el('button', 'md-switch'); toggle.type = 'button'; toggle.setAttribute('role', 'switch'); toggle.setAttribute('aria-checked', String(!!mod.enabled)); setLabel(toggle, t(mod.enabled ? 'disable' : 'enable', {name: mod.name})); toggle.dataset.focus = 'switch-' + mod.id;
-      toggle.disabled = !CONFIG.enabled || store.is('saving');
+      toggle.disabled = !CONFIG.enabled || store.is('saving') || data.paused;
       toggle.addEventListener('click', () => setEnabled(mod, !mod.enabled));
       const more = iconButton(t('more', {name: mod.name}), 'more', event => moreMenu(event.currentTarget, mod)); more.dataset.focus = 'more-' + mod.id; more.setAttribute('aria-haspopup', 'menu');
       const tags = [];
@@ -1289,6 +1591,31 @@ LOADER_SCRIPT = r"""
     section(t('starters'), starters());
     if (isAdmin()) body.append(el('p', 'md-note', t('for_everyone_note')));
   }
+  // What Create does, in three steps, with examples to start from; open until the person has made a mod
+  function howItWorks() {
+    const box = el('details', 'md-details md-how'); box.open = !studio.result && !writingNow() && !data.mods.some(m => m.source === 'user');
+    box.append(el('summary', null, t('how_title')));
+    const inner = el('div', 'md-howbody');
+    const steps = el('ol', 'md-steps'); for (const key of ['how_1', 'how_2', 'how_3']) steps.append(el('li', null, t(key)));
+    const tip = el('p', 'md-note'); const kbd = el('kbd', 'md-kbd', '/mod'); kbd.translate = false; tip.append(t('how_tip_before') + ' ', kbd, ' ' + t('how_tip_after'));
+    const examples = el('div', 'md-examples'); examples.setAttribute('role', 'group'); setLabel(examples, t('examples')); examples.removeAttribute('title');
+    for (const key of ['ex_1', 'ex_2', 'ex_3', 'ex_4']) { const b = button(t(key), () => { studio.description = t(key); paintDialog(); dialog?.querySelector('[data-focus="describe"]')?.focus(); }, 'md-example'); examples.append(b); }
+    inner.append(steps, tip, el('div', 'md-label', t('examples')), examples);
+    box.append(inner);
+    return box;
+  }
+  // Where writing a mod has got to: written, checked, sent back to fix
+  function progress() {
+    const box = el('div', 'md-progress'); box.setAttribute('role', 'status'); box.setAttribute('aria-live', 'polite');
+    const list = el('ol', 'md-steps md-live');
+    const step = (text, state) => { const li = el('li', null, text); li.dataset.state = state; if (state === 'active') li.prepend(el('span', 'md-spin')); return li; };
+    const writing = phase.is('writing'), checking = phase.is('checking');
+    list.append(step(studio.attempt > 1 ? t('step_fix', {n: studio.attempt, max: MAX_TRIES}) : studio.modelName ? t('step_write', {model: studio.modelName}) : t('step_choose'), writing ? 'active' : 'done'));
+    list.append(step(t('step_check'), checking ? 'active' : writing ? 'waiting' : 'done'));
+    box.append(list);
+    if (studio.problem && writingNow()) { const p = el('p', 'md-note', t('step_problem', {problem: clip(studio.problem, 240)})); box.append(p); }
+    return box;
+  }
   function paintCreate(body) {
     if (!CONFIG.allowUserMods && !isAdmin()) { body.append(el('p', 'md-note', t('no_user_mods'))); return; }
     const describe = el('label', 'md-field', t('describe'));
@@ -1299,23 +1626,28 @@ LOADER_SCRIPT = r"""
     modelField.append(select);
     pickModel().then(models => { select.replaceChildren(...models.map(m => { const o = el('option', null, m.name || m.id); o.value = m.id; return o; })); select.value = studio.model || CONFIG.studioModel || models[0]?.id || ''; studio.model = select.value; if (!models.length) select.disabled = true; }).catch(() => { select.disabled = true; });
     select.addEventListener('change', () => { studio.model = select.value; });
-    const go = button(studio.busy ? t('generating') : t('generate'), () => generate(), 'md-btn md-primary'); go.dataset.focus = 'generate';
-    go.disabled = studio.busy; if (studio.busy) go.prepend(el('span', 'md-spin'));
+    const busy = writingNow();
+    const go = button(busy ? t('generating') : t('generate'), () => generate(), 'md-btn md-primary'); go.dataset.focus = 'generate';
+    go.disabled = busy; if (busy) go.prepend(el('span', 'md-spin'));
     const row = el('div', 'md-row'); row.append(go);
-    body.append(describe, modelField, row);
+    if (busy) { const halt = button(t('stop'), () => studio.abort?.abort()); halt.dataset.focus = 'stop'; row.append(halt); }
+    body.append(howItWorks(), describe, modelField, row);
+    if (busy) body.append(progress());
     if (studio.error) { const err = el('p', 'md-error', studio.error); err.setAttribute('role', 'alert'); body.append(err); }
     if (studio.result) {
       const mod = studio.result;
-      body.append(el('h3', 'md-section', t('preview')));
+      const head = el('h3', 'md-section', t('preview')); head.id = 'md-preview-head'; head.tabIndex = -1; body.append(head);
       const list = el('ul', 'md-list'); list.append(cardFor({...mod, source: 'user'}, [])); body.append(list);
+      if (mod.added?.length) body.append(el('p', 'md-note', t('added_perms', {list: mod.added.map(permLabel).join(', ')})));
+      if (studio.warning) { const warn = el('p', 'md-warnbox', studio.warning); warn.setAttribute('role', 'note'); body.append(warn); }
       const details = el('details', 'md-details'); const pre = el('pre', 'md-code', mod.code); pre.translate = false; details.append(el('summary', null, t('code')), pre); body.append(details);
       const changeField = el('label', 'md-field', t('change')); const change = el('textarea', 'md-textarea'); change.name = 'mod-change'; change.placeholder = t('change_ph'); change.value = studio.change; change.maxLength = 4000; change.autocomplete = 'off'; change.dataset.focus = 'change'; change.dir = 'auto';
       change.addEventListener('input', () => { studio.change = change.value; }); changeField.append(change); body.append(changeField);
       const actions = el('div', 'md-row');
       const tryButton = runners.get('preview:' + mod.id) ? button(t('stop_try'), () => { stopPreview(); paintDialog(); }) : button(t('try_it'), () => tryMod(mod));
       tryButton.dataset.focus = 'try';
-      const changeButton = button(t('apply_change'), () => generate(true)); changeButton.disabled = studio.busy; changeButton.dataset.focus = 'apply-change';
-      const keep = button(studio.editing ? t('save_update') : t('save_install'), () => install(mod, {update: studio.editing ? findInstalled(studio.editing) : findInstalled(mod.id)}), 'md-btn md-primary'); keep.dataset.focus = 'keep';
+      const changeButton = button(t('apply_change'), () => generate(true)); changeButton.disabled = busy; changeButton.dataset.focus = 'apply-change';
+      const keep = button(studio.editing ? t('save_update') : t('save_install'), () => install(mod, {update: studio.editing ? findInstalled(studio.editing) : findInstalled(mod.id)}), 'md-btn md-primary'); keep.dataset.focus = 'keep'; keep.disabled = busy;
       actions.append(tryButton, changeButton, el('span', 'md-spacer'), keep);
       body.append(actions);
       if (runners.get('preview:' + mod.id)) body.append(el('p', 'md-note', t('trying')));
@@ -1332,7 +1664,7 @@ LOADER_SCRIPT = r"""
     body.append(paste);
   }
   function readPasted() {
-    try { studio.result = parseMod(studio.paste); studio.error = ''; studio.editing = null; }
+    try { studio.result = parseMod(studio.paste); studio.error = ''; studio.editing = null; const lint = lintMod(studio.result.code); studio.warning = lint ? t('lint_warning', {problem: lint}) : ''; }
     catch (error) { studio.error = t('bad_mod', {error: error.message}); }
     paintDialog();
   }
@@ -1340,7 +1672,8 @@ LOADER_SCRIPT = r"""
   const GUIDE = [
     'You write mods for Open WebUI. A mod is plain JavaScript that runs in a sandboxed iframe: it cannot touch the Open WebUI page, its storage, cookies or the network. It talks to Open WebUI only through the global `mod` object, and only with the permissions it declares.',
     'Answer with exactly one fenced block opened with ```mod, nothing else. Inside: settings lines, a line containing only ---, then the code.',
-    'Settings: "name: …" (required, under 60 characters), "description: …" (one sentence), "icon: <one emoji>", "version: 1", "permissions: …" (comma separated; ask only for what the code uses).',
+    'Settings: "name: …" (required, under 60 characters), "description: …" (one sentence), "version: 1", "permissions: …" (comma separated; ask only for what the code uses).',
+    'Where things go: "above the message box" means a label (mod.status) or a bar with buttons (mod.band); "under each answer" means mod.messages.button; "a panel", "a list" or "a sidebar" means mod.pane with its own document; "/something" means mod.commands; "the look", "bigger text" or "a theme" means mod.style. Don\'t use a panel for a timer or a counter; use a bar or a label.',
     'Permissions and the API they unlock (all calls return promises):',
     '- composer.read: mod.on("composer", text => …) fires as the person types; mod.composer.get().',
     '- composer.write: mod.composer.set(text), mod.composer.insert(text).',
@@ -1348,35 +1681,120 @@ LOADER_SCRIPT = r"""
     '- chat.send: mod.chat.send(text) sends a message in the person\'s name. Use only when the person clearly asked for it.',
     '- ui.status: mod.status.set(text, {tone: "warn"|"ok", onClick}) shows a small label above the message box; mod.status.clear().',
     '- ui.band: mod.band.set({text, actions:[{label, onClick}]}) shows a bar above the message box (up to 3 actions); mod.band.clear().',
-    '- ui.pane: mod.pane.open({title}) shows the mod\'s own document (document.body) in a panel beside the chat; mod.pane.close(). Build that UI with normal DOM code; CSS variables --mod-bg, --mod-text, --mod-muted, --mod-soft, --mod-line, --mod-accent, --mod-on-accent follow light and dark mode; buttons, inputs and .card, .muted, button.primary are already styled. mod.on("pane", e => e.open).',
+    '- ui.pane: mod.pane.open({title}) shows the mod\'s own document (document.body) in a panel beside the chat, and returns nothing; mod.pane.close(). Build the panel once, at the start, in document.body, and open it from a label or a button. Build that UI with normal DOM code; CSS variables --mod-bg, --mod-text, --mod-muted, --mod-soft, --mod-line, --mod-accent, --mod-on-accent follow light and dark mode; buttons, inputs and .card, .muted, button.primary are already styled. mod.on("pane", e => e.open).',
     '- commands: mod.commands.add("name", "description", args => string | {send: string}). Typing /name and Enter calls it; a returned string replaces the message box (needs composer.write), {send} sends it (needs chat.send).',
     '- message.buttons: mod.messages.button("Label", message => …) adds a button under every answer; message is {id, role, text, chatId}.',
-    '- ui.style: mod.style(css) applies CSS to Open WebUI. No @import, no url() except data: images, and never select anything containing "owui-mods" or "md-". Use .dark for dark mode rules.',
+    '- ui.style: mod.style(css) applies CSS to Open WebUI. Use only selectors that exist there: #messages-container (the whole conversation), #response-content-container (the text of each answer), #chat-input (the message box), #sidebar, html.dark for dark mode rules, and the --color-gray-50 … --color-gray-950 variables on html. Never invent class names. No @import, no url() except data: images, and never select anything containing "owui-mods" or "md-".',
     '- ai: mod.ai.complete(prompt) returns the model\'s answer as text (rate limited).',
     '- download: mod.download(name, text, "text/markdown"|"text/plain"|"text/csv"|"application/json").',
     'Always available: mod.toast(text), mod.storage.get(key)/set(key, value)/remove(key) (per person, up to 64 KB), mod.theme() returns {dark, lang}, mod.on("theme", t => …), mod.on("chat", c => …) when the open chat changes (c is {id} or null), mod.log(...).',
-    'Rules: no network, no eval, no external libraries; keep labels short; handle empty text; debounce work on "composer"; support French when mod.theme().lang starts with "fr" if the person writes in French; keep the code under 300 lines.'
+    'Every mod.* call returns a promise: write await mod.chat.current(), await mod.storage.get(key), and so on, inside async functions (the top level of a mod is already async).',
+    'Rules: no network (no fetch), no localStorage (use mod.storage), no alert/prompt, no eval, no external libraries; the mod\'s own document is only its panel, never Open WebUI\'s page; keep labels short and plain, without emojis unless asked; handle empty text; support French when mod.theme().lang starts with "fr" if the person writes in French; keep the code under 300 lines.',
+    'Example of a complete answer:',
+    '```mod',
+    'name: Word Limit',
+    'description: Shows how many words the message has and warns above 300.',
+    'version: 1',
+    'permissions: composer.read, ui.status',
+    '---',
+    'const limit = 300;',
+    'mod.on("composer", text => {',
+    '  const words = (text.trim().match(/\\S+/g) || []).length;',
+    '  if (!words) { mod.status.clear(); return; }',
+    '  mod.status.set(words + " / " + limit + " words", { tone: words > limit ? "warn" : "" });',
+    '});',
+    '```',
+    'A timer in a bar, with buttons:',
+    '```mod',
+    'name: Study Timer',
+    'description: A 25-minute timer above the message box.',
+    'version: 1',
+    'permissions: ui.band',
+    '---',
+    'let left = 25 * 60, timer = null;',
+    'const clock = s => String(Math.floor(s / 60)).padStart(2, "0") + ":" + String(s % 60).padStart(2, "0");',
+    'function show() { mod.band.set({ text: "Study " + clock(left), actions: [{ label: timer ? "Pause" : "Start", onClick: toggle }, { label: "Reset", onClick: reset }] }); }',
+    'function toggle() { if (timer) { clearInterval(timer); timer = null; } else timer = setInterval(() => { left = Math.max(0, left - 1); if (!left) { clearInterval(timer); timer = null; mod.toast("Time is up"); } show(); }, 1000); show(); }',
+    'function reset() { clearInterval(timer); timer = null; left = 25 * 60; show(); }',
+    'show();',
+    '```',
+    'A second example, with a command, saved data and the chat:',
+    '```mod',
+    'name: Summarize Chat',
+    'description: Adds /recap, which asks for a summary of the open chat.',
+    'version: 1',
+    'permissions: commands, composer.write, chat.read',
+    '---',
+    'mod.commands.add("recap", "Summarize this chat", async extra => {',
+    '  const chat = await mod.chat.current();',
+    '  if (!chat || !chat.messages.length) { mod.toast("Open a chat first"); return ""; }',
+    '  const count = (await mod.storage.get("count")) || 0;',
+    '  await mod.storage.set("count", count + 1);',
+    '  return "Summarize the " + chat.messages.length + " messages of this chat in 5 points. " + extra;',
+    '});',
+    '```'
   ].join('\n');
+  const modelKey = () => 'owui-mods:model:' + (me?.id || 'anon');
+  async function chooseModel() {
+    const models = await pickModel();
+    let remembered = ''; try { remembered = localStorage.getItem(modelKey()) || ''; } catch {}
+    return models.find(m => m.id === studio.model) || models.find(m => m.id === CONFIG.studioModel) || models.find(m => m.id === remembered) || models[0] || null;
+  }
   async function generate(changing = false) {
-    if (studio.busy) return;
+    if (writingNow()) { toast(t('busy_already')); return; }
     const ask = (changing ? studio.change : studio.description).trim();
     if (!ask) { dialog?.querySelector(changing ? '[data-focus="change"]' : '[data-focus="describe"]')?.focus(); return; }
-    studio.busy = true; studio.error = ''; paintDialog();
+    const had = !!studio.result, controller = new AbortController();
+    studio.abort = controller; studio.error = ''; studio.problem = ''; studio.attempt = 1; studio.modelName = '';
+    phase.send('write'); paintDialog();
     try {
-      const models = await pickModel(), model = models.find(m => m.id === studio.model)?.id || models.find(m => m.id === CONFIG.studioModel)?.id || models[0]?.id;
+      const model = await chooseModel();
       if (!model) throw new Error(t('no_model'));
+      studio.modelName = model.name || model.id; try { localStorage.setItem(modelKey(), model.id); } catch {}
+      paintDialog();
       const messages = [{role: 'system', content: GUIDE}];
-      if (changing && studio.result) messages.push({role: 'user', content: 'This is the current mod:\n```mod\n' + modText(studio.result) + '\n```\nChange it: ' + ask});
+      if (changing && studio.result) messages.push({role: 'user', content: 'This is the current mod:\n```mod\n' + modText(studio.result) + '\n```\nChange it: ' + ask + '\nAnswer with the whole changed mod.'});
       else messages.push({role: 'user', content: 'Make a mod that: ' + ask});
-      let answer;
-      try { answer = await complete(model, messages); } catch (error) { throw new Error(t('ai_failed', {error: error.message})); }
-      let mod;
-      try { mod = parseMod(answer); } catch (error) { throw new Error(t('gen_failed') + ' (' + error.message + ')'); }
-      if (changing && studio.result) mod.id = studio.result.id;
-      stopPreview();
-      studio.result = mod; studio.change = '';
-    } catch (error) { studio.error = error.message; }
-    studio.busy = false; paintDialog();
+      for (;;) {
+        let answer;
+        try { answer = await complete(model.id, messages, 300000, controller.signal); }
+        catch (error) {
+          if (controller.signal.aborted) throw error;
+          // Our own time limit ends the request with an AbortError too; that one is a slow model, not a stop
+          throw new Error(error?.name === 'AbortError' ? t('ai_timeout') : t('ai_failed', {error: error.message}));
+        }
+        if (controller.signal.aborted) throw new DOMException('stopped', 'AbortError');
+        phase.send('check'); paintDialog();
+        let mod = null, problem = '', unused = [];
+        try { mod = parseMod(answer, {lenient: true}); } catch (error) { problem = error.message; }
+        if (mod) ({problem, unused} = await checkMod(mod, studio.attempt >= MAX_TRIES));
+        if (controller.signal.aborted) throw new DOMException('stopped', 'AbortError');
+        if (!problem) {
+          if (changing && studio.result) mod.id = studio.result.id;
+          stopPreview();
+          studio.result = mod; studio.change = ''; studio.problem = '';
+          studio.warning = unused.length ? t('unused_perms', {list: unused.map(permLabel).join(', ')}) : '';
+          phase.send('ok');
+          if (!dialog?.open) toast(t('ready_closed', {name: mod.name, keys: SHORTCUT}));
+          break;
+        }
+        studio.problem = problem;
+        if (studio.attempt >= MAX_TRIES) throw new Error(t('gen_failed', {n: MAX_TRIES, problem: clip(problem, 300)}));
+        // The model sees its own answer and what was wrong with it, and tries again
+        // On the last try, the model is told to start again simply rather than patch the same code
+        const last = studio.attempt + 1 >= MAX_TRIES ? ' This is the last try: start again from scratch with the simplest code that does what was asked, like the examples.' : '';
+        messages.push({role: 'assistant', content: clip(answer, 20000)}, {role: 'user', content: 'That answer cannot be used: ' + problem + '. Fix it and answer again with the whole mod in exactly one ```mod block, in the format described.' + last});
+        studio.attempt++; phase.send('repair'); paintDialog();
+      }
+    } catch (error) {
+      if (controller.signal.aborted || error?.name === 'AbortError') { phase.send('cancel', {had}); toast(t('stopped')); }
+      else { studio.error = error.message; phase.send('fail'); }
+    }
+    studio.abort = null;
+    paintDialog(); paintBar();
+    // The result is below the description: bring it into view, and focus it so screen readers hear it
+    const target = dialog?.querySelector(phase.is('ready') ? '#md-preview-head' : '.md-dbody .md-error');
+    if (target) { target.scrollIntoView({block: 'start', behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth'}); if (phase.is('ready')) target.focus({preventScroll: true}); }
   }
   function stopPreview() { for (const id of [...runners.keys()]) if (id.startsWith('preview:')) stop(id); }
   async function tryMod(mod) {
@@ -1513,6 +1931,21 @@ LOADER_SCRIPT = r"""
     const now = language();
     if (now !== shownLang) { shownLang = lang = now; chatItem?.remove(); plusItem?.remove(); chatItem = plusItem = null; if (pane) { pane.remove(); pane = null; for (const r of runners.values()) r.frame.remove(); const list = [...runners.values()].map(r => r.mod); runners.clear(); for (const m of list) if (!m.id.startsWith('preview:')) start(m); } paintBar(); repaintDialog(); }
   }
+  // Another tab may have installed, removed or paused mods: a tab that comes back into view reloads them and
+  // starts or stops its mods to match, so it never saves an old list over a newer one
+  function matchRunners() {
+    for (const [id, runner] of [...runners]) {
+      if (id.startsWith('preview:')) continue;
+      const now = findInstalled(id);
+      if (!now || !now.enabled || data.paused || now.code !== runner.mod.code || (now.granted || now.permissions || []).filter(allowedPerm).join() !== [...runner.granted].join()) stop(id);
+    }
+    if (!data.paused) for (const mod of data.mods) if (mod.enabled && !runners.has(mod.id)) start(mod);
+    paintBar(); repaintDialog();
+  }
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState !== 'visible' || !loaded || !CONFIG.enabled || safeMode || store.is('loading', 'saving')) return;
+    loadMine().then(matchRunners);
+  });
   function boot() {
     const style = el('style'); style.id = 'owui-mods-style'; style.textContent = __CSS__; document.head.append(style);
     document.documentElement.dataset.mods = '1';
@@ -1629,7 +2062,6 @@ STARTERS = [
     {
         "id": "word-counter",
         "name": "Word Counter",
-        "icon": "🔢",
         "version": 1,
         "description": "Counts the words and characters of your message while you type.",
         "permissions": ["composer.read", "ui.status"],
@@ -1645,7 +2077,6 @@ mod.on('composer', text => {
     {
         "id": "prompt-shortcuts",
         "name": "Prompt Shortcuts",
-        "icon": "⚡",
         "version": 1,
         "description": "Type /summarize, /translate, /simplify, /quiz or /proofread to start a ready-written prompt.",
         "permissions": ["commands", "composer.write"],
@@ -1670,7 +2101,6 @@ for (const [name, [description, prompt]] of Object.entries(prompts)) {
     {
         "id": "focus-mode",
         "name": "Focus Mode",
-        "icon": "🎯",
         "version": 1,
         "description": "Hides the sidebar and widens the chat. Turn it on and off from the label above the message box.",
         "permissions": ["ui.style", "ui.status"],
@@ -1680,7 +2110,7 @@ const css = `#sidebar, #sidebar-open-button { display: none !important; }
 let on = (await mod.storage.get('on')) ?? false;
 async function paint() {
   await mod.style(on ? css : '');
-  mod.status.set(on ? (fr ? '🎯 Concentration : activée' : '🎯 Focus: on') : (fr ? '🎯 Concentration' : '🎯 Focus'), { tone: on ? 'ok' : '', onClick: toggle });
+  mod.status.set(on ? (fr ? 'Mode concentration : activé' : 'Focus mode: on') : (fr ? 'Mode concentration : désactivé' : 'Focus mode: off'), { tone: on ? 'ok' : '', onClick: toggle });
 }
 async function toggle() { on = !on; await mod.storage.set('on', on); paint(); }
 paint();""",
@@ -1688,19 +2118,18 @@ paint();""",
     {
         "id": "pomodoro",
         "name": "Pomodoro Timer",
-        "icon": "🍅",
         "version": 1,
         "description": "A 25-minute study timer with 5-minute breaks, in a bar above the message box.",
         "permissions": ["ui.band"],
         "code": r"""const fr = mod.theme().lang.startsWith('fr');
-const W = fr ? { focus: 'Travail', pause: 'Pause', start: 'Démarrer', stop: 'Arrêter', reset: 'Réinitialiser', done: 'Session terminée : faites une pause.', back: 'Pause finie : on reprend.' }
-             : { focus: 'Focus', pause: 'Break', start: 'Start', stop: 'Pause', reset: 'Reset', done: 'Session done: take a break.', back: 'Break over: back to work.' };
+const W = fr ? { focus: 'Travail', pause: 'Pause', start: 'Démarrer', stop: 'Arrêter', reset: 'Réinitialiser', rounds: 'Sessions', done: 'Session terminée : faites une pause.', back: 'Pause finie : on reprend.' }
+             : { focus: 'Focus', pause: 'Break', start: 'Start', stop: 'Pause', reset: 'Reset', rounds: 'Sessions', done: 'Session done: take a break.', back: 'Break over: back to work.' };
 const LENGTH = { focus: 25 * 60, pause: 5 * 60 };
 let phase = 'focus', left = LENGTH.focus, running = false, rounds = 0, timer = 0;
 const clock = s => String(Math.floor(s / 60)).padStart(2, '0') + ':' + String(s % 60).padStart(2, '0');
 function paint() {
   mod.band.set({
-    text: '🍅 ' + W[phase] + ' · ' + clock(left) + (rounds ? '  ·  ' + '●'.repeat(Math.min(rounds, 8)) : ''),
+    text: W[phase] + ' ' + clock(left) + (rounds ? ' · ' + W.rounds + ' ' + rounds : ''),
     actions: [{ label: running ? W.stop : W.start, onClick: toggle }, { label: W.reset, onClick: reset }]
   });
 }
@@ -1721,17 +2150,16 @@ paint();""",
     {
         "id": "bookmarks",
         "name": "Bookmarks",
-        "icon": "🔖",
         "version": 1,
         "description": "Bookmark answers with a button under each one, and find them again in a panel.",
         "permissions": ["message.buttons", "ui.pane", "ui.status", "chat.read"],
         "code": r"""const fr = mod.theme().lang.startsWith('fr');
-const W = fr ? { save: '🔖 Marquer', saved: 'Réponse marquée', title: 'Signets', empty: 'Aucun signet. Utilisez 🔖 Marquer sous une réponse.', open: 'Ouvrir', remove: 'Retirer', other: 'Dans une autre conversation' }
-             : { save: '🔖 Bookmark', saved: 'Answer bookmarked', title: 'Bookmarks', empty: 'No bookmarks yet. Use 🔖 Bookmark under an answer.', open: 'Go To', remove: 'Remove', other: 'In another chat' };
+const W = fr ? { save: 'Marquer', saved: 'Réponse marquée', title: 'Signets', label: 'Signets', empty: 'Aucun signet. Utilisez Marquer sous une réponse.', open: 'Ouvrir', remove: 'Retirer', other: 'Dans une autre conversation' }
+             : { save: 'Bookmark', saved: 'Answer bookmarked', title: 'Bookmarks', label: 'Bookmarks', empty: 'No bookmarks yet. Use Bookmark under an answer.', open: 'Go To', remove: 'Remove', other: 'In another chat' };
 let marks = (await mod.storage.get('marks')) || [];
 let chatId = null;
 const date = new Intl.DateTimeFormat(mod.theme().lang, { dateStyle: 'medium', timeStyle: 'short' });
-function label() { mod.status.set('🔖 ' + marks.length, { onClick: () => mod.pane.open({ title: W.title }) }); }
+function label() { mod.status.set(W.label + ': ' + marks.length, { onClick: () => mod.pane.open({ title: W.title }) }); }
 function render() {
   document.body.replaceChildren();
   if (!marks.length) { const p = document.createElement('p'); p.className = 'muted'; p.textContent = W.empty; document.body.append(p); return; }
@@ -1762,7 +2190,6 @@ render(); label();""",
     {
         "id": "readability",
         "name": "Readability",
-        "icon": "📖",
         "version": 1,
         "description": "Shows how easy the last answer is to read, from very easy to very hard.",
         "permissions": ["chat.read", "ui.status"],
@@ -1789,7 +2216,7 @@ function show(text) {
   const s = score(text || '');
   if (s === null) { mod.status.clear(); return; }
   const i = s >= 90 ? 0 : s >= 80 ? 1 : s >= 70 ? 2 : s >= 60 ? 3 : s >= 50 ? 4 : s >= 30 ? 5 : 6;
-  mod.status.set('📖 ' + levels[i] + ' · ' + Math.round(Math.max(0, Math.min(100, s))), { tone: i >= 5 ? 'warn' : '' });
+  mod.status.set((fr ? 'Lisibilité : ' : 'Readability: ') + levels[i] + ' (' + Math.round(Math.max(0, Math.min(100, s))) + ')', { tone: i >= 5 ? 'warn' : '' });
 }
 async function latest() {
   const chat = await mod.chat.current();
@@ -1803,13 +2230,12 @@ latest().catch(() => {});""",
     {
         "id": "export-markdown",
         "name": "Export to Markdown",
-        "icon": "📝",
         "version": 1,
         "description": "Saves the open chat as a Markdown file, from a label above the message box or with /export.",
         "permissions": ["chat.read", "download", "ui.status", "commands"],
         "code": r"""const fr = mod.theme().lang.startsWith('fr');
-const W = fr ? { label: '📝 Exporter', none: 'Ouvrez une conversation pour l’exporter.', you: 'Vous', ai: 'Assistant', done: 'Conversation exportée', cmd: 'Exporter la conversation en Markdown' }
-             : { label: '📝 Export', none: 'Open a chat to export it.', you: 'You', ai: 'Assistant', done: 'Chat exported', cmd: 'Save this chat as Markdown' };
+const W = fr ? { label: 'Exporter en Markdown', none: 'Ouvrez une conversation pour l’exporter.', you: 'Vous', ai: 'Assistant', done: 'Conversation exportée', cmd: 'Exporter la conversation en Markdown' }
+             : { label: 'Export as Markdown', none: 'Open a chat to export it.', you: 'You', ai: 'Assistant', done: 'Chat exported', cmd: 'Save this chat as Markdown' };
 async function exportChat() {
   const chat = await mod.chat.current();
   if (!chat || !chat.messages.length) { mod.toast(W.none); return; }
@@ -1827,7 +2253,6 @@ label(await mod.chat.current().catch(() => null));""",
     {
         "id": "warm-reading",
         "name": "Warm Reading Theme",
-        "icon": "☕",
         "version": 1,
         "description": "Softer, warmer greys for long reading sessions, in light and dark mode.",
         "permissions": ["ui.style"],
@@ -1880,6 +2305,10 @@ class Event:
             default="",
             description="Model that writes mods in Create, and answers mods that ask the AI. Leave empty to use the first model each person can use.",
         )
+        slash_command: bool = Field(
+            default=True,
+            description="Let people type /mod and a description in the message box to create a mod. A card above the message box explains it while they type. Off, they use the Mods window instead.",
+        )
         show_starters: bool = Field(
             default=True,
             description="Offer the 8 ready-made mods in Discover.",
@@ -1917,7 +2346,7 @@ class Event:
 
     class UserValves(BaseModel):
         mods: str = Field(
-            default='{"mods": [], "dismissed": []}',
+            default='{"mods": [], "dismissed": [], "paused": false}',
             description="Your mods, managed from the Mods window (⋯ menu of a chat, or Ctrl+Shift+.). Edit by hand only to fix something.",
         )
 
@@ -1938,8 +2367,11 @@ class Event:
             if not isinstance(dismissed, list) or len(dismissed) > 200:
                 raise ValueError("dismissed must be a short list")
             dismissed = [d for d in dismissed if isinstance(d, str) and MOD_ID.match(d)]
+            paused = raw.get("paused", False)
+            if not isinstance(paused, bool):
+                raise ValueError("paused must be true or false")
             return _json.dumps(
-                {"mods": mods, "dismissed": list(dict.fromkeys(dismissed))},
+                {"mods": mods, "dismissed": list(dict.fromkeys(dismissed)), "paused": paused},
                 ensure_ascii=False,
             )
 
@@ -1970,6 +2402,7 @@ class Event:
             "maxMods": int(valves.max_mods_per_user),
             "aiPerMinute": int(valves.ai_calls_per_minute),
             "studioModel": valves.studio_model.strip(),
+            "slashCommand": bool(valves.slash_command),
             "chatMenu": bool(valves.show_in_chat_menu),
             "tabMenu": bool(valves.show_in_tab_menu),
             "language": valves.language,

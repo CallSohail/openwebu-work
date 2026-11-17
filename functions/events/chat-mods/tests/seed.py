@@ -8,6 +8,7 @@ first account becomes the administrator. Never point it at an instance people us
 """
 
 import json
+import os
 import sys
 import time
 import urllib.error
@@ -41,7 +42,9 @@ for path in SOURCES:
     function_id = path.replace("\\", "/").rsplit("/", 1)[-1].removesuffix(".py")
     call("POST", "/api/v1/functions/create", admin_token, {"id": function_id, "name": function_id, "content": open(path, encoding="utf-8").read(), "meta": {"description": function_id}})
     call("POST", f"/api/v1/functions/id/{function_id}/toggle", admin_token)
-call("POST", "/api/v1/models/create", admin_token, {"id": "fake-modder", "base_model_id": None, "name": "fake-modder", "meta": {}, "params": {}, "access_grants": [{"principal_type": "user", "principal_id": "*", "permission": "read"}], "is_active": True})
+# Every model the connection offers is opened to everyone (the fake one, or real ones named in MODS_MODELS)
+for model_id in (os.environ.get("MODS_MODELS") or "fake-modder").split(","):
+    call("POST", "/api/v1/models/create", admin_token, {"id": model_id, "base_model_id": None, "name": model_id, "meta": {}, "params": {}, "access_grants": [{"principal_type": "user", "principal_id": "*", "permission": "read"}], "is_active": True})
 call("POST", "/api/v1/auths/add", admin_token, {"name": "Mods User", "email": "user@example.test", "password": PASSWORD, "role": "user"})
 user_token = call("POST", "/api/v1/auths/signin", body={"email": "user@example.test", "password": PASSWORD})["token"]
 

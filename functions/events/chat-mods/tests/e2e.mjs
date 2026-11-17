@@ -112,17 +112,17 @@ async function userMods(token) { const { data } = await api(token, 'GET', '/api/
   await page.click('#owui-mods-bar .md-band .md-btn:has-text("Start")');
   await page.waitForTimeout(2300);
   check(/24:5[78]/.test(await chipText(page)), 'the Pomodoro bar counts down');
-  check(await page.locator('#owui-mods-bar .md-bandname').count() === 0, 'a bar whose text starts with the mod icon shows no extra icon');
+  check((await page.locator('#owui-mods-bar .md-bandname').innerText()) === 'Pomodoro Timer', 'a bar says which mod it belongs to');
 
   // Readability scored the last answer
-  check(/📖 \S+/.test(await chipText(page)), 'Readability scores the last answer');
+  check(/Readability: \S+/.test(await chipText(page)), 'Readability scores the last answer');
 
   // Bookmarks: button under answers, label, panel
   check(await page.locator('.md-msgrow .md-msgbtn').count() === 2, 'Bookmarks adds a button under each answer');
   await page.locator('.md-msgrow .md-msgbtn').first().click();
-  await page.waitForFunction(() => /🔖 1/.test(document.getElementById('owui-mods-bar')?.innerText || ''), null, { timeout: 5000 }).catch(() => {});
-  check(/🔖 1/.test(await chipText(page)), 'bookmarking an answer counts it');
-  await page.click('#owui-mods-bar button.md-chip:has-text("🔖")');
+  await page.waitForFunction(() => /Bookmarks: 1/.test(document.getElementById('owui-mods-bar')?.innerText || ''), null, { timeout: 5000 }).catch(() => {});
+  check(/Bookmarks: 1/.test(await chipText(page)), 'bookmarking an answer counts it');
+  await page.click('#owui-mods-bar button.md-chip:has-text("Bookmarks:")');
   await page.waitForSelector('#owui-mods-pane:not([hidden])');
   const frame = page.frameLocator('iframe.md-frame[data-mod="bookmarks"]');
   check(/library opens at eight/.test(await frame.locator('body').innerText()), 'the Bookmarks panel lists the saved answer');
@@ -131,26 +131,26 @@ async function userMods(token) { const { data } = await api(token, 'GET', '/api/
   check(await page.locator('#owui-mods-pane').isHidden(), 'the panel closes');
 
   // Export downloads the chat as Markdown
-  const [download] = await Promise.all([page.waitForEvent('download'), page.click('#owui-mods-bar button.md-chip:has-text("Export")')]);
+  const [download] = await Promise.all([page.waitForEvent('download'), page.click('#owui-mods-bar button.md-chip:has-text("Export as Markdown")')]);
   const markdown = fs.readFileSync(await download.path(), 'utf8');
   check(download.suggestedFilename() === 'Library questions.md' && /^# Library questions/.test(markdown) && /## You\n\nWhen does the library open\?/.test(markdown), 'Export saves the chat as Markdown');
 
   // Focus mode changes the page's style and can be turned off
-  await page.click('#owui-mods-bar button.md-chip:has-text("Focus")');
+  await page.click('#owui-mods-bar button.md-chip:has-text("Focus mode")');
   await page.waitForTimeout(400);
   check(await page.evaluate(() => getComputedStyle(document.getElementById('sidebar')).display === 'none'), 'Focus Mode hides the sidebar');
   await shot(page, 'chat-light');
-  await page.click('#owui-mods-bar button.md-chip:has-text("Focus")');
+  await page.click('#owui-mods-bar button.md-chip:has-text("Focus mode")');
   await page.waitForTimeout(400);
   check(await page.evaluate(() => getComputedStyle(document.getElementById('sidebar')).display !== 'none'), 'Focus Mode turns off again');
 
   // A new answer reaches mods that listen for messages
-  const scoreBefore = (await chipText(page)).match(/📖[^\n]*/)?.[0];
+  const scoreBefore = (await chipText(page)).match(/Readability:[^\n]*/)?.[0];
   await typeInComposer(page, 'Tell me about the library');
   await page.keyboard.press('Enter');
   await page.waitForFunction(before => document.querySelectorAll('#messages-container [id^="message-"]').length >= before + 2, before, { timeout: 15000 });
-  await page.waitForFunction(old => { const m = (document.getElementById('owui-mods-bar')?.innerText || '').match(/📖[^\n]*/); return m && m[0] !== old; }, scoreBefore, { timeout: 15000 }).catch(() => {});
-  check((await chipText(page)).match(/📖[^\n]*/)?.[0] !== scoreBefore, 'a finished answer is passed to mods (Readability updates)');
+  await page.waitForFunction(old => { const m = (document.getElementById('owui-mods-bar')?.innerText || '').match(/Readability:[^\n]*/); return m && m[0] !== old; }, scoreBefore, { timeout: 15000 }).catch(() => {});
+  check((await chipText(page)).match(/Readability:[^\n]*/)?.[0] !== scoreBefore, 'a finished answer is passed to mods (Readability updates)');
 
   // Turning a mod off stops it, and that is kept
   await openMods(page);
@@ -168,7 +168,7 @@ async function userMods(token) { const { data } = await api(token, 'GET', '/api/
 
   // After a reload everything comes back on its own
   await open();
-  check(await page.locator('iframe.md-frame').count() === 6 && /🔖 1/.test(await chipText(page)), 'mods start again after a reload, with their saved data');
+  check(await page.locator('iframe.md-frame').count() === 6 && /Bookmarks: 1/.test(await chipText(page)), 'mods start again after a reload, with their saved data');
   check(errors.length === 0, 'no page errors (' + errors.slice(0, 2).join(' | ') + ')');
   await context.close();
 }
@@ -183,8 +183,8 @@ async function userMods(token) { const { data } = await api(token, 'GET', '/api/
   check(await page.evaluate(() => document.activeElement.dataset.focus === 'describe'), 'Create with nothing described focuses the description');
   await page.fill('[data-focus="describe"]', 'NOMOD please');
   await page.click('[data-focus="generate"]');
-  await page.waitForSelector('.md-dbody .md-error', { timeout: 15000 });
-  check(/didn’t return a mod/.test(await page.locator('.md-dbody .md-error').innerText()), 'an answer without a mod says so and how to go on');
+  await page.waitForSelector('.md-dbody .md-error', { timeout: 20000 });
+  check(/couldn’t write a working mod in 3 tries/.test(await page.locator('.md-dbody .md-error').innerText()) && await page.evaluate(() => document.documentElement.dataset.mdStudio) === 'failed', 'a model that never writes a mod is asked 3 times, then the person is told what to do');
   await page.fill('[data-focus="describe"]', 'count the characters I type');
   await page.click('[data-focus="generate"]');
   await page.waitForSelector('.md-card[data-mod="character-counter"]', { timeout: 15000 });
@@ -234,6 +234,110 @@ async function userMods(token) { const { data } = await api(token, 'GET', '/api/
   await page.keyboard.press('Enter');
   await dialogOpen(page);
   check(await page.evaluate(() => document.activeElement?.dataset.focus === 'describe'), '/mod alone opens Create, ready to type');
+  await page.keyboard.press('Escape');
+
+  // The card above the message box explains /mod while it is typed
+  await typeInComposer(page, '/mod');
+  check(await page.locator('#owui-mods-slash').isVisible() && /Create a mod/.test(await page.locator('#owui-mods-slash').innerText()) && await page.locator('#owui-mods-slash .md-example').count() === 3, 'typing /mod shows a card that explains it, with examples');
+  check(!(await page.locator('#suggestions-container').isVisible().catch(() => false)), 'Open WebUI’s own /model suggestion steps aside while the /mod card shows');
+  await shot(page, 'slash-empty');
+  await page.locator('#owui-mods-slash .md-example').first().click();
+  await page.waitForTimeout(400);
+  check(/^\/mod Count the words I type/.test((await page.locator('#chat-input').innerText()).trim()), 'an example fills in the message box');
+  check(/Press Enter to create a mod that:\s*Count the words/.test(await page.locator('#owui-mods-slash').innerText()), 'the card says what Enter will create');
+  await shot(page, 'slash-ready');
+  await typeInComposer(page, '');
+  check(await page.locator('#owui-mods-slash').count() === 0, 'the card goes when the message box is emptied');
+  await typeInComposer(page, '/model');
+  check(await page.locator('#owui-mods-slash').count() === 0 && await page.evaluate(() => !document.documentElement.dataset.modsSlash), 'typing /model leaves Open WebUI’s own command alone');
+  await typeInComposer(page, '');
+
+  // What real models write: a looser format reads, a forgotten permission is added and shown
+  const completions = [];
+  page.on('request', request => { if (request.url().endsWith('/api/chat/completions')) completions.push(request.postDataJSON()); });
+  await typeInComposer(page, '/mod MESSYMOD counter');
+  await page.keyboard.press('Enter');
+  await page.waitForSelector('.md-card[data-mod="messy-counter"]', { timeout: 20000 });
+  const messy = await page.locator('.md-dbody').innerText();
+  check(/Messy Counter/.test(messy) && /Added because the code uses them: Read what you type/.test(messy), 'a mod in a loose format is read, and a permission the code needs is added and shown');
+  // A first answer that would fail is sent back to the model with the problem, and the fixed one is used
+  completions.length = 0;
+  await page.fill('[data-focus="describe"]', 'REPAIRME counter');
+  await page.click('[data-focus="generate"]');
+  await page.waitForFunction(() => document.documentElement.dataset.mdStudio === 'ready', null, { timeout: 20000 });
+  const last = completions[completions.length - 1];
+  check(completions.length === 2 && /cannot be used: it uses the network/.test(last.messages[last.messages.length - 1].content) && await page.locator('.md-card[data-mod="character-counter"]').count() === 1, 'a broken first answer is sent back with the problem and the repaired mod is shown');
+  // Stop leaves things as they were
+  await page.fill('[data-focus="describe"]', 'SLOWMOD counter');
+  await page.click('[data-focus="generate"]');
+  await page.waitForSelector('.md-progress', { timeout: 5000 });
+  await page.waitForFunction(() => /Writing the mod with/.test(document.querySelector('.md-progress')?.textContent || ''), null, { timeout: 5000 }).catch(() => {});
+  check(/Writing the mod with fake-modder/.test(await page.locator('.md-progress').innerText()), 'progress says which model is writing');
+  await shot(page, 'create-progress');
+  await page.click('[data-focus="stop"]');
+  await page.waitForFunction(() => document.documentElement.dataset.mdStudio === 'ready', null, { timeout: 5000 }).catch(() => {});
+  check(await page.evaluate(() => document.documentElement.dataset.mdStudio) === 'ready' && await page.locator('.md-card[data-mod="character-counter"]').count() === 1 && /Stopped/.test(await page.locator('#owui-mods-toast').innerText()), 'Stop ends the writing and keeps the previous result');
+  // Closing the window while it writes: the person is told when it is ready
+  await page.click('[data-focus="generate"]');
+  await page.waitForSelector('.md-progress');
+  await page.keyboard.press('Escape');
+  await typeInComposer(page, '/mod another one');
+  check(/already being written/.test(await page.locator('#owui-mods-slash').innerText()), 'while a mod is being written, the /mod card says so');
+  await typeInComposer(page, '');
+  await page.waitForFunction(() => /is ready/.test(document.getElementById('owui-mods-toast')?.textContent || ''), null, { timeout: 15000 }).catch(() => {});
+  check(/“Character Counter” is ready/.test(await page.locator('#owui-mods-toast').innerText()), 'a mod finished while the window is closed is announced');
+  await context.close();
+}
+
+/* ---------- two tabs stay in step ---------- */
+{
+  const { context, page, open } = await session(seed.user);
+  await open();
+  const other = await context.newPage();
+  await other.goto(seed.base + '/c/' + seed.chats.user, { waitUntil: 'domcontentloaded' });
+  await other.waitForFunction(() => document.documentElement.dataset.mdStore === 'ready', null, { timeout: 30000 });
+  await other.waitForTimeout(800);
+  const before = await other.locator('iframe.md-frame[data-mod="warm-reading"]').count();
+  await page.bringToFront();
+  await openMods(page);
+  await installStarter(page, 'warm-reading');
+  // The other tab comes back into view
+  await other.bringToFront();
+  await other.evaluate(() => document.dispatchEvent(new Event('visibilitychange')));
+  await other.waitForSelector('iframe.md-frame[data-mod="warm-reading"]', { timeout: 8000 }).catch(() => {});
+  check(before === 0 && await other.locator('iframe.md-frame[data-mod="warm-reading"]').count() === 1, 'a tab that comes back into view picks up a mod installed in another tab');
+  await tab(page, 'installed');
+  await page.click('.md-card[data-mod="warm-reading"] .md-icon[aria-haspopup="menu"]');
+  await page.click('.md-ask[open] [role="menuitem"]:has-text("Remove")');
+  await page.click('.md-ask[open] .md-danger');
+  await page.waitForTimeout(600);
+  await other.evaluate(() => document.dispatchEvent(new Event('visibilitychange')));
+  await other.waitForTimeout(1500);
+  check(await other.locator('iframe.md-frame[data-mod="warm-reading"]').count() === 0, 'and stops a mod removed in another tab');
+  await context.close();
+}
+
+/* ---------- a person pauses all their mods ---------- */
+{
+  const { context, page, open } = await session(seed.user);
+  await open();
+  const running = await page.locator('iframe.md-frame').count();
+  await openMods(page);
+  await page.click('#md-run-mine');
+  await page.waitForTimeout(600);
+  check(await page.locator('iframe.md-frame').count() === 0 && (await userMods(seed.user.token)).paused === true, 'pausing stops every mod and is saved');
+  check(await page.locator('.md-card .md-switch:disabled').count() > 0 && /Paused/.test(await page.locator('.md-master').innerText()), 'while paused, the window says so and single switches wait');
+  await shot(page, 'paused');
+  await page.keyboard.press('Escape');
+  await open();
+  check(await page.locator('iframe.md-frame').count() === 0, 'mods stay paused after a reload');
+  await typeInComposer(page, '/mod something');
+  check(await page.locator('#owui-mods-slash').count() === 0, '/mod is off while paused');
+  await typeInComposer(page, '');
+  await openMods(page);
+  await page.click('#md-run-mine');
+  await page.waitForTimeout(800);
+  check(await page.locator('iframe.md-frame').count() === running && (await userMods(seed.user.token)).paused === false, 'turning them back on starts them again');
   await context.close();
 }
 
@@ -295,6 +399,16 @@ mod.status.set('styles ' + out.join(','));`);
   const sheet = await page.evaluate(() => document.querySelector('style[data-mod="styler"]')?.textContent || '');
   check(styled.slice(1, 6).every(s => s === 'refused') && !/example\.com/.test(sheet), 'styles that load from other sites or touch Mods are refused (' + styled.join(',') + ')');
 
+  // Wrong arguments fail loudly instead of drawing code as a label
+  await paste(`name: Wrong Args
+permissions: message.buttons
+---
+mod.messages.button(message => ({label: 'Quote'}));`);
+  await page.waitForTimeout(800);
+  await openMods(page);
+  check(/needs a text label and a function/.test(await page.locator('.md-card[data-mod="wrong-args"]').innerText()) && !(await page.locator('.md-msgbtn').allInnerTexts()).some(t => /=>/.test(t)), 'a mod called with the wrong arguments shows the error and draws nothing broken');
+  await page.keyboard.press('Escape');
+
   // A mod that navigates its frame away is stopped and switched off
   await paste(`name: Runaway
 ---
@@ -340,7 +454,7 @@ setInterval(() => { throw new Error('boom'); }, 100);`);
   await tab(page, 'discover');
   await shot(page, 'discover-dark');
   await page.keyboard.press('Escape');
-  await page.click('#owui-mods-bar button.md-chip:has-text("🔖")');
+  await page.click('#owui-mods-bar button.md-chip:has-text("Bookmarks:")');
   await page.waitForSelector('#owui-mods-pane:not([hidden])');
   const frameColours = await page.frameLocator('iframe.md-frame[data-mod="bookmarks"]').locator('body').evaluate(b => [getComputedStyle(b).color, document.documentElement.dataset.theme]);
   check(frameColours[1] === 'dark' && frameColours[0] !== 'rgb(38, 38, 38)', 'a mod’s panel follows dark mode (' + frameColours.join(' / ') + ')');
@@ -356,7 +470,7 @@ setInterval(() => { throw new Error('boom'); }, 100);`);
   await openMods(page);
   check(await page.locator('#md-tab-installed').innerText() === 'Installés', 'Mods follows the French interface');
   await page.keyboard.press('Escape');
-  check(/Concentration/.test(await chipText(page)) || /Travail/.test(await chipText(page)), 'ready-made mods speak French too');
+  check(/Mode concentration|Travail|Lisibilit/.test(await chipText(page)), 'ready-made mods speak French too');
   await context.close();
 }
 {
@@ -427,7 +541,7 @@ setInterval(() => { throw new Error('boom'); }, 100);`);
   const { context, page, open } = await session(second);
   await open('/');
   await page.waitForTimeout(800);
-  check(await page.locator('iframe.md-frame[data-mod="pomodoro"]').count() === 1 && /Focus · 25:00/.test(await chipText(page)), 'a mod turned on for everyone runs for a new person');
+  check(await page.locator('iframe.md-frame[data-mod="pomodoro"]').count() === 1 && /Focus 25:00/.test(await chipText(page)), 'a mod turned on for everyone runs for a new person');
   await openMods(page);
   await page.click('.md-card[data-mod="pomodoro"] .md-icon[aria-haspopup="menu"]');
   await page.click('.md-ask[open] [role="menuitem"]:has-text("Remove")');
@@ -455,6 +569,22 @@ setInterval(() => { throw new Error('boom'); }, 100);`);
   await openMods(page);
   check(await page.locator('#md-tab-create').count() === 0, 'Create is hidden when people may not make mods');
   await api(seed.admin.token, 'POST', '/api/v1/functions/id/chat_mods/valves/update', { ...valves, allow_user_mods: true });
+  await context.close();
+}
+
+/* ---------- the administrator turns /mod off ---------- */
+{
+  const valves = (await api(seed.admin.token, 'GET', '/api/v1/functions/id/chat_mods/valves')).data;
+  await api(seed.admin.token, 'POST', '/api/v1/functions/id/chat_mods/valves/update', { ...valves, slash_command: false });
+  await new Promise(r => setTimeout(r, 1500));
+  const { context, page, open } = await session(seed.user);
+  await open();
+  await typeInComposer(page, '/mo');
+  check(!/\/mod/.test(await chipText(page)), 'with slash_command off, /mod is not suggested');
+  await typeInComposer(page, '/mod a timer');
+  check(await page.locator('#owui-mods-slash').count() === 0, 'with slash_command off, no /mod card appears');
+  await typeInComposer(page, '');
+  await api(seed.admin.token, 'POST', '/api/v1/functions/id/chat_mods/valves/update', { ...valves, slash_command: true });
   await context.close();
 }
 

@@ -49,6 +49,28 @@ start(mod)
 - A finished answer is detected when the last answer's text is the same on two checks a second apart and nothing is generating; answers already there when a chat opens are not announced.
 - Chats are read from `GET /api/v1/chats/{id}`, following `currentId` back through `parentId`, cached for 2.5 seconds.
 
+### Writing a mod
+
+```text
+describe ──▶ writing ──▶ checking ──┬─▶ ready      (preview, Try It, Install)
+   ▲            ▲                   ├─▶ writing    (problem sent back; up to MAX_TRIES = 3)
+   │            └─ Stop ─▶ previous └─▶ failed     (last problem shown)
+   └─ /mod <description> in the message box
+```
+
+- The phase is a machine shown on `<html>` as `data-md-studio` (`idle`, `writing`, `checking`, `ready`, `failed`). Stop aborts the request and returns to the previous result, if any.
+- `parseMod(text, {lenient: true})` reads a model's answer: it drops `<think>` blocks, finds the ```` ```mod ```` fence (or any fence whose content starts with `name:`), keeps a ```` ```js ```` block inside it, accepts bold and bulleted settings, settings without the `---` line, permission synonyms, and skips names that need no permission. `neededPermissions()` reads the code for the API it calls and adds what is missing (shown as *Added because the code uses them*). Pasted mods are read strictly.
+- `lintMod()` refuses what can't work in the sandbox (network, browser storage, `alert`, the Open WebUI page, `eval`, imports), API names and events that don't exist, and promise-returning calls used without `await`.
+- `testRun()` writes a throwaway frame with the same sandbox and content policy as a real mod. `smokeStub` defines a stand-in `mod` that records what is used and calls nothing outside the frame. After the code starts, it fires `chat`, `theme`, `composer` (empty, short, 360 words), `message` and `pane` events, then calls every action, command and button callback it collected. Uncaught errors and rejections are reported, with a 5-second limit for code that never finishes.
+- `unmatchedSelectors()` checks the CSS a mod set during the test run against the real page; if no rule matches anything, the model is told which selectors exist.
+- A panel, buttons or commands asked for but never made are a problem, except on the last try, where they become a warning.
+- Each problem goes back as a user message after the model's own answer. The last try asks it to start again simply.
+- The guide (`GUIDE`) describes every permission, where things go ("above the message box" means a label or a bar), the selectors that exist, the `await` rule, and two complete example mods.
+
+### The /mod card
+
+`paintBar()` shows `slashHelp()` while the message box starts with `/mod`: an explanation and examples when nothing follows, *Press Enter to create a mod that: …* when something does, and a note while a mod is being written. Meanwhile `data-mods-slash` on `<html>` hides Open WebUI's own suggestion popup (`[data-tippy-root]:has(#suggestions-container)`), which would otherwise offer `/model`. The keydown handler catches `/mod` + Enter in the capture phase, before Open WebUI sends.
+
 ### The window
 
 - A `<dialog>` with three tabs, redrawn whole by `paintDialog()`, which puts focus back on the control with the same `data-focus`.
@@ -58,7 +80,9 @@ start(mod)
 
 ### States
 
-Saving and loading a person's mods is a small machine (`idle → loading → ready ⇄ saving`, `failed`), shown on `<html>` as `data-md-store`. Writes are queued so two saves never cross.
+Saving and loading a person's mods is a small machine (`idle → loading → ready ⇄ saving`, `failed`), shown on `<html>` as `data-md-store`. Writes are queued so two saves never cross. The stored object is `{mods, dismissed, paused}`; `paused` stops every mod and `/mod`.
+
+When a tab becomes visible again (`visibilitychange`), it reloads that object and `matchRunners()` stops mods that were removed, switched off, changed or paused elsewhere, and starts ones that were added.
 
 ## Files
 

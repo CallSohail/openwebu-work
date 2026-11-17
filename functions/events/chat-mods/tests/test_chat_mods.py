@@ -119,15 +119,16 @@ def test_script_is_served_with_the_default_settings(served):
     assert config["functionId"] == "chat_mods"
     assert config["enabled"] is True and config["allowUserMods"] is True
     assert config["allowedPermissions"] == list(plugin.PERMISSIONS)
-    assert config["maxMods"] == 12 and config["aiPerMinute"] == 6
+    assert config["maxMods"] == 12 and config["aiPerMinute"] == 6 and config["slashCommand"] is True
     assert config["catalog"] == [] and [m["id"] for m in config["starters"]] == [m["id"] for m in plugin.STARTERS]
 
 
 def test_valve_changes_reach_the_next_request(served):
     plugin, event, _, client = served
-    event.valves = plugin.Event.Valves(enabled=False, allowed_permissions="ui.status, ai", show_starters=False)
+    event.valves = plugin.Event.Valves(enabled=False, allowed_permissions="ui.status, ai", show_starters=False, slash_command=False)
     config = config_of(script_of(client.get("/static/loader.js").text))
     assert config["enabled"] is False and config["allowedPermissions"] == ["ui.status", "ai"] and config["starters"] == []
+    assert config["slashCommand"] is False
 
 
 def test_disabling_the_function_withdraws_the_script(served):
@@ -171,8 +172,11 @@ def test_a_person_s_mods_are_checked_and_trimmed(plugin):
     extra = a_mod(plugin, sneaky="x", enabled=1)
     stored = json.loads(plugin.Event.UserValves(mods=json.dumps({"mods": [extra], "dismissed": ["pomodoro", "Bad Id", 3]})).mods)
     assert "sneaky" not in stored["mods"][0] and stored["mods"][0]["enabled"] is True
-    assert stored["dismissed"] == ["pomodoro"]
-    assert json.loads(plugin.Event.UserValves().mods) == {"mods": [], "dismissed": []}
+    assert stored["dismissed"] == ["pomodoro"] and stored["paused"] is False
+    assert json.loads(plugin.Event.UserValves().mods) == {"mods": [], "dismissed": [], "paused": False}
+    assert json.loads(plugin.Event.UserValves(mods=json.dumps({"mods": [], "paused": True})).mods)["paused"] is True
+    with pytest.raises(ValidationError):
+        plugin.Event.UserValves(mods=json.dumps({"mods": [], "paused": "yes"}))
 
 
 @pytest.mark.parametrize(
@@ -209,6 +213,8 @@ def test_starters_are_valid_mods(plugin):
         plugin._clean_mod(starter, "starter", catalog=True)
         # Ready-made mods are examples too: they build their panels as text, never as markup
         assert "innerHTML" not in starter["code"] and "eval(" not in starter["code"]
+        # Plain labels: no emojis anywhere in what the ready-made mods show
+        assert not re.search("[\U0001F000-\U0001FAFF\u2600-\u27BF\u25CF]", starter["code"] + starter["name"] + starter["description"]), starter["id"]
 
 
 def test_every_word_has_a_translation(plugin):
@@ -248,7 +254,8 @@ def test_page_text_is_never_written_as_html(plugin):
     for risky in ("innerHTML", "outerHTML", "insertAdjacentHTML", "document.write"):
         assert risky not in script, risky
     # The only markup is each frame's document, and code in it can't close its script element
-    assert script.count(".srcdoc = ") == 1
+    # (each mod's own, and the throwaway one that only compiles code to check it)
+    assert script.count(".srcdoc = ") == 2
     assert "const scriptSafe = code => String(code).replace(/<\\/(script)/gi" in script
 
 
@@ -298,8 +305,12 @@ def test_reading_mods_and_cleaning_styles(plugin, tmp_path):
     runner = tmp_path / "logic.js"
     runner.write_text(
         "const assert = require('assert');\nconst document = {documentElement: {dataset: {}}};\nlet lang = 'en';\nconst t = (key, vars) => key + (vars ? JSON.stringify(vars) : '');\n"
-        + _lines(script, "const PERMS = ", "const CODE_LIMIT", "const slug = ", "const clip = ", "const clamp = ", "const modText = ", "const CSS_FORBIDDEN")
-        + "\n" + _function_source(script, "  function parseMod(")
+        + _lines(script, "const PERMS = ", "const CODE_LIMIT", "const slug = ", "const clip = ", "const clamp = ", "const modText = ", "const CSS_FORBIDDEN", "const PERM_ALIASES", "const ALWAYS_ALLOWED", "const NEEDS = ", "const fenceOpen", "const KEY_LINE", "const API = ", "const EVENTS = ")
+        + "\n" + script[script.index("  const LINT = [") : script.index("\n  ];\n", script.index("  const LINT = [")) + 6]
+        + _function_source(script, "  function neededPermissions(")
+        + _function_source(script, "  function missingAwait(")
+        + _function_source(script, "  function lintMod(")
+        + _function_source(script, "  function parseMod(")
         + _function_source(script, "  function cleanCss(")
         + _function_source(script, "  function machine(")
         + r"""
@@ -313,6 +324,35 @@ assert.strictEqual(parseMod('name: Évé Café\n---\nx').id, 'eve-cafe');
 for (const [bad, key] of [['mod.toast(1)', 'e_header'], ['---\nx', 'e_name'], ['name: a\n---\n', 'e_code'], ['name: a\npermissions: root\n---\nx', 'e_perm'], ['name: a\nowner: me\n---\nx', 'e_key'], ['name: a\n---\n' + 'x'.repeat(60001), 'e_long']]) {
   assert.throws(() => parseMod(bad), e => e.message.startsWith(key), key);
 }
+// What models write, read leniently: thinking, prose, bold keys, lists, quotes, brackets, aliases, a code fence inside
+const F = '```';
+const messy = '<think>draft ' + F + 'mod\nname: Wrong\n---\nx\n' + F + '</think>Sure! Here it is:\n\n' + F + 'mod\n**Name:** Word Limit\n- description: "Warns above 300."\nauthor: someone\npermissions: [status, "composer.read"] and storage\n\n' + F + 'javascript\nmod.on("composer", t => mod.status.set(String(t.length)));\n' + F + '\n' + F + '\nHope this helps!';
+const read = parseMod(messy, {lenient: true});
+assert.deepStrictEqual([read.name, read.description, read.permissions, read.added], ['Word Limit', 'Warns above 300.', ['ui.status', 'composer.read'], []]);
+assert.strictEqual(read.code, 'mod.on("composer", t => mod.status.set(String(t.length)));');
+assert.throws(() => parseMod(messy), /e_key|e_perm|e_header/, 'pasted mods are read strictly');
+// No fence and no --- line: the settings end where the code starts
+const bare = parseMod('Here you go\nname: Bare\npermissions: ui.band\nmod.band.set({text: "x"});\nmod.commands.add("go", () => "x");', {lenient: true});
+assert.deepStrictEqual([bare.name, bare.permissions, bare.added], ['Bare', ['ui.band', 'commands', 'composer.write'], ['commands', 'composer.write']]);
+assert.ok(bare.code.startsWith('mod.band.set'));
+// From a model, names that need no permission or don't exist are skipped; what the code uses is added
+const loose = parseMod('name: x\npermissions: storage.write, everything, toast\n---\nawait mod.storage.set("a", 1); mod.status.set("x");', {lenient: true});
+assert.deepStrictEqual([loose.permissions, loose.added], [['ui.status'], ['ui.status']]);
+// Mistakes found before the mod runs
+assert.strictEqual(lintMod('mod.status.set("a"); mod.on("composer", x => x);'), '');
+assert.match(lintMod('fetch("https://x")'), /network/);
+assert.match(lintMod('localStorage.setItem("a", 1)'), /mod\.storage/);
+assert.match(lintMod('mod.notify("x")'), /mod\.notify does not exist/);
+assert.match(lintMod('mod.status.show("x")'), /mod\.status\.show does not exist/);
+assert.match(lintMod('mod.on("typing", f)'), /not an event/);
+assert.match(lintMod('document.querySelector("#chat-input").value'), /own panel/);
+assert.match(lintMod('window.parent.document.title'), /Open WebUI page/);
+assert.match(lintMod('alert("hi")'), /alert/);
+assert.strictEqual(lintMod('mod.theme().lang; mod.style("a{}"); await mod.storage.get("k")'), '');
+// Promises used as values: what real models wrote in testing
+assert.match(lintMod('const sender = mod.storage.get("sender", "You");'), /without await/);
+assert.match(lintMod('const n = mod.chat.current().messages.length;'), /mod\.chat\.current\(\) without await/);
+for (const fine of ['const s = await mod.storage.get("s");', 'mod.chat.current().then(c => c.title);', 'return mod.ai.complete(text);', 'const [a, b] = await Promise.all([mod.storage.get("a"), mod.storage.get("b")]);']) assert.strictEqual(lintMod(fine), '', fine);
 // Styles: nothing loads from elsewhere, nothing touches Mods, no escapes to hide words
 assert.strictEqual(cleanCss('body{color:red}'), 'body{color:red}');
 assert.strictEqual(cleanCss('a{background:url(https://evil.example/x)}'), 'a{background:none}');
@@ -341,6 +381,26 @@ def test_studio_guide_documents_every_permission(plugin):
     guide = script[script.index("const GUIDE = [") : script.index("].join('\\n');")]
     for perm in plugin.PERMISSIONS:
         assert f"'- {perm}:" in guide, perm
+    # A whole worked example, which small models follow far better than rules
+    assert "'```mod'," in guide and "'name: Word Limit'," in guide and "without emojis" in guide
+
+
+def test_writing_a_mod_is_checked_and_repaired(plugin):
+    script = plugin.LOADER_SCRIPT
+    assert "const MAX_TRIES = 3;" in script and "machine('studio'" in script
+    # Every answer is read leniently, linted and compiled before anyone sees it; a problem goes back to the model
+    assert "parseMod(answer, {lenient: true})" in script
+    assert "if (mod) ({problem, unused} = await checkMod(mod, studio.attempt >= MAX_TRIES));" in script
+    assert "'That answer cannot be used: ' + problem" in script
+    # The test run uses the same sandbox and content policy as a real mod, never eval, and has a time limit
+    assert "frame.setAttribute('sandbox', SANDBOX); frame.setAttribute('aria-hidden', 'true')" in script
+    assert script.count('content="\' + FRAME_CSP + \'"') == 2 and "unsafe-eval" not in script
+    assert "did not finish starting within 5 seconds" in script
+    # The test run calls each callback with what it would really get, and holds mods to the real limits
+    assert "kind === 'command' ? fn('hello world') : kind === 'button' ? fn(Object.assign({}, answer)) : fn()" in script
+    assert "was called inside an event handler" in script and "a mod can add up to 3 buttons" in script
+    # Wrong arguments fail loudly at run time too, instead of drawing code as a label
+    assert script.count("needs a text label and a function") == 2
 
 
 def test_shortcut_is_free_in_open_webui(plugin):
