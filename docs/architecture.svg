@@ -49,8 +49,8 @@
 <rect class="k-plugin-bar" x="388.0" y="204.0" width="5" height="88" rx="2"/>
 <text class="t" x="404.0" y="226.0" font-size="14">Filters</text>
 <text class="s" x="404.0" y="246.0" font-size="12">inlet, stream, outlet:</text>
-<text class="s" x="404.0" y="262.0" font-size="12">Rich Responses, Study Mode,</text>
-<text class="s" x="404.0" y="278.0" font-size="12">Artifacts mode</text>
+<text class="s" x="404.0" y="262.0" font-size="12">Rich Responses, Rich Visuals,</text>
+<text class="s" x="404.0" y="278.0" font-size="12">Study Mode, Artifacts mode</text>
 <rect class="k-plugin" x="388.0" y="308.0" width="252" height="88" rx="8" stroke-width="1.5"/>
 <rect class="k-plugin-bar" x="388.0" y="308.0" width="5" height="88" rx="2"/>
 <text class="t" x="404.0" y="330.0" font-size="14">Tools</text>

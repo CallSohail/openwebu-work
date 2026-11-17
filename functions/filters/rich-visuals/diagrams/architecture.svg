@@ -1,0 +1,71 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1028 594" width="1028" height="594" role="img" aria-labelledby="t d">
+<title id="t">Rich Visuals: how it works</title><desc id="d">On the way in, the Filter decides whether a message needs anything, and asks for a visual with icon tokens. While the answer streams, it turns tokens and emojis in the Visualization tool call into real SVG icons, and removes emojis from the text. It emits no events.</desc>
+<style>text{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans",Helvetica,Arial,sans-serif}.bg{fill:#ffffff}.lane{fill:#f6f8fa;stroke:#d0d7de}.lanet{fill:#1f2328;font-weight:600}.lanes{fill:#59636e}.t{fill:#1f2328;font-weight:600}.s{fill:#3d444d}.edge{stroke:#59636e;fill:none;stroke-width:1.5}.edge.dash{stroke-dasharray:5 4}.el{fill:#1f2328}.elb{fill:#ffffff;stroke:#d0d7de}.head{fill:#59636e}.cap{fill:#1f2328;font-weight:700}.capsub{fill:#59636e}.num{fill:#1f2328}.numt{fill:#ffffff;font-weight:700}.k-plugin{fill:#ddf4ff;stroke:#0969da}.k-plugin-bar{fill:#0969da}.k-ui{fill:#ffffff;stroke:#8c959f}.k-ui-bar{fill:#8c959f}.k-server{fill:#dafbe1;stroke:#1a7f37}.k-server-bar{fill:#1a7f37}.k-ext{fill:#fbefff;stroke:#8250df}.k-ext-bar{fill:#8250df}.k-store{fill:#fff1e5;stroke:#bc4c00}.k-store-bar{fill:#bc4c00}.k-sandbox{fill:#ffebe9;stroke:#cf222e}.k-sandbox-bar{fill:#cf222e}@media (prefers-color-scheme:dark){.bg{fill:#0d1117}.lane{fill:#151b23;stroke:#3d444d}.lanet{fill:#f0f6fc}.lanes{fill:#9198a1}.t{fill:#f0f6fc}.s{fill:#c9d1d9}.edge{stroke:#9198a1}.el{fill:#f0f6fc}.elb{fill:#0d1117;stroke:#3d444d}.head{fill:#9198a1}.cap{fill:#f0f6fc}.capsub{fill:#9198a1}.num{fill:#f0f6fc}.numt{fill:#0d1117}.k-plugin{fill:#0c2d4f;stroke:#4493f8}.k-plugin-bar{fill:#4493f8}.k-ui{fill:#161b22;stroke:#6e7681}.k-ui-bar{fill:#6e7681}.k-server{fill:#0f2d1a;stroke:#3fb950}.k-server-bar{fill:#3fb950}.k-ext{fill:#2a1a3f;stroke:#a371f7}.k-ext-bar{fill:#a371f7}.k-store{fill:#3a1f0b;stroke:#f0883e}.k-store-bar{fill:#f0883e}.k-sandbox{fill:#3b1215;stroke:#f85149}.k-sandbox-bar{fill:#f85149}}</style>
+<defs><marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="head" d="M0 0L10 5L0 10z"/></marker></defs>
+<rect class="bg" width="1028" height="594" rx="12"/>
+<rect class="lane" x="28" y="28" width="300" height="480" rx="10"/>
+<text class="lanet" x="44" y="54" font-size="15">In the browser</text>
+<text class="lanes" x="44" y="73" font-size="12">the Open WebUI page</text>
+<rect class="lane" x="364" y="28" width="300" height="480" rx="10"/>
+<text class="lanet" x="380" y="54" font-size="15">Open WebUI server</text>
+<text class="lanes" x="380" y="73" font-size="12">Python, inside Open WebUI</text>
+<rect class="lane" x="700" y="28" width="300" height="480" rx="10"/>
+<text class="lanet" x="716" y="54" font-size="15">Model</text>
+<text class="lanes" x="716" y="73" font-size="12">any model with native tool calling</text>
+<path class="edge" d="M304.0 144.0 L388.0 144.0" marker-end="url(#arrow)"/>
+<path class="edge" d="M640.0 144.0 L850.0 144.0 L850.0 212.0" marker-end="url(#arrow)"/>
+<path class="edge" d="M724.0 248.0 L682.0 248.0 L682.0 300.0 L640.0 300.0" marker-end="url(#arrow)"/>
+<path class="edge" d="M388.0 300.0 L346.0 300.0 L346.0 248.0 L304.0 248.0" marker-end="url(#arrow)"/>
+<path class="edge" d="M514.0 360.0 L514.0 428.0" marker-end="url(#arrow)"/>
+<path class="edge" d="M388.0 456.0 L346.0 456.0 L346.0 404.0 L304.0 404.0" marker-end="url(#arrow)"/>
+<rect class="k-ui" x="52.0" y="108.0" width="252" height="72" rx="8" stroke-width="1.5"/>
+<rect class="k-ui-bar" x="52.0" y="108.0" width="5" height="72" rx="2"/>
+<text class="t" x="68.0" y="130.0" font-size="14">Question</text>
+<text class="s" x="68.0" y="150.0" font-size="12">greetings and thanks are</text>
+<text class="s" x="68.0" y="166.0" font-size="12">left alone</text>
+<rect class="k-plugin" x="388.0" y="108.0" width="252" height="72" rx="8" stroke-width="1.5"/>
+<rect class="k-plugin-bar" x="388.0" y="108.0" width="5" height="72" rx="2"/>
+<text class="t" x="404.0" y="130.0" font-size="14">inlet</text>
+<text class="s" x="404.0" y="150.0" font-size="12">classify: skip, rich text or visual;</text>
+<text class="s" x="404.0" y="166.0" font-size="12">add rules and the icon names</text>
+<rect class="k-ext" x="724.0" y="212.0" width="252" height="72" rx="8" stroke-width="1.5"/>
+<rect class="k-ext-bar" x="724.0" y="212.0" width="5" height="72" rx="2"/>
+<text class="t" x="740.0" y="234.0" font-size="14">Model</text>
+<text class="s" x="740.0" y="254.0" font-size="12">calls render_visualization with</text>
+<text class="s" x="740.0" y="270.0" font-size="12">[[icon:thermometer]] tokens</text>
+<rect class="k-plugin" x="388.0" y="240.0" width="252" height="120" rx="8" stroke-width="1.5"/>
+<rect class="k-plugin-bar" x="388.0" y="240.0" width="5" height="120" rx="2"/>
+<text class="t" x="404.0" y="262.0" font-size="14">stream</text>
+<text class="s" x="404.0" y="282.0" font-size="12">in the tool call&#x27;s arguments:</text>
+<text class="s" x="404.0" y="298.0" font-size="12">tokens, emojis and made-up icon</text>
+<text class="s" x="404.0" y="314.0" font-size="12">images become Lucide SVG icons</text>
+<text class="s" x="404.0" y="330.0" font-size="12"></text>
+<text class="s" x="404.0" y="346.0" font-size="12">in the text: emojis removed</text>
+<rect class="k-server" x="388.0" y="428.0" width="252" height="56" rx="8" stroke-width="1.5"/>
+<rect class="k-server-bar" x="388.0" y="428.0" width="5" height="56" rx="2"/>
+<text class="t" x="404.0" y="450.0" font-size="14">Visualization (built in)</text>
+<text class="s" x="404.0" y="470.0" font-size="12">checks size and title</text>
+<rect class="k-sandbox" x="52.0" y="368.0" width="252" height="72" rx="8" stroke-width="1.5" stroke-dasharray="6 4"/>
+<rect class="k-sandbox-bar" x="52.0" y="368.0" width="5" height="72" rx="2"/>
+<text class="t" x="68.0" y="390.0" font-size="14">Visual in the answer</text>
+<text class="s" x="68.0" y="410.0" font-size="12">sandboxed frame, no network;</text>
+<text class="s" x="68.0" y="426.0" font-size="12">icons take the theme colour</text>
+<rect class="k-ui" x="52.0" y="220.0" width="252" height="56" rx="8" stroke-width="1.5"/>
+<rect class="k-ui-bar" x="52.0" y="220.0" width="5" height="56" rx="2"/>
+<text class="t" x="68.0" y="242.0" font-size="14">Answer text</text>
+<text class="s" x="68.0" y="262.0" font-size="12">no emojis unless asked</text>
+<rect class="elb" x="656.1" y="264.0" width="51.8" height="20" rx="6"/>
+<text class="el" x="682.0" y="279.0" font-size="11.5" text-anchor="middle">chunks</text>
+<rect class="elb" x="326.4" y="420.0" width="39.2" height="20" rx="6"/>
+<text class="el" x="346.0" y="435.0" font-size="11.5" text-anchor="middle">HTML</text>
+<rect class="k-plugin" x="28" y="542" width="14" height="14" rx="3" stroke-width="1.5"/>
+<text class="capsub" x="48" y="553" font-size="12">This repository</text>
+<rect class="k-ui" x="161.0" y="542" width="14" height="14" rx="3" stroke-width="1.5"/>
+<text class="capsub" x="181.0" y="553" font-size="12">Open WebUI page</text>
+<rect class="k-server" x="294.0" y="542" width="14" height="14" rx="3" stroke-width="1.5"/>
+<text class="capsub" x="314.0" y="553" font-size="12">Open WebUI server</text>
+<rect class="k-ext" x="440.2" y="542" width="14" height="14" rx="3" stroke-width="1.5"/>
+<text class="capsub" x="460.2" y="553" font-size="12">Outside service</text>
+<rect class="k-sandbox" x="573.2" y="542" width="14" height="14" rx="3" stroke-width="1.5"/>
+<text class="capsub" x="593.2" y="553" font-size="12">Sandboxed code</text>
+</svg>
