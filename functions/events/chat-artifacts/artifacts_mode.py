@@ -2,7 +2,7 @@
 title: Artifacts mode
 description: A switch in the message box. When it is on, the model makes artifacts (documents, slides, spreadsheets, diagrams, web pages, apps, drawings) for the Artifacts panel when you ask for something to create, and answers normally otherwise.
 author: Muhammad Sohail
-version: 1.2.0
+version: 1.4.0
 license: MIT
 required_open_webui_version: 0.13.0
 """
@@ -19,10 +19,10 @@ MARK = "<!-- artifacts-mode -->"
 INSTRUCTIONS = """You can create artifacts: substantial, self-contained content that opens in a panel beside the chat, where the user can view, run, edit and download it.
 
 When to make one
-- Only when the user asks you to create, draft, build or change something they will keep or reuse: a document, report, letter, plan, slide deck, spreadsheet or table of data, chart, diagram, web page, interface design, interactive app or game, drawing, data set, or a program longer than about 15 lines.
+- Only when the user asks you to create, draft, build or change something they will keep or reuse: a document, report, letter, plan, slide deck, animated explainer or short video, spreadsheet or table of data, chart, diagram, web page, interface design, interactive app or game, drawing, data set, or a program longer than about 15 lines.
 - Never for greetings, small talk, questions, explanations, advice, summaries in a few sentences, or short code snippets. Answer those normally, without any artifact.
 - If unsure, answer normally.
-- When the user asks for a presentation, a document, a spreadsheet, a chart or a diagram, write the artifact itself in your answer. Do not write a script, run code, use the code interpreter, a terminal or any other tool to produce .pptx, .docx, .xlsx, .pdf or image files, and do not describe the slides in prose: the panel shows the artifact and downloads it as PowerPoint, Word, Excel, PDF or PNG.
+- When the user asks for a presentation, a document, a spreadsheet, a chart, a diagram, an animation or a video, write the artifact itself in your answer. Do not write a script, run code, use the code interpreter, a terminal or any other tool to produce .pptx, .docx, .xlsx, .pdf, .mp4 or image files, and do not describe the slides or scenes in prose: the panel shows the artifact and downloads it as PowerPoint, Word, Excel, PDF, MP4 or PNG.
 - Use tools only to gather what the artifact needs (a web search for facts, for example), then write the artifact.
 
 How to write one
@@ -34,6 +34,12 @@ How to write one
 Formats
 - Document: ```markdown. Use headings, lists, tables, ==highlighted text==, and callouts (a line "> [!NOTE]", "> [!TIP]", "> [!IMPORTANT]" or "> [!WARNING]" followed by "> text"). Put diagrams in ```mermaid blocks, charts in ```chart blocks and drawings in ```svg blocks inside the document.
 - Slides: ```slides. Separate slides with a line containing only ---. Start each slide with a # heading; keep to about six short bullets. Speaker notes go after a line starting with "Note:". A slide may hold a ```mermaid diagram, a ```chart, an ```svg drawing, a table, an image ![description](url), ==highlights==, callouts, and two columns separated by a line containing only |||. A slide whose first line is <!-- layout: title --> is a title slide; <!-- layout: section --> a section divider.
+- Animation (a short animated explainer or motion graphic the panel plays and saves as an MP4 video, with sound): ```motion. Never write animation code for this.
+  Settings first, one per line, all optional: "size: 16:9" (or 9:16, 1:1, 4:3, 4:5); "style: minimal", "bold", "corporate", "neon", "paper", "editorial", "playful" or "chalk" (a complete look), or "theme: light"/"theme: dark"; "accent: #2563eb"; "background: #0f172a" (two colours separated by a comma make a gradient); "font: sans", "serif", "mono" or "rounded"; "logo: <image address on this site>"; "progress: on" (a bar along the bottom); "captions: karaoke" (default), "plain" or "off"; "voice: on" to narrate every caption aloud; "music: <audio address on this site> | 0.3" (volume).
+  Scenes: each opens with a line such as "--- 4s fade" (0.5 to 30 seconds; transitions fade, slide, zoom, wipe, cut, flash, iris, rise, blur). In a scene, one item per line: # heading, ## subheading, plain text, - bullets, > callout, "number: 1,350 | students" (counts up), "chart: bar" (or line, area, pie, donut, hbar, race) followed directly by CSV lines with a header row (for race, each column after the first is a moment, such as a year), "steps: Apply -> Review -> Offer", "icon: rocket | Launch" and "icons: book Library, users Clubs, globe Partners" (names such as check, star, heart, bolt, clock, calendar, user, users, globe, idea, lock, shield, chart, target, flag, mail, home, pin, book, graduation, leaf, sun, chat, search, money, trophy, rocket, flask, laptop, gear, or any emoji), "progress: 72% | Completed" (a bar), "ring: 3/4 | Modules" (a circle), "timeline: 2019 Founded; 2021 New labs; 2025 Today", "compare: Before | After" followed by lines "- old way | new way", "quote: The words | Who said them", "badge: New", "lower: Name | Role" (a lower third), an image ![description](url), and "say: ..." for the caption (spoken when voice is on).
+  Decoration per scene: "pattern: grid", "dots", "lines", "waves", "rings" or "blobs"; "particles: confetti", "sparkles", "snow", "bokeh" or "bubbles"; "camera: zoom-in", "zoom-out", "pan-left", "pan-right", "pan-up", "pan-down" or "drift"; "shape: circle #f59e0b top-right large {float}" (shapes circle, square, ring, triangle, star, blob, line, dots, arrow, plus; places top-left, top, top-right, left, center, right, bottom-left, bottom, bottom-right; sizes small, medium, large, huge; motion spin, float, pulse or draw), up to six.
+  End any line with an entrance: {fade}, {up}, {down}, {left}, {right}, {zoom}, {pop}, {drop}, {blur}, {type}, or kinetic type {words}, {letters}, {scramble}, {wave}; add a time to choose when, as in {up at 1.5s}.
+  Keep one idea per scene, about 3 to 6 seconds each, 20 to 60 seconds in all, and short words on screen; put the explanation in the captions.
 - Chart (inside documents or slides, or on its own): ```chart, then optional lines "type: bar", "type: line", "type: area" or "type: pie" and "title: ...", then CSV with a header row; the first column holds labels and the others numbers.
 - Spreadsheet: ```csv with a header row. Formulas such as =SUM(B2:B10), =AVERAGE(C2:C9), =B2*C2 and =IF(B2>100,"high","low") are calculated.
 - Diagram: ```mermaid (flowchart, sequenceDiagram, gantt, timeline, mindmap, pie, classDiagram, erDiagram, stateDiagram).

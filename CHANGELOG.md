@@ -2,6 +2,22 @@
 
 This repository contains independently versioned Open WebUI extensions. Plugin-specific release notes live next to each implementation when they need more detail.
 
+## 2026-11-17
+
+### Mods 1.0.0
+
+Adds Mods: small features people add to Open WebUI themselves. A person describes a feature, a model writes it as a short mod, and they try it, change it and install it, straight from the message box with `/mod <description>` or from the Mods window; or they pick one of 8 ready-made mods (Word Counter, Prompt Shortcuts, Focus Mode, Pomodoro Timer, Bookmarks, Readability, Export to Markdown, Warm Reading Theme). Mods show labels and bars above the message box, panels beside the chat, `/` commands, buttons under answers and styles. Before anyone sees a model's mod, Mods reads it leniently, checks the code, test-runs it in a throwaway sandbox with sample input, and sends any problem back to the model, up to 3 tries; a card explains `/mod` while it is typed, and *Run my mods* pauses everything. Each runs in a sandboxed frame with no network and reaches Open WebUI only through checked calls within 12 permissions granted at install; frames that navigate away or keep failing are stopped; the server validates every stored mod. Administrators can publish mods to everyone. In English and French, light and dark, with a safe mode. The browser suite passed 96 of 96 checks on Open WebUI 0.13.3 with Chat Files and Artifacts, and 95 of 95 on 0.13.0 alone. Create was also tested end to end through the real interface with Qwen2.5-Coder 3B and 1.5B served locally; the results are in the README.
+
+## 2026-11-16
+
+### Artifacts 1.4.0
+
+Motion grows into a motion-graphics tool modelled on what HyperFrames offers, without running generated code: eight styles, kinetic type, icons, progress bars and rings, timelines, comparisons, quotes, badges, lower thirds, donut, horizontal-bar and bar-race charts, patterns, particles, shapes, camera moves, four more transitions, a logo and progress bar, karaoke captions, narration through Open WebUI's text-to-speech and music, all in the MP4. The browser suite passed 192 of 192 checks on Open WebUI 0.13.0 and 0.13.3, alone and with the other event functions; videos and their soundtracks were checked with ffprobe and ffmpeg.
+
+### Artifacts 1.3.0
+
+Adds Motion, short animated explainers in the spirit of Claude Motion: the model describes scenes in plain lines (headings, text, bullets, counting numbers, growing charts, steps, pictures, captions, transitions) and the panel plays them, lets people edit a scene's words, length and transition, and downloads an MP4 video made in the browser, with H.264 through WebCodecs faster than real time, or recorded in real time where that isn't available. Anything it couldn't use as written is listed with its line. The browser suite passed 178 of 178 checks on Open WebUI 0.13.0 and 0.13.3, alone and with the other event functions; the videos were checked with ffprobe and ffmpeg.
+
 ## 2026-11-12
 
 ### Chat Files 2.0.0

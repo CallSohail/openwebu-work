@@ -72,7 +72,15 @@ Each piece of state that used to be a set of flags is a small machine made by `m
 
 `pptxOf` writes a minimal PresentationML package with the same ZIP writer: one blank layout, and for each slide text boxes for the title and body (bullets, bold, italics, highlights; two columns side by side) and pictures for its figures, rasterised to PNG in the browser after `diagramsReady`.
 
-## 12. Where to change things
+## 12. Motion
+
+A Motion artifact is data, not code: nothing the model writes runs. `motionOf` reads the settings and scenes into a model (with `motionParts`/`motionText` to rewrite one scene and keep the rest byte for byte), clamping lengths and counts and collecting a warning, with its line, for anything it had to change. `layoutScene` places each thing once per size: a column, a centred stack, or text beside a single chart or picture on wide frames, shrinking type until it fits; it also sets when each thing enters, squeezed to fit a short scene. `paintMotion(g, model, t, scale)` draws one frame at any time and scale, on the panel's canvas and for every export alike, so the preview is exactly the video.
+
+The video: `encodeMotion` draws every frame, hands it to WebCodecs' `VideoEncoder` (H.264, High then Main then Baseline) and `mp4Of` writes the samples into an MP4 (ftyp, then moov, then one mdat) so it starts playing before it has fully loaded. Where WebCodecs isn't there (http pages, older browsers) or the encoder reorders frames, `recordMotion` records the canvas with `MediaRecorder` while it plays once in real time. The `motion` machine (paused, playing, ended) drives the player and the `export` machine allows one video at a time. Pictures load only from this site or as data (or https with `network = open`, without credentials), so the canvas can always be read back for export.
+
+Motion graphics: `lookOf` resolves a style (`MOTION_STYLES`) with any colour and font given; `paintScene` draws the background and its pattern, then, under the camera move, the shapes and blocks, then particles, the lower third and the caption; `paintMotion` adds the transition, the logo and the progress bar. Kinetic type (`paintKinetic`) draws word by word or letter by letter. Particles come from a seeded generator, so a frame always looks the same. Sound: `motionSound` loads music (this site or `data:` only, through `request()`) and asks `/api/v1/audio/speech` once per caption (pages and Open WebUI both cache it); `timeScenes` lengthens scenes to fit narration; `scheduleSound` plays the plan in an `AudioContext` for the preview and in an `OfflineAudioContext` for the export (`mixSound`), ducking music under speech; `encodeSound` makes AAC or Opus with WebCodecs and `mp4Of` writes it as a second track (`esds` or `dOps`).
+
+## 13. Where to change things
 
 | To change | Look at |
 | --- | --- |
@@ -84,6 +92,7 @@ Each piece of state that used to be a set of flags is a small machine made by `m
 | Versions | `artifactsOf` |
 | The sandbox and its policy | `SANDBOX`, `policy()`, `BOOT`, `reactDoc`, `mermaidDoc` |
 | Formulas | `sheetEngine`, `toNumber` |
-| Downloads | `downloadItems`, `xlsxOf`, `pptxOf`, `slidesHtml`, `wordHtml` |
+| Downloads | `downloadItems`, `xlsxOf`, `pptxOf`, `slidesHtml`, `wordHtml`, `motionVideo` |
+| Motion | `motionOf` (reading), `layoutScene` and `paintMotion` (drawing), `motionView` (player), `encodeMotion`, `mp4Of`, `recordMotion` (video) |
 | A state and its moves | the `machine(…)` tables (`view`, `load`, `size`, `stream`), and `cell` in `sheetView` |
 | Where it sits in Open WebUI | `place`, `syncHeaderButton`, `syncMenu`, `syncChat` |
