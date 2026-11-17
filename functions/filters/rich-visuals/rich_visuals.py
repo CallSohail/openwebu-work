@@ -1,7 +1,7 @@
 """
 title: Rich Visuals
 author: Muhammad Sohail
-version: 1.0.0
+version: 1.1.0
 license: MIT
 required_open_webui_version: 0.13.4
 description: Real icons and better visuals for Open WebUI's built-in Visualization. On questions where a visual helps (weather, comparisons, trends, money, plans, processes, science), it asks the model for an inline visualization and lets it place real SVG icons with short tokens such as [[icon:thermometer]], which it turns into Lucide icons as the answer streams. Emojis become icons in visuals and are left out of text unless asked for. Greetings, thanks and small talk are left alone. It emits no status or events.
@@ -11,6 +11,7 @@ description: Real icons and better visuals for Open WebUI's built-in Visualizati
 # Permission to use, copy, modify, and/or distribute this software for any purpose with or without fee is hereby
 # granted, provided that the above copyright notice and this permission notice appear in all copies.
 
+import json
 import re
 import time
 import unicodedata
@@ -340,9 +341,8 @@ EMOJI_RUN_RE = re.compile(_EMOJI_RUN)
 # The token, and the loose ways models write it: [icon:x], [[icon:x], <[icon:x|label]], {{icon:x}}
 TOKEN_RE = re.compile(r"<?(?:\[\[?|\{\{)icon:([A-Za-z0-9_-]{1,40})(?:\|([^\[\]{}\\\"<>]{0,60}))?(?:\]\]?|\}\})>?")
 TOKEN_START = "[[icon:"
-# What models write instead of the token: an icon name inside an "icon" element, or a data-icon attribute. Quotes may be
-# JSON-escaped inside tool-call arguments.
-_Q = r"""(?:\\?["'])"""
+# What models write instead of the token: an icon name inside an "icon" element, or a data-icon attribute
+_Q = r"""["']"""
 ICON_TAG_RE = re.compile(
     r"<(span|i)\b[^<>]*?\bclass=" + _Q + r"[^<>\"'\\]*\bicons?\b[^<>\"'\\]*" + _Q + r"[^<>]*>\s*([A-Za-z0-9_-]{2,40})\s*</\1>"
     r"|<(?:span|i)\b[^<>]*?\bdata-icon=" + _Q + r"([A-Za-z0-9_-]{2,40})" + _Q + r"[^<>]*>\s*</(?:span|i)>"
@@ -366,10 +366,12 @@ def _icon_from_classes(classes: str) -> str:
 ICON_IMG_RE = re.compile(r"<img\b[^<>]*?\bsrc=" + _Q + r"[^\"'<>\\]*?/([A-Za-z0-9_-]{2,40})\.(?:svg|png)" + _Q + r"[^<>]*?>")
 IMG_ALT_RE = re.compile(r"\balt=" + _Q + r"([^\"'<>\\]{0,60})" + _Q)
 
+# Icons take the colour and size of the text around them; the model colours one only when the colour means something
 SVG_OPEN = (
     "<svg class='owui-icon owui-icon-{name}' viewBox='0 0 24 24' width='1.15em' height='1.15em' fill='none' stroke='currentColor' "
     "stroke-width='2' stroke-linecap='round' stroke-linejoin='round' style='display:inline-block;vertical-align:-0.18em;flex:none' {a11y}>"
 )
+MAX_ARGUMENTS = 400_000  # Visualization accepts 256 KiB of HTML; anything far larger is passed through untouched
 
 
 def _fold(text: str) -> str:
@@ -433,19 +435,70 @@ def _emoji_to_icons(text: str) -> str:
     return EMOJI_RUN_RE.sub(swap, text)
 
 
-ESCAPED_EMOJI_RE = re.compile(r"(?:\\u[dD]83[c-eC-E]\\u[dD][c-fC-F][0-9a-fA-F]{2}|\\u2[67][0-9a-fA-F]{2}|\\u2b5[05]|\\u231[ab]|\\u23[ef][0-9a-fA-F]|\\u2139)(?:\\u[fF][eE]0[fF]|\\u200[dD])*|\\u[fF][eE]0[fF]|\\u20[eE]3", re.I)
-
-
-def _unescape(escaped: str) -> str:
-    try:
-        return escaped.encode("ascii").decode("unicode_escape").encode("utf-16", "surrogatepass").decode("utf-16")
-    except Exception:
-        return ""
-
-
 def strip_emojis(text: str) -> str:
     """Remove emojis, keeping one space where one separated two words: 'Hi 👋 there' -> 'Hi there', 'Paris 🌤️:' -> 'Paris:'."""
     return EMOJI_RE.sub(lambda m: " " if m.group(1) and m.group(2) else "", text)
+
+
+# ------------------------------------------------------------------ the visual's HTML
+
+# Code and comments, where a token must never turn into markup: an SVG inside a JavaScript string or a CSS rule breaks it
+CODE_BLOCK_RE = re.compile(r"<(script|style)\b[^>]*>[\s\S]*?(?:</\1\s*>|$)|<!--[\s\S]*?(?:-->|$)", re.I)
+CODE_TOKEN_RE = re.compile("(?:" + TOKEN_RE.pattern + ") ?")
+CODE_EMOJI_RE = re.compile("(?:" + _EMOJI_RUN + ") ?")
+# A tag; "<" followed by anything else ("a < b", "<[icon:x]]") is text
+TAG_RE = re.compile(r"(<(?:/?[A-Za-z][^<>]*|![^<>]*)>)")
+
+
+def _markup(part: str, emoji_icons: bool) -> str:
+    """HTML outside scripts and styles: icons go into text only; inside tags (attributes) tokens and emojis are removed."""
+    part = ICON_TAG_RE.sub(lambda m: icon_svg(m.group(2) or m.group(3)) or m.group(0), part)
+    part = ICON_CLASS_RE.sub(lambda m: _icon_from_classes(m.group(2)) or m.group(0), part)
+    part = ICON_IMG_RE.sub(lambda m: icon_svg(m.group(1), (IMG_ALT_RE.search(m.group(0)) or [None, ""])[1]) or m.group(0), part)
+    pieces = TAG_RE.split(part)
+    for i, piece in enumerate(pieces):
+        if i % 2:
+            # Inside a tag (attributes, or an icon the filter just drew): nothing may become markup
+            if not piece.startswith("<svg"):
+                piece = TOKEN_RE.sub("", piece)
+                pieces[i] = EMOJI_RUN_RE.sub("", piece) if emoji_icons else piece
+        else:
+            piece = TOKEN_RE.sub(lambda m: icon_svg(m.group(1), m.group(2) or ""), piece)
+            pieces[i] = _emoji_to_icons(piece) if emoji_icons else piece
+    return "".join(pieces)
+
+
+def transform_html(html: str, emoji_icons: bool) -> str:
+    """Put real icons into a visual's HTML. Scripts and styles only lose tokens (and emojis), so code always stays valid."""
+    out, pos = [], 0
+    for match in CODE_BLOCK_RE.finditer(html):
+        out.append(_markup(html[pos:match.start()], emoji_icons))
+        block = match.group(0)
+        if not block.startswith("<!--"):
+            block = CODE_TOKEN_RE.sub("", block)
+            if emoji_icons and block[:7].lower() == "<script":
+                block = CODE_EMOJI_RE.sub("", block)
+        out.append(block)
+        pos = match.end()
+    out.append(_markup(html[pos:], emoji_icons))
+    return "".join(out)
+
+
+def transform_arguments(raw: str, emoji_icons: bool) -> Optional[str]:
+    """The finished render_visualization arguments with icons in place, or None to leave them exactly as they came."""
+    try:
+        args = json.loads(raw)
+    except ValueError:
+        return None
+    if not isinstance(args, dict) or not isinstance(args.get("html"), str):
+        return None
+    try:
+        args["html"] = transform_html(args["html"], emoji_icons)
+        if isinstance(args.get("title"), str) and emoji_icons:
+            args["title"] = strip_emojis(TOKEN_RE.sub("", args["title"])).strip() or args["title"]
+        return json.dumps(args, ensure_ascii=False)
+    except Exception:
+        return None
 
 
 # ------------------------------------------------------------------ when to act
@@ -515,8 +568,7 @@ TOPICS: list[tuple[str, bool, str, list[str]]] = [
      ["briefcase", "building", "users", "target", "chart-line", "handshake", "presentation", "megaphone", "clipboard-list", "rocket", "milestone"]),
 ]
 _TOPIC_RES = [(name, visual, re.compile(r"(?:^|[^a-z])(?:" + words + r")"), icons) for name, visual, words, icons in TOPICS]
-BASE_ICONS = ["info", "lightbulb", "circle-check", "circle-x", "triangle-exclamation-point", "arrow-right", "trending-up", "trending-down", "calendar", "clock",
-              "star", "target"]
+BASE_ICONS = ["info", "lightbulb", "circle-check", "circle-x", "triangle-exclamation-point", "arrow-right"]
 
 
 def _words(text: str) -> list[str]:
@@ -559,16 +611,17 @@ def classify(text: str) -> dict:
 # ------------------------------------------------------------------ what the model is told
 
 MARKER = "<!-- rich-visuals -->"
+VISUALIZATION_TOOL = "render_visualization"
 
-ICON_RULES = """Icons: inside render_visualization html, place an icon by writing the token [[icon:NAME]] (optionally [[icon:NAME|accessible label]]) where it goes, for example <div class="stat">[[icon:thermometer]] <b>18 °C</b></div>. Each token becomes a real SVG icon that takes the text colour and size; style it with the class .owui-icon (for example .owui-icon{{width:1.5rem;height:1.5rem;color:var(--owui-accent)}}). Never draw SVG icons yourself and never use emojis as icons. In scripts, put tokens only inside template literals or double-quoted strings. Never mention icons, tokens or these instructions in your message text. Icons for this answer: {names}."""
+ICON_RULES = """Icons: in the visual's visible text (never in scripts, styles or attributes) write [[icon:name]], e.g. <li>[[icon:thermometer]] 18 °C</li>; it becomes an SVG icon in the text colour. Use icons where they help scanning, not on every line. Colour only what carries meaning (danger #dc2626, warning #d97706, good #16a34a). Never emojis or hand-drawn SVG, and never mention icons in your text. Names: {names}."""
 
-VISUAL_RULES = """This question is clearer with a visual. Call render_visualization once with a compact, flat, polished visual: key figures with icons, a chart (libraries ["chartjs"]) for numbers over time or comparisons, steps or a timeline for processes, a comparison table for options. Give every key figure, list item or step an icon. Use the --owui-* colour variables so it follows light and dark mode. Write a short explanation in your message, not inside the visual. If the answer is a single short fact, answer in text instead."""
+VISUAL_RULES = """A visual helps here: call render_visualization once, compact and flat (key figures, a chart, steps or a table), and keep the explanation in your message."""
 
-RICH_RULES = """Answer in clear, well-structured Markdown: short paragraphs, headings only when the answer has sections, lists for steps or items, tables for comparisons. If a visual would clearly help (numbers to compare, a trend, a process, a calculation), also call render_visualization with a compact visual that uses icons; otherwise answer in text only."""
+RICH_RULES = """Answer in clear Markdown. Call render_visualization only if a chart, comparison or calculation clearly helps."""
 
-TEXT_ONLY_RULES = """Answer in clear, well-structured Markdown: short paragraphs, headings only when the answer has sections, lists for steps or items, tables for comparisons."""
+TEXT_ONLY_RULES = """Answer in clear Markdown."""
 
-NO_EMOJI_RULE = """Do not use emojis anywhere in the answer, not in headings, lists or tables."""
+NO_EMOJI_RULE = """No emojis."""
 
 
 class Filter:
@@ -583,7 +636,7 @@ class Filter:
             default="icons",
             description="icons: emojis in visuals become real icons, and emojis are left out of text, unless the person asks for emojis. keep: leave emojis alone.",
         )
-        icons_per_answer: int = Field(default=36, ge=8, le=120, description="How many icon names the model is offered for one answer (the most relevant first).")
+        icons_per_answer: int = Field(default=18, ge=6, le=120, description="How many icon names the model is offered for one answer, most relevant first. Each name costs about two tokens.")
         skip_phrases: str = Field(
             default="",
             description="Extra messages to leave alone, separated by commas (for example a team's own greeting). Compared without case or accents.",
@@ -677,11 +730,11 @@ class Filter:
                     return
         messages.insert(0, {"role": "system", "content": block})
 
-    # ---------------------------------------------------------- streaming replacement
+    # ---------------------------------------------------------- text, as it streams
 
     @staticmethod
-    def _hold_back(text: str, visual: bool = False) -> int:
-        """Where a piece that may continue in the next chunk starts (an icon token, or in a visual a JSON escape), or -1."""
+    def _hold_back(text: str) -> int:
+        """Where an icon token that may continue in the next chunk starts, or -1."""
         window = max(0, len(text) - 110)
         for match in re.finditer(r"[\[{]", text[window:]):
             start = window + match.start()
@@ -695,46 +748,14 @@ class Filter:
             if "icon:".startswith(rest) or re.fullmatch(r"icon:[A-Za-z0-9_-]{0,40}(\|[^\[\]{}\\\"<>]{0,60})?[\]}]?", rest):
                 # A "<" written just before the token belongs to it
                 return start - 1 if start and text[start - 1] == "<" else start
-        if visual:
-            # An icon element that is not closed yet, such as <span class="icon">wal
-            element = None
-            for element in re.finditer(r"<(span|i|img)\b", text[window:]):
-                pass
-            if element is not None:
-                start = window + element.start()
-                tail = text[start:]
-                closed = ">" in tail if element.group(1) == "img" else bool(re.search(r"</(span|i)>", tail))
-                if not closed:
-                    return start
-            partial = re.search(r"<(s(p(an?)?)?|i(mg?)?)?$", text)
-            if partial:
-                return partial.start()
-            # An escaped emoji (🌡) or its variation selector may be cut between chunks
-            escape = re.search(r"(\\(u[0-9a-fA-F]{0,3})?|\\u[dD][89abAB][0-9a-fA-F]{2}(\\(u[0-9a-fA-F]{0,3})?)?)$", text)
-            if escape and not text[: escape.start()].endswith("\\"):
-                return escape.start()
         return -1
 
-    def _replace_visual(self, text: str, emoji_icons: bool) -> str:
-        text = TOKEN_RE.sub(lambda m: icon_svg(m.group(1), m.group(2) or ""), text)
-        text = ICON_TAG_RE.sub(lambda m: icon_svg(m.group(2) or m.group(3)) or m.group(0), text)
-        text = ICON_CLASS_RE.sub(lambda m: _icon_from_classes(m.group(2)) or m.group(0), text)
-        text = ICON_IMG_RE.sub(lambda m: icon_svg(m.group(1), (IMG_ALT_RE.search(m.group(0)) or [None, ""])[1]) or m.group(0), text)
-        if not emoji_icons:
-            return text
-        # Some providers send arguments with non-ASCII characters escaped: \ud83c\udf21\ufe0f is one emoji
-        text = ESCAPED_EMOJI_RE.sub(lambda m: _emoji_to_icons(_unescape(m.group(0))), text)
-        return _emoji_to_icons(text)
-
-    def _feed(self, state: dict, slot: str, chunk: str, visual: bool) -> str:
-        """Run one streamed piece through the replacements, holding back a token cut in half."""
+    def _feed_text(self, state: dict, slot: str, chunk: str) -> str:
         carry = state["carry"].pop(slot, "") + chunk
-        cut = self._hold_back(carry, visual)
+        cut = self._hold_back(carry)
         if cut != -1:
             state["carry"][slot] = carry[cut:]
             carry = carry[:cut]
-        if visual:
-            return self._replace_visual(carry, state["emoji_icons"])
         return self._clean_text(state, slot, carry)
 
     def _clean_text(self, state: dict, slot: str, text: str) -> str:
@@ -756,11 +777,65 @@ class Filter:
             out.append(part if state["in_code"] else strip_emojis(part))
         return "".join(out)
 
-    def _flush(self, state: dict, slot: str, visual: bool) -> str:
+    def _flush_text(self, state: dict, slot: str) -> str:
         rest = state["carry"].pop(slot, "")
-        if not rest:
-            return ""
-        return self._replace_visual(rest, state["emoji_icons"]) if visual else (rest if rest.strip("`") == "" else self._clean_text(state, slot, rest))
+        if not rest or rest.strip("`") == "":
+            return rest
+        return self._clean_text(state, slot, rest)
+
+    # ---------------------------------------------------------- the visual's tool call
+
+    def _feed_call(self, state: dict, slot: str, function: dict) -> None:
+        """Hold back render_visualization's arguments until they are complete, then put the icons in. Other tools pass untouched."""
+        calls = state["calls"]
+        call = calls.get(slot)
+        if call is None:
+            name = function.get("name")
+            call = calls[slot] = {"buffer": [], "size": 0, "mode": "hold" if name == VISUALIZATION_TOOL else "pass"}
+        elif call["mode"] == "hold" and function.get("name") not in (None, "", VISUALIZATION_TOOL):
+            # The tool turned out to be another one: give back what was held, unchanged
+            call["mode"] = "pass"
+            function["arguments"] = "".join(call["buffer"]) + (function.get("arguments") or "")
+            call["buffer"] = []
+            return
+        piece = function.get("arguments")
+        if call["mode"] != "hold" or not isinstance(piece, str):
+            return
+        call["buffer"].append(piece)
+        call["size"] += len(piece)
+        if call["size"] > MAX_ARGUMENTS:
+            # Far beyond what Visualization accepts: give it back as it came, and let Open WebUI report the size
+            call["mode"] = "pass"
+            function["arguments"] = "".join(call["buffer"])
+            call["buffer"] = []
+            return
+        function["arguments"] = ""
+        if piece.rstrip().endswith("}"):
+            raw = "".join(call["buffer"])
+            out = transform_arguments(raw, state["emoji_icons"])
+            if out is not None:
+                call["mode"] = "done"
+                call["buffer"] = []
+                function["arguments"] = out
+
+    def _finish_calls(self, state: dict, c_index: int, delta: dict) -> None:
+        """At the end of a choice, anything still held goes out: transformed when it is valid JSON, otherwise exactly as it came."""
+        for slot, call in state["calls"].items():
+            ci, ti = slot
+            if ci != c_index or call["mode"] != "hold":
+                continue
+            raw = "".join(call["buffer"])
+            call["mode"], call["buffer"] = "done", []
+            out = transform_arguments(raw, state["emoji_icons"])
+            calls = delta.get("tool_calls")
+            if not isinstance(calls, list):
+                calls = delta["tool_calls"] = []
+            target = next((c for c in calls if isinstance(c, dict) and c.get("index", 0) == ti), None)
+            if target is None:
+                calls.append({"index": ti, "function": {"arguments": out if out is not None else raw}})
+            else:
+                function = target.setdefault("function", {})
+                function["arguments"] = out if out is not None else raw
 
     # ---------------------------------------------------------- Open WebUI hooks
 
@@ -808,6 +883,7 @@ class Filter:
             self._streams[key] = {
                 "at": time.monotonic(),
                 "carry": {},
+                "calls": {},
                 "in_code": False,
                 "strip_emojis": not keep_emojis,
                 "emoji_icons": not keep_emojis,
@@ -820,7 +896,7 @@ class Filter:
         if not state or not isinstance(event, dict):
             return event
         try:
-            # Chat Completions chunks
+            # Chat Completions chunks (Open WebUI turns Responses API streams into these before filters see them)
             for c_index, choice in enumerate(event.get("choices") or []):
                 if not isinstance(choice, dict):
                     continue
@@ -831,40 +907,20 @@ class Filter:
                 if isinstance(calls, list):
                     for call in calls:
                         function = call.get("function") if isinstance(call, dict) else None
-                        if isinstance(function, dict) and isinstance(function.get("arguments"), str):
-                            slot = f"tool:{c_index}:{call.get('index', 0)}"
-                            state.setdefault("slots", set()).add(slot)
-                            function["arguments"] = self._feed(state, slot, function["arguments"], True)
+                        if isinstance(function, dict):
+                            self._feed_call(state, (c_index, call.get("index", 0)), function)
                 content = delta.get("content")
                 if isinstance(content, str) and content:
-                    delta["content"] = self._feed(state, f"text:{c_index}", content, False)
+                    delta["content"] = self._feed_text(state, f"text:{c_index}", content)
                 if choice.get("finish_reason"):
-                    # Whatever was held back goes out with the last chunk
-                    for slot in sorted(state.get("slots", set())):
-                        _, ci, ti = slot.split(":")
-                        if int(ci) != c_index:
-                            continue
-                        rest = self._flush(state, slot, True)
-                        if rest:
-                            calls = delta.setdefault("tool_calls", [])
-                            target = next((c for c in calls if isinstance(c, dict) and c.get("index", 0) == int(ti)), None)
-                            if target is None:
-                                calls.append({"index": int(ti), "function": {"arguments": rest}})
-                            else:
-                                target.setdefault("function", {})["arguments"] = target["function"].get("arguments", "") + rest
-                    rest = self._flush(state, f"text:{c_index}", False)
+                    self._finish_calls(state, c_index, delta)
+                    rest = self._flush_text(state, f"text:{c_index}")
                     if rest:
                         delta["content"] = (delta.get("content") or "") + rest
                     choice["delta"] = delta
-            # Responses API events
-            kind = event.get("type")
-            if kind == "response.function_call_arguments.delta" and isinstance(event.get("delta"), str):
-                event["delta"] = self._feed(state, f"resp:{event.get('item_id') or event.get('output_index', 0)}", event["delta"], True)
-            elif kind == "response.function_call_arguments.done" and isinstance(event.get("arguments"), str):
-                state["carry"].pop(f"resp:{event.get('item_id') or event.get('output_index', 0)}", None)
-                event["arguments"] = self._replace_visual(event["arguments"], state["emoji_icons"])
-            elif kind == "response.output_text.delta" and isinstance(event.get("delta"), str):
-                event["delta"] = self._feed(state, f"rtext:{event.get('item_id') or 0}", event["delta"], False)
+            # Responses API text, should a provider's events reach the filter as they are
+            if event.get("type") == "response.output_text.delta" and isinstance(event.get("delta"), str):
+                event["delta"] = self._feed_text(state, f"rtext:{event.get('item_id') or 0}", event["delta"])
         except Exception:
             # Never break an answer: on any surprise, pass the chunk through as it came
             return event

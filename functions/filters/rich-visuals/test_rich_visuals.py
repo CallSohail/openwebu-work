@@ -95,7 +95,8 @@ def test_inlet_asks_for_a_visual_with_icons_when_visualization_is_on():
     b = run(f.inlet(body("What is the temperature in Paris this week?", "You are helpful."), __metadata__=META, __model__=VIZ_MODEL))
     system = system_of(b)
     assert system.startswith("You are helpful.") and rv.MARKER in system
-    assert "render_visualization" in system and "[[icon:NAME]]" in system and "thermometer" in system and "Do not use emojis" in system
+    assert "render_visualization" in system and "[[icon:" in system and "thermometer" in system and "No emojis." in system
+    assert "accent" not in system  # icons follow the text colour; colour is only for meaning
 
 
 def test_inlet_without_visualization_only_tidies_text():
@@ -234,13 +235,12 @@ def test_chunks_for_other_answers_pass_untouched():
     assert run(f.stream(json.loads(json.dumps(chunk)), __metadata__={"message_id": "other"})) == chunk
 
 
-def test_responses_api_events():
+def test_responses_api_text_events_lose_emojis_and_tool_events_pass():
     f = armed_filter()
-    out = []
-    for piece in ['{"title":"x","html":"[[ic', 'on:sun]] ok"}']:
-        out.append(run(f.stream({"type": "response.function_call_arguments.delta", "item_id": "fc1", "delta": piece}, __metadata__=META))["delta"])
-    done = run(f.stream({"type": "response.function_call_arguments.done", "item_id": "fc1", "arguments": '{"title":"x","html":"[[icon:sun]] ok"}'}, __metadata__=META))
-    assert "owui-icon-sun" in "".join(out) and "owui-icon-sun" in json.loads(done["arguments"])["html"]
+    text = run(f.stream({"type": "response.output_text.delta", "item_id": "t", "delta": "Warm ✅ day"}, __metadata__=META))
+    assert text["delta"] == "Warm day"
+    event = {"type": "response.function_call_arguments.delta", "item_id": "fc1", "delta": '{"html":"[[icon:sun]]'}
+    assert run(f.stream(dict(event), __metadata__=META)) == event
 
 
 def test_a_broken_chunk_is_passed_through():
@@ -344,3 +344,124 @@ def test_loose_icon_forms_from_real_models(written, icon, sizes):
     else:
         assert written in out and "<svg" not in out
 
+
+
+# ------------------------------------------------------------- the visual is never broken
+
+def tool_chunks(name, arguments, sizes, finish=True):
+    chunks = chunks_for(arguments, sizes)
+    chunks[0]["choices"][0]["delta"]["tool_calls"][0]["function"]["name"] = name
+    return chunks if finish else chunks[:-1]
+
+
+SCRIPT_HTML = (
+    "<div id='c'>[[icon:battery]] Battery</div><canvas id='x'></canvas>"
+    "<script>const labels = ['[[icon:battery]] Battery', '📷 Camera', \"{{icon:cpu}} Chip\"];"
+    "new Chart(document.getElementById('x'), {data: {labels}});</script>"
+    "<style>.k::before{content:'[[icon:sun]]'}</style><!-- [[icon:sun]] -->"
+)
+
+
+@pytest.mark.parametrize("sizes", [[9], [1] * 50, [300]])
+def test_tokens_and_emojis_in_scripts_and_styles_never_become_markup(sizes):
+    # The bug people saw: an icon put into a single-quoted JavaScript string broke the chart's script
+    f = armed_filter("Compare the iPhone 16 and the Pixel 9")
+    args, _ = stream_all(f, chunks_for(json.dumps({"title": "Phones", "html": SCRIPT_HTML}), sizes))
+    html = json.loads(args)["html"]
+    script = re.search(r"<script>([\s\S]*?)</script>", html).group(1)
+    assert "<svg" not in script and "[[icon" not in script and "{{icon" not in script and "📷" not in script
+    assert "'Battery'" in script and "'Camera'" in script
+    assert "<svg" not in re.search(r"<style>([\s\S]*?)</style>", html).group(1)
+    assert "<!-- [[icon:sun]] -->" in html  # comments are left as they are
+    assert html.startswith("<div id='c'><svg class='owui-icon owui-icon-battery")
+
+
+def test_tokens_inside_attributes_are_removed_not_drawn():
+    out = rv.transform_html('<td title="[[icon:sun]] Sunny ☀️" data-x=\'{{icon:sun}}\'>[[icon:sun]] Sunny</td>', True)
+    tag = out.split(">", 1)[0]
+    assert "<svg" not in tag and "icon:" not in tag and "☀" not in tag
+    assert "owui-icon-sun" in out
+
+
+def test_comparison_signs_in_text_are_kept():
+    out = rv.transform_html("<p>a < b and 3 > 2 [[icon:check]]</p>", True)
+    assert "a < b and 3 > 2" in out and "<svg" in out
+
+
+def test_the_arguments_are_held_until_complete_then_sent_once():
+    f = armed_filter()
+    arguments = json.dumps({"title": "t", "html": "<p>[[icon:sun]] hi</p>"})
+    sent = []
+    for chunk in chunks_for(arguments, [4] * 20):
+        chunk = run(f.stream(chunk, __metadata__=META))
+        for call in chunk["choices"][0]["delta"].get("tool_calls") or []:
+            sent.append(call["function"].get("arguments", ""))
+    assert sum(1 for piece in sent if piece) == 1
+    assert "owui-icon-sun" in json.loads("".join(sent))["html"]
+
+
+def test_complete_arguments_are_sent_even_without_a_finish_reason():
+    f = armed_filter()
+    args, _ = stream_all(f, tool_chunks("render_visualization", json.dumps({"title": "t", "html": "[[icon:sun]] x"}), [6] * 10, finish=False))
+    assert "owui-icon-sun" in json.loads(args)["html"]
+
+
+@pytest.mark.parametrize("name", ["web_search", "execute_code", "my_tool"])
+def test_other_tools_pass_through_untouched(name):
+    f = armed_filter()
+    arguments = json.dumps({"query": "[[icon:sun]] ☀️ weather", "html": "[[icon:sun]]"})
+    chunks = tool_chunks(name, arguments, [5] * 30)
+    sent = []
+    for chunk in chunks:
+        before = json.dumps(chunk)
+        out = run(f.stream(chunk, __metadata__=META))
+        assert json.dumps(out) == before
+        for call in out["choices"][0]["delta"].get("tool_calls") or []:
+            sent.append(call["function"].get("arguments", ""))
+    assert "".join(sent) == arguments
+
+
+def test_two_tool_calls_in_one_answer_are_kept_apart():
+    f = armed_filter()
+    viz = json.dumps({"title": "t", "html": "[[icon:sun]] a"})
+    other = json.dumps({"query": "[[icon:sun]]"})
+    stream = [
+        {"choices": [{"index": 0, "delta": {"tool_calls": [{"index": 0, "id": "a", "function": {"name": "render_visualization", "arguments": viz[:10]}}]}}]},
+        {"choices": [{"index": 0, "delta": {"tool_calls": [{"index": 1, "id": "b", "function": {"name": "web_search", "arguments": other}}]}}]},
+        {"choices": [{"index": 0, "delta": {"tool_calls": [{"index": 0, "function": {"arguments": viz[10:]}}]}}]},
+        {"choices": [{"index": 0, "delta": {}, "finish_reason": "tool_calls"}]},
+    ]
+    got = {0: "", 1: ""}
+    for chunk in stream:
+        for call in run(f.stream(chunk, __metadata__=META))["choices"][0]["delta"].get("tool_calls") or []:
+            got[call["index"]] += call["function"].get("arguments", "")
+    assert "owui-icon-sun" in json.loads(got[0])["html"] and got[1] == other
+
+
+def test_arguments_that_are_not_json_go_out_exactly_as_they_came():
+    f = armed_filter()
+    broken = '{"title": "t", "html": "[[icon:sun]] unfinished'
+    args, _ = stream_all(f, chunks_for(broken, [7] * 10))
+    assert args == broken
+
+
+def test_oversized_arguments_are_passed_through():
+    f = armed_filter()
+    big = json.dumps({"title": "t", "html": "[[icon:sun]]" + "x" * (rv.MAX_ARGUMENTS + 10)})
+    args, _ = stream_all(f, chunks_for(big, [50_000] * 10))
+    assert args == big
+
+
+def test_the_title_loses_emojis_and_tokens():
+    out = json.loads(rv.transform_arguments(json.dumps({"title": "☀️ [[icon:sun]] Paris", "html": "x"}), True))
+    assert out["title"] == "Paris"
+
+
+def test_the_instructions_stay_small():
+    # Every message pays for these tokens, so they must stay short (about 4 characters per token)
+    f = rv.Filter()
+    b = run(f.inlet(body("Compare the iPhone 16 and the Pixel 9 on price, battery and camera"), __metadata__=META, __model__=VIZ_MODEL))
+    added = system_of(b)
+    assert len(added) < 1100, len(added)
+    plain = run(rv.Filter().inlet(body("Explain how DNS works"), __metadata__=META, __model__=PLAIN_MODEL))
+    assert len(system_of(plain)) < 80

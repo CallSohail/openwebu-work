@@ -1,5 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1028 594" width="1028" height="594" role="img" aria-labelledby="t d">
-<title id="t">Rich Visuals: how it works</title><desc id="d">On the way in, the Filter decides whether a message needs anything, and asks for a visual with icon tokens. While the answer streams, it turns tokens and emojis in the Visualization tool call into real SVG icons, and removes emojis from the text. It emits no events.</desc>
+<title id="t">Rich Visuals: how it works</title><desc id="d">On the way in, the Filter decides whether a message needs anything, and asks for a visual with icon tokens. It holds back the Visualization tool call until it is complete, then puts real SVG icons into the visible HTML only, never into scripts, styles or attributes, and removes emojis from the text. It emits no events.</desc>
 <style>text{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans",Helvetica,Arial,sans-serif}.bg{fill:#ffffff}.lane{fill:#f6f8fa;stroke:#d0d7de}.lanet{fill:#1f2328;font-weight:600}.lanes{fill:#59636e}.t{fill:#1f2328;font-weight:600}.s{fill:#3d444d}.edge{stroke:#59636e;fill:none;stroke-width:1.5}.edge.dash{stroke-dasharray:5 4}.el{fill:#1f2328}.elb{fill:#ffffff;stroke:#d0d7de}.head{fill:#59636e}.cap{fill:#1f2328;font-weight:700}.capsub{fill:#59636e}.num{fill:#1f2328}.numt{fill:#ffffff;font-weight:700}.k-plugin{fill:#ddf4ff;stroke:#0969da}.k-plugin-bar{fill:#0969da}.k-ui{fill:#ffffff;stroke:#8c959f}.k-ui-bar{fill:#8c959f}.k-server{fill:#dafbe1;stroke:#1a7f37}.k-server-bar{fill:#1a7f37}.k-ext{fill:#fbefff;stroke:#8250df}.k-ext-bar{fill:#8250df}.k-store{fill:#fff1e5;stroke:#bc4c00}.k-store-bar{fill:#bc4c00}.k-sandbox{fill:#ffebe9;stroke:#cf222e}.k-sandbox-bar{fill:#cf222e}@media (prefers-color-scheme:dark){.bg{fill:#0d1117}.lane{fill:#151b23;stroke:#3d444d}.lanet{fill:#f0f6fc}.lanes{fill:#9198a1}.t{fill:#f0f6fc}.s{fill:#c9d1d9}.edge{stroke:#9198a1}.el{fill:#f0f6fc}.elb{fill:#0d1117;stroke:#3d444d}.head{fill:#9198a1}.cap{fill:#f0f6fc}.capsub{fill:#9198a1}.num{fill:#f0f6fc}.numt{fill:#0d1117}.k-plugin{fill:#0c2d4f;stroke:#4493f8}.k-plugin-bar{fill:#4493f8}.k-ui{fill:#161b22;stroke:#6e7681}.k-ui-bar{fill:#6e7681}.k-server{fill:#0f2d1a;stroke:#3fb950}.k-server-bar{fill:#3fb950}.k-ext{fill:#2a1a3f;stroke:#a371f7}.k-ext-bar{fill:#a371f7}.k-store{fill:#3a1f0b;stroke:#f0883e}.k-store-bar{fill:#f0883e}.k-sandbox{fill:#3b1215;stroke:#f85149}.k-sandbox-bar{fill:#f85149}}</style>
 <defs><marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="head" d="M0 0L10 5L0 10z"/></marker></defs>
 <rect class="bg" width="1028" height="594" rx="12"/>
@@ -36,10 +36,10 @@
 <rect class="k-plugin" x="388.0" y="240.0" width="252" height="120" rx="8" stroke-width="1.5"/>
 <rect class="k-plugin-bar" x="388.0" y="240.0" width="5" height="120" rx="2"/>
 <text class="t" x="404.0" y="262.0" font-size="14">stream</text>
-<text class="s" x="404.0" y="282.0" font-size="12">in the tool call&#x27;s arguments:</text>
-<text class="s" x="404.0" y="298.0" font-size="12">tokens, emojis and made-up icon</text>
-<text class="s" x="404.0" y="314.0" font-size="12">images become Lucide SVG icons</text>
-<text class="s" x="404.0" y="330.0" font-size="12"></text>
+<text class="s" x="404.0" y="282.0" font-size="12">holds render_visualization until</text>
+<text class="s" x="404.0" y="298.0" font-size="12">complete; icons go into visible</text>
+<text class="s" x="404.0" y="314.0" font-size="12">text, never into scripts or styles;</text>
+<text class="s" x="404.0" y="330.0" font-size="12">other tools pass untouched;</text>
 <text class="s" x="404.0" y="346.0" font-size="12">in the text: emojis removed</text>
 <rect class="k-server" x="388.0" y="428.0" width="252" height="56" rx="8" stroke-width="1.5"/>
 <rect class="k-server-bar" x="388.0" y="428.0" width="5" height="56" rx="2"/>
@@ -49,7 +49,7 @@
 <rect class="k-sandbox-bar" x="52.0" y="368.0" width="5" height="72" rx="2"/>
 <text class="t" x="68.0" y="390.0" font-size="14">Visual in the answer</text>
 <text class="s" x="68.0" y="410.0" font-size="12">sandboxed frame, no network;</text>
-<text class="s" x="68.0" y="426.0" font-size="12">icons take the theme colour</text>
+<text class="s" x="68.0" y="426.0" font-size="12">icons take the text colour</text>
 <rect class="k-ui" x="52.0" y="220.0" width="252" height="56" rx="8" stroke-width="1.5"/>
 <rect class="k-ui-bar" x="52.0" y="220.0" width="5" height="56" rx="2"/>
 <text class="t" x="68.0" y="242.0" font-size="14">Answer text</text>

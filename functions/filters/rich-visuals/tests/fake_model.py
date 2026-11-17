@@ -4,7 +4,8 @@
 
 When it is offered render_visualization and asked about the weather, it answers the way models do: a sentence, then a
 streamed tool call whose HTML uses icon tokens and an emoji, cut into small pieces. After the tool result it writes a
-closing sentence with an emoji. Anything else gets a short reply with an emoji. GET /log returns, for each request,
+closing sentence with an emoji. The visual's script holds an icon token in a single-quoted string, which must
+not break it. Anything else gets a short reply with an emoji. GET /log returns, for each request,
 whether the Rich Visuals instructions and the visualization tool reached it.
 """
 
@@ -18,10 +19,13 @@ MODELS = [{"id": "fake-visual", "object": "model", "owned_by": "test"}]
 LOG: list = []
 HTML = (
     "<style>.row{display:flex;gap:.5rem;flex-wrap:wrap}.kpi{display:flex;align-items:center;gap:.4rem;padding:.4rem .6rem;"
-    "border:1px solid var(--owui-border);border-radius:.5rem}.owui-icon{width:1.4rem;height:1.4rem;color:var(--owui-accent)}</style>"
+    "border:1px solid var(--owui-border);border-radius:.5rem}.warn{color:#dc2626}</style>"
     "<div class=\"row\"><div class=\"kpi\">[[icon:thermometer|Temperature]] <b>18 °C</b> average</div>"
     "<div class=\"kpi\">[[icon:rain|Chance of rain]] 40% rain</div><div class=\"kpi\">☀️ 6 h of sun</div>"
-    "<div class=\"kpi\">[[icon:wind]] 15 km/h</div></div>"
+    "<div class=\"kpi\">[[icon:wind]] 15 km/h</div>"
+    "<div class=\"kpi warn\" title=\"[[icon:alert]] Storm\">[[icon:alert|Warning]] Storm on Friday</div></div>"
+    # The case that used to break: an icon token inside a single-quoted JavaScript string
+    "<p id=\"note\"></p><script>document.getElementById('note').textContent = '[[icon:sun]] Script ran ☀️';</script>"
 )
 
 
@@ -66,8 +70,8 @@ class Handler(BaseHTTPRequestHandler):
         user = next((text_of(m) for m in reversed(messages) if m.get("role") == "user"), "")
         tools = [t.get("function", {}).get("name") for t in body.get("tools") or []]
         after_tool = bool(messages) and messages[-1].get("role") == "tool"
-        LOG.append({"user": user[:80], "rich_visuals": "<!-- rich-visuals -->" in system, "icon_rules": "[[icon:NAME]]" in system,
-                    "visual_rules": "clearer with a visual" in system, "no_emoji_rule": "Do not use emojis" in system,
+        LOG.append({"user": user[:80], "rich_visuals": "<!-- rich-visuals -->" in system, "icon_rules": "[[icon:name]]" in system,
+                    "visual_rules": "A visual helps here" in system, "no_emoji_rule": "No emojis." in system,
                     "tools": tools, "after_tool": after_tool})
         self.send_response(200)
         self.send_header("Content-Type", "text/event-stream")
