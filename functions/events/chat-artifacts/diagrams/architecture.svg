@@ -1,0 +1,98 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1028 698" width="1028" height="698" role="img" aria-labelledby="t d">
+<title id="t">Artifacts: how it works</title><desc id="d">Artifacts mode tells the model when to make an artifact. In the page, the parser finds artifacts in answers, keeps their versions, and opens them in a panel with a viewer per kind; pages and apps run in a sandboxed frame; exports are built in the browser.</desc>
+<style>text{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans",Helvetica,Arial,sans-serif}.bg{fill:#ffffff}.lane{fill:#f6f8fa;stroke:#d0d7de}.lanet{fill:#1f2328;font-weight:600}.lanes{fill:#59636e}.t{fill:#1f2328;font-weight:600}.s{fill:#3d444d}.edge{stroke:#59636e;fill:none;stroke-width:1.5}.edge.dash{stroke-dasharray:5 4}.el{fill:#1f2328}.elb{fill:#ffffff;stroke:#d0d7de}.head{fill:#59636e}.cap{fill:#1f2328;font-weight:700}.capsub{fill:#59636e}.num{fill:#1f2328}.numt{fill:#ffffff;font-weight:700}.k-plugin{fill:#ddf4ff;stroke:#0969da}.k-plugin-bar{fill:#0969da}.k-ui{fill:#ffffff;stroke:#8c959f}.k-ui-bar{fill:#8c959f}.k-server{fill:#dafbe1;stroke:#1a7f37}.k-server-bar{fill:#1a7f37}.k-ext{fill:#fbefff;stroke:#8250df}.k-ext-bar{fill:#8250df}.k-store{fill:#fff1e5;stroke:#bc4c00}.k-store-bar{fill:#bc4c00}.k-sandbox{fill:#ffebe9;stroke:#cf222e}.k-sandbox-bar{fill:#cf222e}@media (prefers-color-scheme:dark){.bg{fill:#0d1117}.lane{fill:#151b23;stroke:#3d444d}.lanet{fill:#f0f6fc}.lanes{fill:#9198a1}.t{fill:#f0f6fc}.s{fill:#c9d1d9}.edge{stroke:#9198a1}.el{fill:#f0f6fc}.elb{fill:#0d1117;stroke:#3d444d}.head{fill:#9198a1}.cap{fill:#f0f6fc}.capsub{fill:#9198a1}.num{fill:#f0f6fc}.numt{fill:#0d1117}.k-plugin{fill:#0c2d4f;stroke:#4493f8}.k-plugin-bar{fill:#4493f8}.k-ui{fill:#161b22;stroke:#6e7681}.k-ui-bar{fill:#6e7681}.k-server{fill:#0f2d1a;stroke:#3fb950}.k-server-bar{fill:#3fb950}.k-ext{fill:#2a1a3f;stroke:#a371f7}.k-ext-bar{fill:#a371f7}.k-store{fill:#3a1f0b;stroke:#f0883e}.k-store-bar{fill:#f0883e}.k-sandbox{fill:#3b1215;stroke:#f85149}.k-sandbox-bar{fill:#f85149}}</style>
+<defs><marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="head" d="M0 0L10 5L0 10z"/></marker></defs>
+<rect class="bg" width="1028" height="698" rx="12"/>
+<rect class="lane" x="28" y="28" width="300" height="584" rx="10"/>
+<text class="lanet" x="44" y="54" font-size="15">Open WebUI server</text>
+<text class="lanes" x="44" y="73" font-size="12">Python, inside Open WebUI</text>
+<rect class="lane" x="364" y="28" width="300" height="584" rx="10"/>
+<text class="lanet" x="380" y="54" font-size="15">In the browser</text>
+<text class="lanes" x="380" y="73" font-size="12">the Open WebUI page</text>
+<rect class="lane" x="700" y="28" width="300" height="584" rx="10"/>
+<text class="lanet" x="716" y="54" font-size="15">Sandboxes and libraries</text>
+<text class="lanes" x="716" y="73" font-size="12">walled off from the page</text>
+<path class="edge" d="M304.0 248.0 L346.0 248.0 L346.0 144.0 L388.0 144.0" marker-end="url(#arrow)"/>
+<path class="edge dash" d="M304.0 144.0 L388.0 144.0" marker-end="url(#arrow)"/>
+<path class="edge" d="M514.0 180.0 L514.0 212.0" marker-end="url(#arrow)"/>
+<path class="edge" d="M304.0 352.0 L346.0 352.0 L346.0 248.0 L388.0 248.0" marker-end="url(#arrow)"/>
+<path class="edge" d="M514.0 284.0 L514.0 344.0" marker-end="url(#arrow)"/>
+<path class="edge" d="M640.0 404.0 L682.0 404.0 L682.0 352.0 L724.0 352.0" marker-end="url(#arrow)"/>
+<path class="edge" d="M850.0 388.0 L850.0 428.0" marker-end="url(#arrow)"/>
+<path class="edge" d="M304.0 456.0 L346.0 456.0 L346.0 404.0 L388.0 404.0" marker-end="url(#arrow)" marker-start="url(#arrow)"/>
+<path class="edge" d="M514.0 464.0 L514.0 524.0" marker-end="url(#arrow)"/>
+<path class="edge" d="M388.0 560.0 L304.0 560.0" marker-end="url(#arrow)"/>
+<rect class="k-plugin" x="52.0" y="108.0" width="252" height="72" rx="8" stroke-width="1.5"/>
+<rect class="k-plugin-bar" x="52.0" y="108.0" width="5" height="72" rx="2"/>
+<text class="t" x="68.0" y="130.0" font-size="14">Artifacts mode (Filter)</text>
+<text class="s" x="68.0" y="150.0" font-size="12">a switch in the chat: adds the</text>
+<text class="s" x="68.0" y="166.0" font-size="12">artifact instructions to the request</text>
+<rect class="k-plugin" x="52.0" y="212.0" width="252" height="72" rx="8" stroke-width="1.5"/>
+<rect class="k-plugin-bar" x="52.0" y="212.0" width="5" height="72" rx="2"/>
+<text class="t" x="68.0" y="234.0" font-size="14">Artifacts Event function</text>
+<text class="s" x="68.0" y="254.0" font-size="12">valves (library addresses,</text>
+<text class="s" x="68.0" y="270.0" font-size="12">limits), serves /static/loader.js</text>
+<rect class="k-server" x="52.0" y="324.0" width="252" height="56" rx="8" stroke-width="1.5"/>
+<rect class="k-server-bar" x="52.0" y="324.0" width="5" height="56" rx="2"/>
+<text class="t" x="68.0" y="346.0" font-size="14">Chats API</text>
+<text class="s" x="68.0" y="366.0" font-size="12">/api/v1/chats/{id}: the answers</text>
+<rect class="k-server" x="52.0" y="420.0" width="252" height="72" rx="8" stroke-width="1.5"/>
+<rect class="k-server-bar" x="52.0" y="420.0" width="5" height="72" rx="2"/>
+<text class="t" x="68.0" y="442.0" font-size="14">Speech and completions</text>
+<text class="s" x="68.0" y="462.0" font-size="12">/api/v1/audio/speech (narration)</text>
+<text class="s" x="68.0" y="478.0" font-size="12">/api/chat/completions (Try fixing)</text>
+<rect class="k-server" x="52.0" y="532.0" width="252" height="56" rx="8" stroke-width="1.5"/>
+<rect class="k-server-bar" x="52.0" y="532.0" width="5" height="56" rx="2"/>
+<text class="t" x="68.0" y="554.0" font-size="14">Files and notes</text>
+<text class="s" x="68.0" y="574.0" font-size="12">save an artifact to Open WebUI</text>
+<rect class="k-ui" x="388.0" y="108.0" width="252" height="72" rx="8" stroke-width="1.5"/>
+<rect class="k-ui-bar" x="388.0" y="108.0" width="5" height="72" rx="2"/>
+<text class="t" x="404.0" y="130.0" font-size="14">Answers in the chat</text>
+<text class="s" x="404.0" y="150.0" font-size="12">code blocks, ```slides, ```motion,</text>
+<text class="s" x="404.0" y="166.0" font-size="12">```csv, ```mermaid, long Markdown</text>
+<rect class="k-plugin" x="388.0" y="212.0" width="252" height="72" rx="8" stroke-width="1.5"/>
+<rect class="k-plugin-bar" x="388.0" y="212.0" width="5" height="72" rx="2"/>
+<text class="t" x="404.0" y="234.0" font-size="14">Finder</text>
+<text class="s" x="404.0" y="254.0" font-size="12">artifactsOf(): kind, title, versions</text>
+<text class="s" x="404.0" y="270.0" font-size="12">across answers; live while streaming</text>
+<rect class="k-plugin" x="388.0" y="344.0" width="252" height="120" rx="8" stroke-width="1.5"/>
+<rect class="k-plugin-bar" x="388.0" y="344.0" width="5" height="120" rx="2"/>
+<text class="t" x="404.0" y="366.0" font-size="14">Panel beside the chat</text>
+<text class="s" x="404.0" y="386.0" font-size="12">viewers: document, slides, sheet</text>
+<text class="s" x="404.0" y="402.0" font-size="12">with formulas, motion player,</text>
+<text class="s" x="404.0" y="418.0" font-size="12">diagram, page, app, code, data</text>
+<text class="s" x="404.0" y="434.0" font-size="12">edits kept per person and chat;</text>
+<text class="s" x="404.0" y="450.0" font-size="12">state machines on &lt;html&gt; (data-ar-*)</text>
+<rect class="k-plugin" x="388.0" y="524.0" width="252" height="72" rx="8" stroke-width="1.5"/>
+<rect class="k-plugin-bar" x="388.0" y="524.0" width="5" height="72" rx="2"/>
+<text class="t" x="404.0" y="546.0" font-size="14">Exports, built in the browser</text>
+<text class="s" x="404.0" y="566.0" font-size="12">PowerPoint, Word, PDF, Excel, PNG,</text>
+<text class="s" x="404.0" y="582.0" font-size="12">MP4 (WebCodecs H.264 + audio)</text>
+<rect class="k-sandbox" x="724.0" y="316.0" width="252" height="72" rx="8" stroke-width="1.5" stroke-dasharray="6 4"/>
+<rect class="k-sandbox-bar" x="724.0" y="316.0" width="5" height="72" rx="2"/>
+<text class="t" x="740.0" y="338.0" font-size="14">Page and app frame</text>
+<text class="s" x="740.0" y="358.0" font-size="12">sandbox, no site origin; a content</text>
+<text class="s" x="740.0" y="374.0" font-size="12">policy allows only the libraries</text>
+<rect class="k-ext" x="724.0" y="428.0" width="252" height="56" rx="8" stroke-width="1.5"/>
+<rect class="k-ext-bar" x="724.0" y="428.0" width="5" height="56" rx="2"/>
+<text class="t" x="740.0" y="450.0" font-size="14">Libraries (CDN you choose)</text>
+<text class="s" x="740.0" y="470.0" font-size="12">React, Babel, Tailwind, Mermaid</text>
+<rect class="elb" x="310.6" y="186.0" width="70.7" height="20" rx="6"/>
+<text class="el" x="346.0" y="201.0" font-size="11.5" text-anchor="middle">loader.js</text>
+<rect class="elb" x="326.4" y="290.0" width="39.2" height="20" rx="6"/>
+<text class="el" x="346.0" y="305.0" font-size="11.5" text-anchor="middle">read</text>
+<rect class="elb" x="637.2" y="368.0" width="89.6" height="20" rx="6"/>
+<text class="el" x="682.0" y="383.0" font-size="11.5" text-anchor="middle">srcdoc + key</text>
+<rect class="elb" x="811.5" y="398.0" width="77.0" height="20" rx="6"/>
+<text class="el" x="850.0" y="413.0" font-size="11.5" text-anchor="middle">only these</text>
+<rect class="k-plugin" x="28" y="646" width="14" height="14" rx="3" stroke-width="1.5"/>
+<text class="capsub" x="48" y="657" font-size="12">This repository</text>
+<rect class="k-ui" x="161.0" y="646" width="14" height="14" rx="3" stroke-width="1.5"/>
+<text class="capsub" x="181.0" y="657" font-size="12">Open WebUI page</text>
+<rect class="k-server" x="294.0" y="646" width="14" height="14" rx="3" stroke-width="1.5"/>
+<text class="capsub" x="314.0" y="657" font-size="12">Open WebUI server</text>
+<rect class="k-ext" x="440.2" y="646" width="14" height="14" rx="3" stroke-width="1.5"/>
+<text class="capsub" x="460.2" y="657" font-size="12">Outside service</text>
+<rect class="k-sandbox" x="573.2" y="646" width="14" height="14" rx="3" stroke-width="1.5"/>
+<text class="capsub" x="593.2" y="657" font-size="12">Sandboxed code</text>
+</svg>

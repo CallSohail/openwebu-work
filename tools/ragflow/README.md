@@ -20,6 +20,12 @@ This Open WebUI Tool connects models to a RAGFlow instance for retrieval across 
 - knowledge-graph inspection helpers;
 - formatted retrieval context with source information.
 
+## How it works
+
+![How RAGFlow Advanced Connector works: an architecture diagram.](diagrams/architecture.svg)
+
+The model calls one of the connector's tools. The connector works out which datasets apply (your valves first, then the person's own overrides), adds the API key on the server, and calls RAGFlow. It drops duplicate chunks and returns the rest with their sources and scores, so the model can cite them.
+
 ## Installation
 
 1. Open **Workspace > Tools** in Open WebUI.

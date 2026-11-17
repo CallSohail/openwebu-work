@@ -1,0 +1,82 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1028 698" width="1028" height="698" role="img" aria-labelledby="t d">
+<title id="t">Secure Dynamic Onboarding: how it works</title><desc id="d">Server events trigger the Event function. It builds a snapshot of what the person may use, renders the guide in their language, and creates or updates one pinned welcome chat, guarded by a marker and a lock.</desc>
+<style>text{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans",Helvetica,Arial,sans-serif}.bg{fill:#ffffff}.lane{fill:#f6f8fa;stroke:#d0d7de}.lanet{fill:#1f2328;font-weight:600}.lanes{fill:#59636e}.t{fill:#1f2328;font-weight:600}.s{fill:#3d444d}.edge{stroke:#59636e;fill:none;stroke-width:1.5}.edge.dash{stroke-dasharray:5 4}.el{fill:#1f2328}.elb{fill:#ffffff;stroke:#d0d7de}.head{fill:#59636e}.cap{fill:#1f2328;font-weight:700}.capsub{fill:#59636e}.num{fill:#1f2328}.numt{fill:#ffffff;font-weight:700}.k-plugin{fill:#ddf4ff;stroke:#0969da}.k-plugin-bar{fill:#0969da}.k-ui{fill:#ffffff;stroke:#8c959f}.k-ui-bar{fill:#8c959f}.k-server{fill:#dafbe1;stroke:#1a7f37}.k-server-bar{fill:#1a7f37}.k-ext{fill:#fbefff;stroke:#8250df}.k-ext-bar{fill:#8250df}.k-store{fill:#fff1e5;stroke:#bc4c00}.k-store-bar{fill:#bc4c00}.k-sandbox{fill:#ffebe9;stroke:#cf222e}.k-sandbox-bar{fill:#cf222e}@media (prefers-color-scheme:dark){.bg{fill:#0d1117}.lane{fill:#151b23;stroke:#3d444d}.lanet{fill:#f0f6fc}.lanes{fill:#9198a1}.t{fill:#f0f6fc}.s{fill:#c9d1d9}.edge{stroke:#9198a1}.el{fill:#f0f6fc}.elb{fill:#0d1117;stroke:#3d444d}.head{fill:#9198a1}.cap{fill:#f0f6fc}.capsub{fill:#9198a1}.num{fill:#f0f6fc}.numt{fill:#0d1117}.k-plugin{fill:#0c2d4f;stroke:#4493f8}.k-plugin-bar{fill:#4493f8}.k-ui{fill:#161b22;stroke:#6e7681}.k-ui-bar{fill:#6e7681}.k-server{fill:#0f2d1a;stroke:#3fb950}.k-server-bar{fill:#3fb950}.k-ext{fill:#2a1a3f;stroke:#a371f7}.k-ext-bar{fill:#a371f7}.k-store{fill:#3a1f0b;stroke:#f0883e}.k-store-bar{fill:#f0883e}.k-sandbox{fill:#3b1215;stroke:#f85149}.k-sandbox-bar{fill:#f85149}}</style>
+<defs><marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="head" d="M0 0L10 5L0 10z"/></marker></defs>
+<rect class="bg" width="1028" height="698" rx="12"/>
+<rect class="lane" x="28" y="28" width="300" height="584" rx="10"/>
+<text class="lanet" x="44" y="54" font-size="15">Open WebUI events</text>
+<text class="lanes" x="44" y="73" font-size="12">what starts it</text>
+<rect class="lane" x="364" y="28" width="300" height="584" rx="10"/>
+<text class="lanet" x="380" y="54" font-size="15">Open WebUI server</text>
+<text class="lanes" x="380" y="73" font-size="12">Python, inside Open WebUI</text>
+<rect class="lane" x="700" y="28" width="300" height="584" rx="10"/>
+<text class="lanet" x="716" y="54" font-size="15">In the browser</text>
+<text class="lanes" x="716" y="73" font-size="12">the Open WebUI page</text>
+<path class="edge" d="M304.0 144.0 L388.0 144.0" marker-end="url(#arrow)"/>
+<path class="edge" d="M304.0 248.0 L346.0 248.0 L346.0 144.0 L388.0 144.0" marker-end="url(#arrow)"/>
+<path class="edge" d="M304.0 352.0 L346.0 352.0 L346.0 144.0 L388.0 144.0" marker-end="url(#arrow)"/>
+<path class="edge" d="M304.0 456.0 L346.0 456.0 L346.0 144.0 L388.0 144.0" marker-end="url(#arrow)"/>
+<path class="edge" d="M514.0 180.0 L514.0 212.0" marker-end="url(#arrow)"/>
+<path class="edge" d="M514.0 284.0 L514.0 316.0" marker-end="url(#arrow)"/>
+<path class="edge" d="M514.0 388.0 L514.0 412.0" marker-end="url(#arrow)"/>
+<path class="edge" d="M640.0 456.0 L724.0 456.0" marker-end="url(#arrow)"/>
+<path class="edge" d="M514.0 500.0 L514.0 524.0" marker-end="url(#arrow)"/>
+<rect class="k-server" x="52.0" y="116.0" width="252" height="56" rx="8" stroke-width="1.5"/>
+<rect class="k-server-bar" x="52.0" y="116.0" width="5" height="56" rx="2"/>
+<text class="t" x="68.0" y="138.0" font-size="14">auth.signup, user.created</text>
+<text class="s" x="68.0" y="158.0" font-size="12">a new account</text>
+<rect class="k-server" x="52.0" y="220.0" width="252" height="56" rx="8" stroke-width="1.5"/>
+<rect class="k-server-bar" x="52.0" y="220.0" width="5" height="56" rx="2"/>
+<text class="t" x="68.0" y="242.0" font-size="14">auth.login</text>
+<text class="s" x="68.0" y="262.0" font-size="12">first login, if no guide yet</text>
+<rect class="k-server" x="52.0" y="324.0" width="252" height="56" rx="8" stroke-width="1.5"/>
+<rect class="k-server-bar" x="52.0" y="324.0" width="5" height="56" rx="2"/>
+<text class="t" x="68.0" y="346.0" font-size="14">user.role_updated</text>
+<text class="s" x="68.0" y="366.0" font-size="12">permissions changed</text>
+<rect class="k-server" x="52.0" y="420.0" width="252" height="72" rx="8" stroke-width="1.5"/>
+<rect class="k-server-bar" x="52.0" y="420.0" width="5" height="72" rx="2"/>
+<text class="t" x="68.0" y="442.0" font-size="14">function.valves_updated</text>
+<text class="s" x="68.0" y="462.0" font-size="12">admin saved the settings:</text>
+<text class="s" x="68.0" y="478.0" font-size="12">sync every guide, or push</text>
+<rect class="k-plugin" x="388.0" y="108.0" width="252" height="72" rx="8" stroke-width="1.5"/>
+<rect class="k-plugin-bar" x="388.0" y="108.0" width="5" height="72" rx="2"/>
+<text class="t" x="404.0" y="130.0" font-size="14">Onboarding Event function</text>
+<text class="s" x="404.0" y="150.0" font-size="12">filters roles, spawns the work</text>
+<text class="s" x="404.0" y="166.0" font-size="12">in the background</text>
+<rect class="k-plugin" x="388.0" y="212.0" width="252" height="72" rx="8" stroke-width="1.5"/>
+<rect class="k-plugin-bar" x="388.0" y="212.0" width="5" height="72" rx="2"/>
+<text class="t" x="404.0" y="234.0" font-size="14">Snapshot</text>
+<text class="s" x="404.0" y="254.0" font-size="12">permissions, models, tools, prompts,</text>
+<text class="s" x="404.0" y="270.0" font-size="12">knowledge, enabled features</text>
+<rect class="k-plugin" x="388.0" y="316.0" width="252" height="72" rx="8" stroke-width="1.5"/>
+<rect class="k-plugin-bar" x="388.0" y="316.0" width="5" height="72" rx="2"/>
+<text class="t" x="404.0" y="338.0" font-size="14">Render the guide</text>
+<text class="s" x="404.0" y="358.0" font-size="12">locale catalogs (en, fr, es, ca),</text>
+<text class="s" x="404.0" y="374.0" font-size="12">ASCII-safe Rich UI HTML</text>
+<rect class="k-plugin" x="388.0" y="412.0" width="252" height="88" rx="8" stroke-width="1.5"/>
+<rect class="k-plugin-bar" x="388.0" y="412.0" width="5" height="88" rx="2"/>
+<text class="t" x="404.0" y="434.0" font-size="14">Create or update</text>
+<text class="s" x="404.0" y="454.0" font-size="12">only when the snapshot hash</text>
+<text class="s" x="404.0" y="470.0" font-size="12">changed; by default a deleted</text>
+<text class="s" x="404.0" y="486.0" font-size="12">chat stays deleted</text>
+<rect class="k-store" x="388.0" y="524.0" width="252" height="72" rx="8" stroke-width="1.5"/>
+<rect class="k-store-bar" x="388.0" y="524.0" width="5" height="72" rx="2"/>
+<text class="t" x="404.0" y="546.0" font-size="14">Marker and lock</text>
+<text class="s" x="404.0" y="566.0" font-size="12">marker in user settings,</text>
+<text class="s" x="404.0" y="582.0" font-size="12">Redis lock across workers</text>
+<rect class="k-ui" x="724.0" y="420.0" width="252" height="72" rx="8" stroke-width="1.5"/>
+<rect class="k-ui-bar" x="724.0" y="420.0" width="5" height="72" rx="2"/>
+<text class="t" x="740.0" y="442.0" font-size="14">Pinned welcome chat</text>
+<text class="s" x="740.0" y="462.0" font-size="12">the guide in a Rich UI embed,</text>
+<text class="s" x="740.0" y="478.0" font-size="12">language picker, tutorials</text>
+<rect class="elb" x="637.2" y="446.0" width="89.6" height="20" rx="6"/>
+<text class="el" x="682.0" y="461.0" font-size="11.5" text-anchor="middle">chat + embed</text>
+<rect class="k-plugin" x="28" y="646" width="14" height="14" rx="3" stroke-width="1.5"/>
+<text class="capsub" x="48" y="657" font-size="12">This repository</text>
+<rect class="k-ui" x="161.0" y="646" width="14" height="14" rx="3" stroke-width="1.5"/>
+<text class="capsub" x="181.0" y="657" font-size="12">Open WebUI page</text>
+<rect class="k-server" x="294.0" y="646" width="14" height="14" rx="3" stroke-width="1.5"/>
+<text class="capsub" x="314.0" y="657" font-size="12">Open WebUI server</text>
+<rect class="k-store" x="440.2" y="646" width="14" height="14" rx="3" stroke-width="1.5"/>
+<text class="capsub" x="460.2" y="657" font-size="12">Stored data</text>
+</svg>

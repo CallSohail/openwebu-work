@@ -60,6 +60,8 @@ Edge cases handled: a block split across any number of chunks, other code fences
 
 ## How the Tool works
 
+![How Generative UI works: an architecture diagram.](diagrams/architecture.svg)
+
 ```text
 User message
   -> model decides a visual helps (guided by the Tool description)

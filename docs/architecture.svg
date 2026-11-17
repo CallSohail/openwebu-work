@@ -1,0 +1,109 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1028 802" width="1028" height="802" role="img" aria-labelledby="t d">
+<title id="t">How the extensions plug into Open WebUI</title><desc id="d">Filters and Tools run in the chat pipeline on the server; Actions run when a button under an answer is pressed; Event functions react to server events and can publish a browser script through the shared loader.</desc>
+<style>text{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans",Helvetica,Arial,sans-serif}.bg{fill:#ffffff}.lane{fill:#f6f8fa;stroke:#d0d7de}.lanet{fill:#1f2328;font-weight:600}.lanes{fill:#59636e}.t{fill:#1f2328;font-weight:600}.s{fill:#3d444d}.edge{stroke:#59636e;fill:none;stroke-width:1.5}.edge.dash{stroke-dasharray:5 4}.el{fill:#1f2328}.elb{fill:#ffffff;stroke:#d0d7de}.head{fill:#59636e}.cap{fill:#1f2328;font-weight:700}.capsub{fill:#59636e}.num{fill:#1f2328}.numt{fill:#ffffff;font-weight:700}.k-plugin{fill:#ddf4ff;stroke:#0969da}.k-plugin-bar{fill:#0969da}.k-ui{fill:#ffffff;stroke:#8c959f}.k-ui-bar{fill:#8c959f}.k-server{fill:#dafbe1;stroke:#1a7f37}.k-server-bar{fill:#1a7f37}.k-ext{fill:#fbefff;stroke:#8250df}.k-ext-bar{fill:#8250df}.k-store{fill:#fff1e5;stroke:#bc4c00}.k-store-bar{fill:#bc4c00}.k-sandbox{fill:#ffebe9;stroke:#cf222e}.k-sandbox-bar{fill:#cf222e}@media (prefers-color-scheme:dark){.bg{fill:#0d1117}.lane{fill:#151b23;stroke:#3d444d}.lanet{fill:#f0f6fc}.lanes{fill:#9198a1}.t{fill:#f0f6fc}.s{fill:#c9d1d9}.edge{stroke:#9198a1}.el{fill:#f0f6fc}.elb{fill:#0d1117;stroke:#3d444d}.head{fill:#9198a1}.cap{fill:#f0f6fc}.capsub{fill:#9198a1}.num{fill:#f0f6fc}.numt{fill:#0d1117}.k-plugin{fill:#0c2d4f;stroke:#4493f8}.k-plugin-bar{fill:#4493f8}.k-ui{fill:#161b22;stroke:#6e7681}.k-ui-bar{fill:#6e7681}.k-server{fill:#0f2d1a;stroke:#3fb950}.k-server-bar{fill:#3fb950}.k-ext{fill:#2a1a3f;stroke:#a371f7}.k-ext-bar{fill:#a371f7}.k-store{fill:#3a1f0b;stroke:#f0883e}.k-store-bar{fill:#f0883e}.k-sandbox{fill:#3b1215;stroke:#f85149}.k-sandbox-bar{fill:#f85149}}</style>
+<defs><marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="head" d="M0 0L10 5L0 10z"/></marker></defs>
+<rect class="bg" width="1028" height="802" rx="12"/>
+<rect class="lane" x="28" y="28" width="300" height="688" rx="10"/>
+<text class="lanet" x="44" y="54" font-size="15">In the browser</text>
+<text class="lanes" x="44" y="73" font-size="12">the Open WebUI page</text>
+<rect class="lane" x="364" y="28" width="300" height="688" rx="10"/>
+<text class="lanet" x="380" y="54" font-size="15">Open WebUI server</text>
+<text class="lanes" x="380" y="73" font-size="12">Python, inside Open WebUI</text>
+<rect class="lane" x="700" y="28" width="300" height="688" rx="10"/>
+<text class="lanet" x="716" y="54" font-size="15">Outside</text>
+<text class="lanes" x="716" y="73" font-size="12">other services</text>
+<path class="edge" d="M304.0 144.0 L388.0 144.0" marker-end="url(#arrow)"/>
+<path class="edge" d="M514.0 172.0 L514.0 204.0" marker-end="url(#arrow)"/>
+<path class="edge" d="M640.0 144.0 L724.0 144.0" marker-end="url(#arrow)"/>
+<path class="edge" d="M514.0 292.0 L514.0 308.0" marker-end="url(#arrow)"/>
+<path class="edge" d="M640.0 352.0 L724.0 352.0" marker-end="url(#arrow)"/>
+<path class="edge" d="M640.0 352.0 L682.0 352.0 L682.0 456.0 L724.0 456.0" marker-end="url(#arrow)"/>
+<path class="edge" d="M388.0 352.0 L346.0 352.0 L346.0 248.0 L304.0 248.0" marker-end="url(#arrow)"/>
+<path class="edge" d="M388.0 456.0 L346.0 456.0 L346.0 404.0 L304.0 404.0" marker-end="url(#arrow)"/>
+<path class="edge dash" d="M178.0 480.0 L178.0 664.0 L388.0 664.0" marker-end="url(#arrow)"/>
+<rect class="k-ui" x="52.0" y="116.0" width="252" height="56" rx="8" stroke-width="1.5"/>
+<rect class="k-ui-bar" x="52.0" y="116.0" width="5" height="56" rx="2"/>
+<text class="t" x="68.0" y="138.0" font-size="14">Chat page</text>
+<text class="s" x="68.0" y="158.0" font-size="12">message box, answers, menus</text>
+<rect class="k-sandbox" x="52.0" y="204.0" width="252" height="88" rx="8" stroke-width="1.5" stroke-dasharray="6 4"/>
+<rect class="k-sandbox-bar" x="52.0" y="204.0" width="5" height="88" rx="2"/>
+<text class="t" x="68.0" y="226.0" font-size="14">Rich UI embeds</text>
+<text class="s" x="68.0" y="246.0" font-size="12">sandboxed iframes in answers:</text>
+<text class="s" x="68.0" y="262.0" font-size="12">Generative UI, Email Composer,</text>
+<text class="s" x="68.0" y="278.0" font-size="12">Study Mode quizzes, onboarding</text>
+<rect class="k-plugin" x="52.0" y="328.0" width="252" height="152" rx="8" stroke-width="1.5"/>
+<rect class="k-plugin-bar" x="52.0" y="328.0" width="5" height="152" rx="2"/>
+<text class="t" x="68.0" y="350.0" font-size="14">Browser features</text>
+<text class="s" x="68.0" y="370.0" font-size="12">one script from /static/loader.js:</text>
+<text class="s" x="68.0" y="386.0" font-size="12">Context (Chat Inspector)</text>
+<text class="s" x="68.0" y="402.0" font-size="12">Gallery, Files and Artifacts tabs</text>
+<text class="s" x="68.0" y="418.0" font-size="12">Mods and their sandboxes</text>
+<text class="s" x="68.0" y="434.0" font-size="12"></text>
+<text class="s" x="68.0" y="450.0" font-size="12">they call Open WebUI&#x27;s own API</text>
+<text class="s" x="68.0" y="466.0" font-size="12">as the signed-in person</text>
+<rect class="k-server" x="388.0" y="116.0" width="252" height="56" rx="8" stroke-width="1.5"/>
+<rect class="k-server-bar" x="388.0" y="116.0" width="5" height="56" rx="2"/>
+<text class="t" x="404.0" y="138.0" font-size="14">Chat pipeline</text>
+<text class="s" x="404.0" y="158.0" font-size="12">builds the request to the model</text>
+<rect class="k-plugin" x="388.0" y="204.0" width="252" height="88" rx="8" stroke-width="1.5"/>
+<rect class="k-plugin-bar" x="388.0" y="204.0" width="5" height="88" rx="2"/>
+<text class="t" x="404.0" y="226.0" font-size="14">Filters</text>
+<text class="s" x="404.0" y="246.0" font-size="12">inlet, stream, outlet:</text>
+<text class="s" x="404.0" y="262.0" font-size="12">Rich Responses, Study Mode,</text>
+<text class="s" x="404.0" y="278.0" font-size="12">Artifacts mode</text>
+<rect class="k-plugin" x="388.0" y="308.0" width="252" height="88" rx="8" stroke-width="1.5"/>
+<rect class="k-plugin-bar" x="388.0" y="308.0" width="5" height="88" rx="2"/>
+<text class="t" x="404.0" y="330.0" font-size="14">Tools</text>
+<text class="s" x="404.0" y="350.0" font-size="12">called by the model:</text>
+<text class="s" x="404.0" y="366.0" font-size="12">Generative UI, Email Composer,</text>
+<text class="s" x="404.0" y="382.0" font-size="12">RAGFlow connector</text>
+<rect class="k-plugin" x="388.0" y="412.0" width="252" height="88" rx="8" stroke-width="1.5"/>
+<rect class="k-plugin-bar" x="388.0" y="412.0" width="5" height="88" rx="2"/>
+<text class="t" x="404.0" y="434.0" font-size="14">Event functions</text>
+<text class="s" x="404.0" y="454.0" font-size="12">react to sign-ups, logins, saves:</text>
+<text class="s" x="404.0" y="470.0" font-size="12">Secure Onboarding, and the</text>
+<text class="s" x="404.0" y="486.0" font-size="12">browser features above</text>
+<rect class="k-plugin" x="388.0" y="524.0" width="252" height="72" rx="8" stroke-width="1.5"/>
+<rect class="k-plugin-bar" x="388.0" y="524.0" width="5" height="72" rx="2"/>
+<text class="t" x="404.0" y="546.0" font-size="14">Actions</text>
+<text class="s" x="404.0" y="566.0" font-size="12">a button under an answer:</text>
+<text class="s" x="404.0" y="582.0" font-size="12">Quick Actions</text>
+<rect class="k-ext" x="724.0" y="116.0" width="252" height="56" rx="8" stroke-width="1.5"/>
+<rect class="k-ext-bar" x="724.0" y="116.0" width="5" height="56" rx="2"/>
+<text class="t" x="740.0" y="138.0" font-size="14">Model provider</text>
+<text class="s" x="740.0" y="158.0" font-size="12">OpenAI-compatible, Ollama, ...</text>
+<rect class="k-ext" x="724.0" y="324.0" width="252" height="56" rx="8" stroke-width="1.5"/>
+<rect class="k-ext-bar" x="724.0" y="324.0" width="5" height="56" rx="2"/>
+<text class="t" x="740.0" y="346.0" font-size="14">RAGFlow server</text>
+<text class="s" x="740.0" y="366.0" font-size="12">retrieval, knowledge graph</text>
+<rect class="k-ext" x="724.0" y="428.0" width="252" height="56" rx="8" stroke-width="1.5"/>
+<rect class="k-ext-bar" x="724.0" y="428.0" width="5" height="56" rx="2"/>
+<text class="t" x="740.0" y="450.0" font-size="14">Open-Meteo, Wikipedia</text>
+<text class="s" x="740.0" y="470.0" font-size="12">live data for Generative UI</text>
+<rect class="k-server" x="388.0" y="636.0" width="252" height="56" rx="8" stroke-width="1.5"/>
+<rect class="k-server-bar" x="388.0" y="636.0" width="5" height="56" rx="2"/>
+<text class="t" x="404.0" y="658.0" font-size="14">Open WebUI API</text>
+<text class="s" x="404.0" y="678.0" font-size="12">chats, files, models, settings</text>
+<rect class="elb" x="310.6" y="134.0" width="70.7" height="20" rx="6"/>
+<text class="el" x="346.0" y="149.0" font-size="11.5" text-anchor="middle">a message</text>
+<rect class="elb" x="618.3" y="134.0" width="127.4" height="20" rx="6"/>
+<text class="el" x="682.0" y="149.0" font-size="11.5" text-anchor="middle">request and stream</text>
+<rect class="elb" x="612.0" y="342.0" width="140.0" height="20" rx="6"/>
+<text class="el" x="682.0" y="357.0" font-size="11.5" text-anchor="middle">API key, server side</text>
+<rect class="elb" x="307.5" y="290.0" width="77.0" height="20" rx="6"/>
+<text class="el" x="346.0" y="305.0" font-size="11.5" text-anchor="middle">HTML embed</text>
+<rect class="elb" x="285.4" y="420.0" width="121.1" height="20" rx="6"/>
+<text class="el" x="346.0" y="435.0" font-size="11.5" text-anchor="middle">serves the script</text>
+<rect class="elb" x="225.6" y="654.0" width="114.8" height="20" rx="6"/>
+<text class="el" x="283.0" y="669.0" font-size="11.5" text-anchor="middle">fetch, signed in</text>
+<rect class="k-plugin" x="28" y="750" width="14" height="14" rx="3" stroke-width="1.5"/>
+<text class="capsub" x="48" y="761" font-size="12">This repository</text>
+<rect class="k-ui" x="161.0" y="750" width="14" height="14" rx="3" stroke-width="1.5"/>
+<text class="capsub" x="181.0" y="761" font-size="12">Open WebUI page</text>
+<rect class="k-server" x="294.0" y="750" width="14" height="14" rx="3" stroke-width="1.5"/>
+<text class="capsub" x="314.0" y="761" font-size="12">Open WebUI server</text>
+<rect class="k-ext" x="440.2" y="750" width="14" height="14" rx="3" stroke-width="1.5"/>
+<text class="capsub" x="460.2" y="761" font-size="12">Outside service</text>
+<rect class="k-sandbox" x="573.2" y="750" width="14" height="14" rx="3" stroke-width="1.5"/>
+<text class="capsub" x="593.2" y="761" font-size="12">Sandboxed code</text>
+</svg>

@@ -114,6 +114,12 @@ The embedded iframe:
 | [smoke_secure_onboarding.mjs](smoke_secure_onboarding.mjs) | Browser DOM test for the full interactive guide |
 | [README.md](README.md) | Installation, rollout, and operating guide |
 
+## How it works
+
+![How Secure Dynamic Onboarding Rich UI works: an architecture diagram.](diagrams/architecture.svg)
+
+Sign-ups, logins, role changes and settings saves all arrive as Open WebUI events. For each person concerned, the function takes a snapshot of what they may use, renders the guide in their language, and creates or updates one pinned welcome chat. It only writes when the snapshot changed. A marker in the person's settings and a Redis lock keep it from doing the same work twice.
+
 ## Installation
 
 1. Sign in to Open WebUI as an administrator.
