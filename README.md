@@ -1,6 +1,6 @@
 # Open WebUI Extensions
 
-Twelve extensions for [Open WebUI](https://github.com/open-webui/open-webui), built for a university deployment and written so anyone can install them. Some change how answers look, some add whole new tabs and panels, and one lets people build small features for themselves by describing them.
+Thirteen extensions for [Open WebUI](https://github.com/open-webui/open-webui), built for a university deployment and written so anyone can install them. Some change how answers look, some add whole new tabs and panels, and one lets people build small features for themselves by describing them.
 
 Every extension is a single Python file you paste into Open WebUI. Each folder has its own README, a changelog, tests, and a diagram of how it works. Read the code before you install anything: Open WebUI runs it on your server.
 
@@ -18,7 +18,7 @@ Every extension is a single Python file you paste into Open WebUI. Each folder h
 
 Open WebUI gives plugins four places to run, and this repository uses all of them.
 
-Filters sit in the chat pipeline. They see the request on its way to the model (`inlet`), each chunk as it streams back (`stream`), and the finished answer (`outlet`). Rich Responses, Study Mode and Artifacts mode work this way.
+Filters sit in the chat pipeline. They see the request on its way to the model (`inlet`), each chunk as it streams back (`stream`), and the finished answer (`outlet`). Rich Responses, Rich Visuals, Study Mode and Artifacts mode work this way.
 
 Tools are functions the model decides to call. Generative UI, the Email Composer and the RAGFlow connector are Tools. The first two answer with an HTML embed, which Open WebUI shows in a sandboxed iframe inside the answer.
 
@@ -34,6 +34,7 @@ Event functions react to things that happen on the server: a sign-up, a login, a
 | [Rich Email Composer](tools/email-composer/) | Tool | 1.0.0 | An editable email card in the chat, with formatting, recipient checks, *Ask for changes*, copy, `.eml` export and a hand-off to the person's own mail app. |
 | [RAGFlow Advanced Connector](tools/ragflow/) | Tool | 3.0.0 | Retrieval from RAGFlow: datasets, multi-query search, document search and knowledge graphs, with sources. |
 | [Rich Responses](functions/filters/rich-responses/) | Filter | 1.0.1 | Works out what kind of answer is wanted (explain, compare, how-to, ...), asks the model for a matching structure, and adds icons to headings as they stream. |
+| [Rich Visuals](functions/filters/rich-visuals/) | Filter | 1.0.0 | Real icons in Open WebUI 0.13.4's built-in Visualization: the model places `[[icon:thermometer]]` tokens and the filter turns them, and any emojis, into SVG icons as the answer streams. Greetings are left alone and it emits no events. |
 | [Study Mode](functions/filters/study-mode/) | Filter | 1.1.0 | Guided learning and Socratic tutoring, with interactive quizzes built from hidden data in the answer. |
 | [Quick Actions](functions/actions/quick-actions/) | Action | 3.0.1 | A menu under each answer: rewrite, humanize, verify and more, plus actions people and teams define themselves. English and French. |
 | [Secure Dynamic Onboarding](functions/events/secure-onboarding/) | Event | 9.3.0 | One pinned welcome chat per person, showing only what they are allowed to use, in English, French, Spanish or Catalan, kept up to date as permissions change. |
@@ -70,6 +71,12 @@ The RAGFlow API key stays on the server. Each person can narrow the datasets thr
 ![Rich Responses architecture](functions/filters/rich-responses/diagrams/architecture.svg)
 
 Two small jobs. On the way in, it guesses the kind of answer from the question and adds instructions for that shape. On the way out, it adds an icon to each heading as soon as the line is complete, so the answer looks right while it is still streaming.
+
+### [Rich Visuals](functions/filters/rich-visuals/)
+
+![Rich Visuals architecture](functions/filters/rich-visuals/diagrams/architecture.svg)
+
+Open WebUI's Visualization frame has no icons, so models used emojis. This filter lets the model write a short token instead, and swaps it for a real SVG icon while the tool call streams, before Open WebUI even sees it. It also repairs the icon attempts small models make, keeps emojis out of the text, and does nothing at all for a "bonjour".
 
 ### [Study Mode](functions/filters/study-mode/)
 
@@ -138,6 +145,7 @@ Open the extension's README for its steps. In short: copy its `.py` file into Op
 | Open WebUI | Extensions |
 | --- | --- |
 | 0.13.0 or newer | Chat Inspector, Chat Gallery, Chat Files, Artifacts, Mods (they use the Tabs panel added in 0.13.0; all tested in a browser on 0.13.0 and 0.13.3) |
+| 0.13.4 or newer | Rich Visuals (it builds on the Visualization tool added in 0.13.4) |
 | 0.12.0 or newer | Generative UI, Rich Responses |
 | 0.11.3 or newer | Secure Dynamic Onboarding |
 | 0.11.1 or newer | Study Mode, Quick Actions |
