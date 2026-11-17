@@ -17,6 +17,7 @@ The goal is simple: keep each extension portable, documented, and safe to review
 | [Chat Inspector](functions/events/chat-inspector/) | Event | 1.2.0 | Stable | Context, in the chat's ⋯ menu: a pop-up showing how full the model's context window is, Claude-style, worded with the platform's own name: a grid of what fills it, fitted to the model's own token count, every tool call by kind (MCP, workspace, tool server, built-in), web searches and sources, and a warning before the chat overflows. Token estimates tuned against five real tokenizers |
 | [Chat Gallery](functions/events/chat-gallery/) | Event | 1.2.0 | Stable | A Gallery tab with every image in the current chat and every image the person uploaded or generated: filters, zoom, generation details, copy, download, zip, delete and a jump back to the message. Maintained fork of @G30's Chat Gallery, in English and French |
 | [Chat Files](functions/events/chat-files/) | Event | 2.0.0 | Stable | A Files tab, chosen from the Tabs panel's + menu, with every document, spreadsheet and other file in the chat and in the person's account, as a list or a grid: previews (PDF, tables, JSON, text, audio, extracted text) with detailed facts, search, kind chips, a menu on every file, rename, delete, zip and a jump back to the message. Companion to Chat Gallery, in English and French, checked for contrast in light, dark, OLED and Her themes |
+| [Mods](functions/events/chat-mods/) | Event | 1.0.0 | Stable | Small features people add themselves, described in plain words and written by a model, or chosen from 8 ready-made ones (word counter, `/` prompt shortcuts, focus mode, Pomodoro timer, bookmarks, readability, Markdown export, warm theme): labels, bars, panels, `/` commands, buttons under answers and styles, each mod in a sandbox without network and limited to the permissions it was granted. Administrators can publish mods to everyone. In English and French, light and dark |
 | [Artifacts](functions/events/chat-artifacts/) | Event | 1.4.0 | Stable | Claude-style Artifacts, with an Artifacts mode switch so ordinary answers stay plain: documents, slides, motion graphics with styles, kinetic type, chart races, narration and music, downloadable as MP4 videos, spreadsheets with formulas, Mermaid diagrams, web pages, React apps, drawings and data open in a panel beside the chat, with versions, live preview, Try fixing, spreadsheets corrected cell by cell as in Excel, slides edited one at a time, exports (PowerPoint, PDF, Word, Excel, PNG), diagrams and charts inside slides and documents, and a sandbox that keeps generated code away from the page and the network. Replaces Chat Canvas |
 | [RAGFlow Advanced Connector](tools/ragflow/) | Tool | 3.0.0 | Stable | RAGFlow retrieval, dataset discovery, document search, and configurable retrieval controls |
 
@@ -93,6 +94,17 @@ The goal is simple: keep each extension portable, documented, and safe to review
         │       ├── fake_model.py
         │       ├── seed.py
         │       └── test_chat_artifacts.py
+        ├── chat-mods/
+        │   ├── README.md
+        │   ├── ARCHITECTURE.md
+        │   ├── CHANGELOG.md
+        │   ├── chat_mods.py
+        │   ├── screenshots/
+        │   └── tests/
+        │       ├── e2e.mjs
+        │       ├── fake_model.py
+        │       ├── seed.py
+        │       └── test_chat_mods.py
         ├── chat-files/
         │   ├── README.md
         │   ├── ARCHITECTURE.md
@@ -174,6 +186,8 @@ Artifacts and Chat Files declare **Open WebUI 0.13.0 or newer** for the same rea
 
 Chat Files: It was tested in a browser on 0.13.0 and 0.13.3, with and without Chat Gallery.
 
+Mods declares **Open WebUI 0.13.0 or newer**. It was tested in a browser on 0.13.0 alone and on 0.13.3 with Chat Files and Artifacts.
+
 Chat Gallery declares **Open WebUI 0.13.0 or newer**, the release that added the Tabs panel it lives in. It was tested in a browser on 0.13.0 and 0.13.3.
 
 Secure Dynamic Onboarding declares **Open WebUI 0.11.3 or newer** because it uses current Event Function hooks, Rich UI embeds, effective permission catalogs, Notes, Channels, Calendar, Automations, and current chat storage APIs.
@@ -214,6 +228,7 @@ secure-onboarding-v9.3.0
 chat-gallery-v1.1.0
 chat-files-v2.0.0
 chat-artifacts-v1.4.0
+chat-mods-v1.0.0
 ```
 
 See [RELEASING.md](RELEASING.md) for the release checklist, tag convention, and suggested GitHub repository topics.
@@ -240,6 +255,7 @@ Every extension also keeps its own changelog beside the implementation:
 | Chat Gallery | [functions/events/chat-gallery/CHANGELOG.md](functions/events/chat-gallery/CHANGELOG.md) | `chat-gallery-v1.1.0` |
 | Chat Files | [functions/events/chat-files/CHANGELOG.md](functions/events/chat-files/CHANGELOG.md) | `chat-files-v2.0.0` |
 | Artifacts | [functions/events/chat-artifacts/CHANGELOG.md](functions/events/chat-artifacts/CHANGELOG.md) | `chat-artifacts-v1.4.0` |
+| Mods | [functions/events/chat-mods/CHANGELOG.md](functions/events/chat-mods/CHANGELOG.md) | `chat-mods-v1.0.0` |
 
 ## License
 
