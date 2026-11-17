@@ -1,7 +1,29 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 820 120" width="820" height="120" role="img" aria-labelledby="t">
-<title id="t">Star history of CallSohail/openwebu-work: 37 stars</title>
-<style>text{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans",Helvetica,Arial,sans-serif}.bg{fill:#ffffff;stroke:#d0d7de}.title{fill:#1f2328;font-weight:600}.sub{fill:#59636e}@media (prefers-color-scheme:dark){.bg{fill:#0d1117;stroke:#3d444d}.title{fill:#f0f6fc}.sub{fill:#9198a1}}</style>
-<rect class="bg" x=".5" y=".5" width="819" height="119" rx="12"/>
-<text class="title" x="64" y="50" font-size="16">Star history: 37 stars</text>
-<text class="sub" x="64" y="78" font-size="13">The chart is drawn by the Star History workflow and replaces this card after its first run.</text>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 820 360" width="820" height="360" role="img" aria-labelledby="t d">
+<title id="t">Star history of CallSohail/openwebu-work</title>
+<desc id="d">37 stars as of November 17, 2026, counted from when each person starred the repository.</desc>
+<style>text{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans",Helvetica,Arial,sans-serif}.bg{fill:#ffffff;stroke:#d0d7de}.grid{stroke:#eaeef2}.axis{fill:#59636e}.title{fill:#1f2328;font-weight:600}.sub{fill:#59636e}.line{stroke:#0969da;fill:none;stroke-width:2.5}.area{fill:#0969da;opacity:.10}.dot{fill:#0969da}.count{fill:#1f2328;font-weight:700}@media (prefers-color-scheme:dark){.bg{fill:#0d1117;stroke:#3d444d}.grid{stroke:#21262d}.axis{fill:#9198a1}.title{fill:#f0f6fc}.sub{fill:#9198a1}.line{stroke:#4493f8}.area{fill:#4493f8;opacity:.16}.dot{fill:#4493f8}.count{fill:#f0f6fc}}</style>
+<rect class="bg" x=".5" y=".5" width="819" height="359" rx="12"/>
+<text class="title" x="64" y="34" font-size="16">Star history</text>
+<text class="sub" x="168" y="34" font-size="13">CallSohail/openwebu-work</text>
+<text class="sub" x="792" y="34" font-size="12" text-anchor="end">updated 2026-11-17</text>
+<line class="grid" x1="64" x2="792" y1="308.0" y2="308.0"/>
+<text class="axis" x="54" y="312.0" font-size="12" text-anchor="end">0</text>
+<line class="grid" x1="64" x2="792" y1="247.0" y2="247.0"/>
+<text class="axis" x="54" y="251.0" font-size="12" text-anchor="end">10</text>
+<line class="grid" x1="64" x2="792" y1="186.0" y2="186.0"/>
+<text class="axis" x="54" y="190.0" font-size="12" text-anchor="end">20</text>
+<line class="grid" x1="64" x2="792" y1="125.0" y2="125.0"/>
+<text class="axis" x="54" y="129.0" font-size="12" text-anchor="end">30</text>
+<line class="grid" x1="64" x2="792" y1="64.0" y2="64.0"/>
+<text class="axis" x="54" y="68.0" font-size="12" text-anchor="end">40</text>
+<text class="axis" x="138.7" y="330" font-size="12" text-anchor="middle">Jan 2026</text>
+<text class="axis" x="259.2" y="330" font-size="12" text-anchor="middle">Mar 2026</text>
+<text class="axis" x="383.7" y="330" font-size="12" text-anchor="middle">May 2026</text>
+<text class="axis" x="508.2" y="330" font-size="12" text-anchor="middle">Jul 2026</text>
+<text class="axis" x="634.8" y="330" font-size="12" text-anchor="middle">Sep 2026</text>
+<text class="axis" x="759.3" y="330" font-size="12" text-anchor="middle">Nov 2026</text>
+<path class="area" d="M64.0 308.0 L64.8 308.0 L64.8 301.9 L64.9 301.9 L64.9 295.8 L65.0 295.8 L65.0 289.7 L74.0 289.7 L74.0 283.6 L79.5 283.6 L79.5 277.5 L184.1 277.5 L184.1 271.4 L439.5 271.4 L439.5 265.3 L458.7 265.3 L458.7 259.2 L623.9 259.2 L623.9 253.1 L624.3 253.1 L624.3 247.0 L624.7 247.0 L624.7 240.9 L627.1 240.9 L627.1 234.8 L627.3 234.8 L627.3 228.7 L627.6 228.7 L627.6 222.6 L627.9 222.6 L627.9 216.5 L628.0 216.5 L628.0 210.4 L628.1 210.4 L628.1 204.3 L628.1 204.3 L628.1 198.2 L628.2 198.2 L628.2 192.1 L628.5 192.1 L628.5 186.0 L628.6 186.0 L628.6 179.9 L628.6 179.9 L628.6 173.8 L628.7 173.8 L628.7 167.7 L630.6 167.7 L630.6 161.6 L631.1 161.6 L631.1 155.5 L632.3 155.5 L632.3 149.4 L636.8 149.4 L636.8 143.3 L670.8 143.3 L670.8 137.2 L671.2 137.2 L671.2 131.1 L671.2 131.1 L671.2 125.0 L674.1 125.0 L674.1 118.9 L701.3 118.9 L701.3 112.8 L715.9 112.8 L715.9 106.7 L744.2 106.7 L744.2 100.6 L783.8 100.6 L783.8 94.5 L785.0 94.5 L785.0 88.4 L789.5 88.4 L789.5 82.3 L792.0 82.3 L792.0 308.0 L64.0 308.0 Z"/>
+<path class="line" d="M64.0 308.0 L64.8 308.0 L64.8 301.9 L64.9 301.9 L64.9 295.8 L65.0 295.8 L65.0 289.7 L74.0 289.7 L74.0 283.6 L79.5 283.6 L79.5 277.5 L184.1 277.5 L184.1 271.4 L439.5 271.4 L439.5 265.3 L458.7 265.3 L458.7 259.2 L623.9 259.2 L623.9 253.1 L624.3 253.1 L624.3 247.0 L624.7 247.0 L624.7 240.9 L627.1 240.9 L627.1 234.8 L627.3 234.8 L627.3 228.7 L627.6 228.7 L627.6 222.6 L627.9 222.6 L627.9 216.5 L628.0 216.5 L628.0 210.4 L628.1 210.4 L628.1 204.3 L628.1 204.3 L628.1 198.2 L628.2 198.2 L628.2 192.1 L628.5 192.1 L628.5 186.0 L628.6 186.0 L628.6 179.9 L628.6 179.9 L628.6 173.8 L628.7 173.8 L628.7 167.7 L630.6 167.7 L630.6 161.6 L631.1 161.6 L631.1 155.5 L632.3 155.5 L632.3 149.4 L636.8 149.4 L636.8 143.3 L670.8 143.3 L670.8 137.2 L671.2 137.2 L671.2 131.1 L671.2 131.1 L671.2 125.0 L674.1 125.0 L674.1 118.9 L701.3 118.9 L701.3 112.8 L715.9 112.8 L715.9 106.7 L744.2 106.7 L744.2 100.6 L783.8 100.6 L783.8 94.5 L785.0 94.5 L785.0 88.4 L789.5 88.4 L789.5 82.3 L792.0 82.3" stroke-linejoin="round"/>
+<circle class="dot" cx="792.0" cy="82.3" r="4.5"/>
+<text class="count" x="782.0" y="70.3" font-size="14" text-anchor="end">37 stars</text>
 </svg>
