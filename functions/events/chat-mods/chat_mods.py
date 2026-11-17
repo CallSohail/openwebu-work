@@ -581,7 +581,7 @@ LOADER_SCRIPT = r"""
       preview: 'Preview', code: 'Code', try_it: 'Try It', stop_try: 'Stop Trying', trying: 'Trying it now; nothing is saved.', save_install: 'Install', save_update: 'Save Changes',
       e_header: 'the settings must end with a line containing only ---', e_name: 'it needs a name of 1 to 60 characters', e_code: 'it has no code', e_long: 'its code is longer than {n} characters', e_perm: '“{value}” isn’t a permission', e_key: '“{value}” isn’t a setting',
       saved_failed: 'Couldn’t save your mods: {error}. Try again in a moment.', load_failed: 'Couldn’t load your mods. Reload the page to try again.', stopped_errors: '{name} was turned off: it kept failing.', stopped_escape: '{name} was turned off: it tried to leave its sandbox.',
-      cmd_taken: 'The command /{name} is already used by another mod.', copied: 'Copied',
+      cmd_taken: 'The command /{name} is already used by another mod.', cmd_mod: 'Describe a feature and create it as a mod', copied: 'Copied',
       shortcut: 'Shortcut:', for_everyone_note: 'Published mods are part of the page every signed-in person loads, so anyone can read their code.'
     },
     fr: {
@@ -612,7 +612,7 @@ LOADER_SCRIPT = r"""
       preview: 'Aperçu', code: 'Code', try_it: 'Essayer', stop_try: 'Arrêter l’essai', trying: 'Essai en cours ; rien n’est enregistré.', save_install: 'Installer', save_update: 'Enregistrer',
       e_header: 'les réglages doivent finir par une ligne contenant seulement ---', e_name: 'il faut un nom de 1 à 60 caractères', e_code: 'il n’a pas de code', e_long: 'son code dépasse {n} caractères', e_perm: '« {value} » n’est pas une permission', e_key: '« {value} » n’est pas un réglage',
       saved_failed: 'Impossible d’enregistrer vos mods : {error}. Réessayez dans un instant.', load_failed: 'Impossible de charger vos mods. Rechargez la page pour réessayer.', stopped_errors: '{name} a été désactivé : il échouait sans cesse.', stopped_escape: '{name} a été désactivé : il a tenté de sortir de son bac à sable.',
-      cmd_taken: 'La commande /{name} est déjà utilisée par un autre mod.', copied: 'Copié',
+      cmd_taken: 'La commande /{name} est déjà utilisée par un autre mod.', cmd_mod: 'Décrire une fonction et la créer comme mod', copied: 'Copié',
       shortcut: 'Raccourci :', for_everyone_note: 'Les mods publiés font partie de la page que chaque personne connectée charge : tout le monde peut lire leur code.'
     }
   };
@@ -964,6 +964,7 @@ LOADER_SCRIPT = r"""
     'commands.add': {perm: 'commands', fn: (r, d) => {
       const name = String(d?.name || '').toLowerCase();
       if (!/^[a-z][a-z0-9-]{0,23}$/.test(name)) throw new Error('A command name is 1 to 24 letters, digits or dashes');
+      if (name === 'mod') throw new Error('/mod belongs to Mods itself');
       for (const [id, other] of runners) if (id !== r.mod.id && other.commands.some(c => c.name === name)) throw new Error(t('cmd_taken', {name}));
       if (!r.commands.some(c => c.name === name)) { if (r.commands.length >= 8) throw new Error('A mod can add up to 8 commands'); r.commands.push({name, description: clip(d?.description, 80)}); }
       paintBar();
@@ -1020,7 +1021,8 @@ LOADER_SCRIPT = r"""
     const bands = [...runners.values()].filter(r => r.band && can(r, 'ui.band'));
     const statuses = [...runners.values()].filter(r => r.status && can(r, 'ui.status'));
     const typed = composerText(), hint = /^\/[a-z0-9-]*$/i.test(typed.trim()) ? typed.trim().slice(1).toLowerCase() : null;
-    const commands = hint == null ? [] : [...runners.values()].filter(r => can(r, 'commands')).flatMap(r => r.commands.map(c => ({...c, runner: r}))).filter(c => c.name.startsWith(hint)).slice(0, 6);
+    const own = canCreate() ? [{name: 'mod', description: t('cmd_mod')}] : [];
+    const commands = hint == null ? [] : [...own, ...[...runners.values()].filter(r => can(r, 'commands')).flatMap(r => r.commands)].filter(c => c.name.startsWith(hint)).slice(0, 6);
     if (!form || (!bands.length && !statuses.length && !commands.length)) { bar?.remove(); return; }
     if (!bar) { bar = el('div', 'md-ui'); bar.id = 'owui-mods-bar'; bar.setAttribute('role', 'region'); setLabel(bar, t('mods')); bar.removeAttribute('title'); }
     const nodes = [];
@@ -1112,6 +1114,14 @@ LOADER_SCRIPT = r"""
     const m = /^\/([a-z][a-z0-9-]{0,23})(?:\s+([\s\S]*))?$/i.exec(composerText().trim());
     if (!m) return;
     const name = m[1].toLowerCase();
+    // "/mod <what you want>" is Mods' own: it opens Create with that description and starts writing the mod
+    if (name === 'mod' && canCreate()) {
+      event.preventDefault(); event.stopImmediatePropagation();
+      const ask = clip((m[2] || '').trim(), 4000);
+      setComposer('');
+      createFrom(ask);
+      return;
+    }
     const runner = [...runners.values()].find(r => can(r, 'commands') && r.commands.some(c => c.name === name));
     if (!runner) return;
     event.preventDefault(); event.stopImmediatePropagation();
@@ -1174,6 +1184,16 @@ LOADER_SCRIPT = r"""
     if (event.code !== 'Period' || !event.shiftKey || event.altKey || !(IS_MAC ? event.metaKey : event.ctrlKey)) return;
     event.preventDefault(); event.stopImmediatePropagation(); openDialog();
   }, true);
+
+  const canCreate = () => CONFIG.enabled && !safeMode && loaded && (CONFIG.allowUserMods || isAdmin());
+  // Opens Create with a description; with one, starts writing the mod at once
+  function createFrom(description) {
+    tab = 'create';
+    if (description) { studio.description = description; studio.change = ''; studio.editing = null; }
+    if (dialog?.open) paintDialog(); else openDialog();
+    if (description) generate();
+    else dialog?.querySelector('[data-focus="describe"]')?.focus();
+  }
 
   /* ---- the Mods window ---- */
   let dialog = null, tab = 'installed', studio = {description: '', model: '', result: null, error: '', busy: false, change: '', editing: null, paste: ''};
@@ -1488,7 +1508,7 @@ LOADER_SCRIPT = r"""
   function sync() {
     watchContext();
     syncMenus();
-    if (runners.size && composerText() !== composerLast) composerMaybeChanged();
+    if ((runners.size || bar?.isConnected) && composerText() !== composerLast) composerMaybeChanged();
     if (runners.size) { if (bar && !bar.isConnected) paintBar(); else if (!bar) paintBar(); paintMessageRows(false); }
     const now = language();
     if (now !== shownLang) { shownLang = lang = now; chatItem?.remove(); plusItem?.remove(); chatItem = plusItem = null; if (pane) { pane.remove(); pane = null; for (const r of runners.values()) r.frame.remove(); const list = [...runners.values()].map(r => r.mod); runners.clear(); for (const m of list) if (!m.id.startsWith('preview:')) start(m); } paintBar(); repaintDialog(); }

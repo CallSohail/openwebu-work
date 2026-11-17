@@ -27,6 +27,7 @@ Version v1.0.0. Event Function. Requires Open WebUI v0.13.0 or later; tested in 
   | Export to Markdown | Saves the chat as a `.md` file, from a label or `/export` | read the chat, save files, label, `/` commands |
   | Warm Reading Theme | Warmer greys in light and dark mode | change the look |
 
+- **Create one from the message box.** Type `/mod` and what you want, for example `/mod a timer that counts how long I've been studying`, and press Enter. Mods opens on *Create* and starts writing it; nothing is sent to the chat. `/mod` alone opens *Create*.
 - **Create your own.** In *Create*, describe the feature and choose a model. The model writes the mod; you see what it asks for and its code, *Try It* runs it without saving anything, *Describe a change* rewrites it, and *Install* keeps it.
 - **Paste or import** a mod someone shared, as text or a `.mod` file. *Export* in a mod's ⋯ menu saves one.
 - **Turn mods on and off**, edit them in Create, or remove them (after a confirmation). A mod that fails shows its last errors on its card.
@@ -38,6 +39,7 @@ Your mods are kept on the server, so they follow you to another browser. What a 
 
 - The chat's **⋯ menu** has *Mods*.
 - The **+ menu** of the tab row above the chat has *Mods*, where Open WebUI shows that menu.
+- **`/mod`** in the message box, with or without a description (where people may create mods).
 - **Ctrl+Shift+.** (**⌘⇧.** on a Mac) from anywhere. Open WebUI already uses Ctrl+Shift+M for its model selector, so Mods doesn't.
 
 If a mod makes the page unusable, open Open WebUI with `?mods=off` at the end of the address (for example `https://chat.example.edu/?mods=off`). Nothing runs in that tab, and the Mods window offers to turn them back on.
@@ -149,14 +151,14 @@ python tests/seed.py http://127.0.0.1:8080 chat_mods.py > seed.json
 node tests/e2e.mjs seed.json
 ```
 
-`e2e.mjs` needs Playwright with Chromium. It installs the ready-made mods and uses each one, creates, tries, changes, installs and exports a mod with the fake model, opens Mods from the ⋯ and + menus, runs a mod that tries every way out of its sandbox, tries styles that would load from elsewhere or hide Mods, a mod that navigates away and one that keeps failing, checks the server's validation, safe mode, dark mode, French, a phone screen, an administrator publishing a mod for everyone, a person removing it, and the off switch.
+`e2e.mjs` needs Playwright with Chromium. It installs the ready-made mods and uses each one, creates a mod from `/mod` in the message box, creates, tries, changes, installs and exports one in Create with the fake model, opens Mods from the ⋯ and + menus, runs a mod that tries every way out of its sandbox, tries styles that would load from elsewhere or hide Mods, a mod that navigates away and one that keeps failing, checks the server's validation, safe mode, dark mode, French, a phone screen, an administrator publishing a mod for everyone, a person removing it, and the off switch.
 
 Results on 2026-11-17:
 
 | Open WebUI | With Chat Files and Artifacts | Checks |
 | --- | --- | --- |
-| 0.13.3 | yes | 69 of 69 |
-| 0.13.0 | no | 68 of 68 (its + menu button only appears on hover, so that check is skipped) |
+| 0.13.3 | yes | 74 of 74 |
+| 0.13.0 | no | 73 of 73 (its + menu button only appears on hover, so that check is skipped) |
 
 Server tests: 42 of 42.
 

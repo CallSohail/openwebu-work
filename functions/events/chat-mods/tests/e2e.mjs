@@ -215,6 +215,28 @@ async function userMods(token) { const { data } = await api(token, 'GET', '/api/
   await context.close();
 }
 
+/* ---------- /mod in the message box creates a mod ---------- */
+{
+  const { context, page, open } = await session(seed.user);
+  await open();
+  await typeInComposer(page, '/mo');
+  check(/\/mod/.test(await chipText(page)), 'typing /mo suggests /mod');
+  const before = await page.locator('#messages-container [id^="message-"]').count();
+  await typeInComposer(page, '/mod show how many characters I type');
+  await page.keyboard.press('Enter');
+  await dialogOpen(page);
+  check(await page.locator('#md-tab-create[aria-selected="true"]').count() === 1 && await page.inputValue('[data-focus="describe"]') === 'show how many characters I type', '/mod opens Create with the description');
+  await page.waitForSelector('.md-dbody .md-card', { timeout: 15000 });
+  check(/Character Counter/.test(await page.locator('.md-dbody').innerText()), '/mod starts writing the mod at once');
+  check(await page.locator('#messages-container [id^="message-"]').count() === before && (await page.locator('#chat-input').innerText()).trim() === '', '/mod sends nothing and empties the message box');
+  await page.keyboard.press('Escape');
+  await typeInComposer(page, '/mod');
+  await page.keyboard.press('Enter');
+  await dialogOpen(page);
+  check(await page.evaluate(() => document.activeElement?.dataset.focus === 'describe'), '/mod alone opens Create, ready to type');
+  await context.close();
+}
+
 /* ---------- what a mod can't do ---------- */
 {
   const { context, page, open } = await session(seed.user);
