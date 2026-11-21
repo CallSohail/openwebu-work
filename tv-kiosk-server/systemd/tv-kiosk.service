@@ -1,0 +1,21 @@
+[Unit]
+Description=TV Kiosk (fullscreen browser on the HDMI TV)
+After=systemd-user-sessions.service tv-control.service
+Wants=tv-control.service
+
+[Service]
+User=__USER__
+# cage is a tiny kiosk compositor: it owns the screen and runs ONE program
+# fullscreen. Our kiosk-run.sh launches Chromium inside it and relaunches it
+# whenever the URL changes.
+ExecStart=/usr/bin/cage -- /opt/tv-kiosk/kiosk-run.sh
+Restart=always
+RestartSec=2
+# cage needs a real seat/VT; run it on the console.
+TTYPath=/dev/tty1
+StandardInput=tty
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

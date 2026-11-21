@@ -1,0 +1,15 @@
+[Unit]
+Description=TV Kiosk control panel (phone-facing, port 8080)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+User=__USER__
+ExecStart=/usr/bin/python3 /opt/tv-kiosk/control_server.py
+Restart=always
+RestartSec=2
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target
