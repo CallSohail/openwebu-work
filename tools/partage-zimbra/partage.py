@@ -3,7 +3,7 @@ title: Partage (Zimbra) - Emails & Calendrier
 description: Agent Zimbra / Partage pour Open WebUI : lire, chercher, analyser, envoyer, repondre, transferer, ranger et supprimer des emails ; consulter, creer, modifier, annuler et repondre aux evenements du calendrier ; trouver un creneau commun ; contacts, dossiers, etiquettes, message d'absence. Toute action qui envoie, supprime ou modifie demande une confirmation dans le navigateur. Si la question ne concerne ni les emails ni le calendrier, orientez l'utilisateur vers les fonctions disponibles (outil `help`).
 author: Muhammad Sohail @ Universite d'Evry Paris-Saclay
 author_url: https://github.com/CallSohail/openwebu-work
-version: 10.0.0
+version: 11.0.0
 license: MIT
 required_open_webui_version: 0.13.0
 requirements: requests
@@ -27,6 +27,9 @@ requirements: requests
 
 import asyncio
 import hashlib
+import http.cookiejar
+import json
+import threading
 import hmac
 import html as html_lib
 import io
@@ -46,7 +49,20 @@ from pydantic import BaseModel, Field
 
 logger = logging.getLogger("partage_zimbra")
 
-VERSION = "10.0.0"
+_TLS = threading.local()
+
+
+def _http_session() -> requests.Session:
+    """One pooled session per worker thread. It never stores cookies, so no
+    Zimbra cookie can leak from one user's request into another's."""
+    sess = getattr(_TLS, "session", None)
+    if sess is None:
+        sess = requests.Session()
+        sess.cookies.set_policy(http.cookiejar.DefaultCookiePolicy(allowed_domains=[]))
+        _TLS.session = sess
+    return sess
+
+VERSION = "11.0.0"
 
 # ================================================================
 # ERRORS
@@ -821,6 +837,114 @@ def _build_search_query(user_query: str, now: datetime) -> str:
 
 
 # ================================================================
+# VISUAL CARDS (Open WebUI Rich UI embeds)
+# ================================================================
+# One self-contained page per card. Data arrives as escaped JSON and is only
+# ever written with textContent, never innerHTML. The CSP forbids every
+# network request, so a hostile email cannot load trackers or leak data.
+# Clicking an item only pre-fills the message box ("input:prompt"): the
+# person still decides whether to send it.
+
+CARD_TEMPLATE = """<!doctype html>
+<html lang="fr"><head><meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data:">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+:root{--bg:#fff;--fg:#1c2430;--mut:#5f6b7a;--line:#e3e7ee;--soft:#f5f7fa;--acc:#2f5fd0;--acc2:#e8eefc;--ok:#1e8e5a;--warn:#b7791f;--bad:#c0392b;--r:10px}
+html[data-theme=dark]{--bg:#16191f;--fg:#e8ecf2;--mut:#9aa5b4;--line:#2a313c;--soft:#1d222a;--acc:#7aa2ff;--acc2:#24304a;--ok:#4cc38a;--warn:#e0b050;--bad:#ff7a6b}
+*{box-sizing:border-box}body{margin:0;background:transparent;color:var(--fg);font:14px/1.45 system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
+.card{background:var(--bg);border:1px solid var(--line);border-radius:var(--r);padding:14px 16px;overflow:hidden}
+.hd{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;margin-bottom:10px}.hd h1{font-size:15px;margin:0;font-weight:650}
+.sub{color:var(--mut);font-size:12px}.badge{font-size:11px;padding:1px 7px;border-radius:999px;background:var(--acc2);color:var(--acc);font-weight:600}
+.row{display:flex;gap:10px;align-items:flex-start;padding:8px 6px;border-top:1px solid var(--line);cursor:pointer;border-radius:6px}
+.row:first-of-type{border-top:0}.row:hover{background:var(--soft)}.row .main{flex:1;min-width:0}
+.t{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.u .t{color:var(--acc)}
+.m{color:var(--mut);font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.right{color:var(--mut);font-size:12px;white-space:nowrap}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--acc);margin-top:7px;flex:none}.dot.off{background:transparent;border:1px solid var(--line)}
+.chips{display:flex;gap:6px;flex-wrap:wrap}.chip{font-size:11px;padding:1px 6px;border-radius:5px;background:var(--soft);color:var(--mut);border:1px solid var(--line)}
+.chip.red{color:var(--bad)}.chip.ok{color:var(--ok)}.chip.warn{color:var(--warn)}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px;margin-bottom:12px}
+.tile{background:var(--soft);border-radius:8px;padding:8px 10px}.tile b{display:block;font-size:19px}.tile span{color:var(--mut);font-size:12px}
+.sec{margin-top:12px}.sec h2{font-size:12px;text-transform:uppercase;letter-spacing:.04em;color:var(--mut);margin:0 0 6px}
+.bar{display:flex;align-items:center;gap:8px;margin:3px 0;font-size:12px}.bar .lab{width:38%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bar .trk{flex:1;height:8px;background:var(--soft);border-radius:4px;overflow:hidden}.bar .fil{height:100%;background:var(--acc);border-radius:4px}
+.bar .val{width:44px;text-align:right;color:var(--mut)}
+.cols{display:flex;gap:3px;align-items:flex-end;height:70px}.cols div{flex:1;background:var(--acc);border-radius:3px 3px 0 0;min-height:2px;opacity:.85}
+.axis{display:flex;gap:3px;font-size:10px;color:var(--mut)}.axis span{flex:1;text-align:center}
+.day{margin-top:10px}.day h3{font-size:13px;margin:0 0 4px;font-weight:650}.day h3 em{font-style:normal;color:var(--acc);font-size:11px;margin-left:6px}
+.ev{display:flex;gap:10px;padding:6px 8px;border-left:3px solid var(--acc);background:var(--soft);border-radius:6px;margin:4px 0;cursor:pointer}
+.ev.NE{border-left-color:var(--warn)}.ev.DE{border-left-color:var(--bad);opacity:.7}.ev.TE{border-left-style:dashed}.ev.free{border-left-color:var(--ok)}
+.ev .tm{width:92px;flex:none;color:var(--mut);font-size:12px;font-variant-numeric:tabular-nums}
+.slot{display:inline-flex;flex-direction:column;gap:2px;margin:4px;padding:8px 10px;border:1px solid var(--line);border-radius:8px;cursor:pointer;min-width:150px}
+.slot:hover{border-color:var(--acc)}.slot b{font-size:13px}.slot span{color:var(--mut);font-size:12px}
+.board{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px}.lane{background:var(--soft);border-radius:8px;padding:8px}
+.lane h2{font-size:12px;margin:0 0 6px;color:var(--mut)}.task{background:var(--bg);border:1px solid var(--line);border-radius:7px;padding:7px 8px;margin:6px 0;cursor:pointer}
+.task.late{border-color:var(--bad)}.prog{height:4px;background:var(--line);border-radius:2px;margin-top:5px}.prog div{height:100%;background:var(--ok);border-radius:2px}
+.gauge{height:14px;background:var(--soft);border-radius:7px;overflow:hidden;margin:6px 0}.gauge div{height:100%;background:var(--acc)}.gauge div.hot{background:var(--bad)}
+.body{white-space:pre-wrap;word-wrap:break-word;background:var(--soft);border-radius:8px;padding:10px;max-height:360px;overflow:auto;font-size:13px}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:2px 10px;font-size:13px;margin-bottom:8px}.kv b{color:var(--mut);font-weight:500}
+.acts{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}button{font:inherit;font-size:12px;padding:5px 10px;border-radius:7px;border:1px solid var(--line);background:var(--bg);color:var(--fg);cursor:pointer}
+button:hover{border-color:var(--acc);color:var(--acc)}.feat{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:8px}
+.feat div{background:var(--soft);border-radius:8px;padding:8px 10px}.feat h3{margin:0 0 4px;font-size:13px}.feat li{font-size:12px;color:var(--mut);margin:2px 0}
+.feat ul{margin:0;padding-left:16px}.foot{margin-top:10px;color:var(--mut);font-size:11px}.empty{color:var(--mut);padding:10px 0}
+</style></head><body><div class="card" id="root"></div>
+<script id="data" type="application/json">__DATA__</script>
+<script>
+(function(){
+var D=document,C=JSON.parse(D.getElementById("data").textContent),R=D.getElementById("root");
+function theme(){var t="light";try{t=window.parent.document.documentElement.classList.contains("dark")?"dark":"light";}catch(e){t=window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light";}D.documentElement.setAttribute("data-theme",t);}
+theme();try{new MutationObserver(theme).observe(window.parent.document.documentElement,{attributes:true,attributeFilter:["class"]});}catch(e){}
+function h(tag,cls,text){var e=D.createElement(tag);if(cls)e.className=cls;if(text!=null&&text!=="")e.textContent=String(text);return e;}
+function add(p){for(var i=1;i<arguments.length;i++){var c=arguments[i];if(c)p.appendChild(c);}return p;}
+function ask(text){try{window.parent.postMessage({type:"input:prompt",text:String(text)},"*");}catch(e){}}
+function head(title,sub,badge){var d=h("div","hd");add(d,h("h1","",title));if(badge)add(d,h("span","badge",badge));if(sub)add(d,h("span","sub",sub));return d;}
+function chip(t,c){return h("span","chip"+(c?" "+c:""),t);}
+function bars(rows,max){var w=h("div");max=max||Math.max.apply(null,rows.map(function(r){return r[1];}).concat([1]));rows.forEach(function(r){var b=h("div","bar"),t=h("div","trk"),f=h("div","fil");f.style.width=Math.round(r[1]*100/max)+"%";add(t,f);add(b,h("div","lab",r[0]),t,h("div","val",r[2]!=null?r[1]+" ("+r[2]+")":r[1]));add(w,b);});return w;}
+function section(title,el){var s=h("div","sec");add(s,h("h2","",title),el);return s;}
+var K={};
+K.emails=function(){add(R,head(C.title,C.subtitle,C.items.length+(C.more?"+":"")));if(!C.items.length){add(R,h("div","empty","Aucun email."));}
+C.items.forEach(function(m){var r=h("div","row"+(m.u?" u":""));add(r,h("div","dot"+(m.u?"":" off")));var mn=h("div","main");add(mn,h("div","t",m.su));
+add(mn,h("div","m",m.from+(m.fr?" — "+m.fr:"")));var c=h("div","chips");if(m.f)add(c,chip("important","warn"));if(m.a)add(c,chip("PJ"));if(m.r)add(c,chip("repondu","ok"));if(c.childNodes.length)add(mn,c);
+add(r,mn,h("div","right",m.date));r.onclick=function(){ask("Lis l'email "+m.id);};add(R,r);});add(R,h("div","foot","Cliquez sur un email pour preparer sa lecture dans le chat."));};
+K.email=function(){add(R,head(C.title,C.date,C.flags));var kv=h("div","kv");[["De",C.from],["A",C.to],["Cc",C.cc],["ID",C.id]].forEach(function(p){if(p[1]){add(kv,h("b","",p[0]),h("span","",p[1]));}});add(R,kv);
+if(C.atts&&C.atts.length){var c=h("div","chips");C.atts.forEach(function(a){var x=chip(a.name+" · "+a.size);x.style.cursor="pointer";x.onclick=function(){ask("Lis la piece jointe "+a.part+" de l'email "+C.id);};add(c,x);});add(R,section("Pieces jointes",c));}
+add(R,section("Message",h("div","body",C.body)));var a=h("div","acts");[["Repondre","Reponds a l'email "+C.id+" : "],["Repondre a tous","Reponds a tous sur l'email "+C.id+" : "],["Transferer","Transfere l'email "+C.id+" a "],["Resumer","Resume l'email "+C.id],["Corbeille","Mets l'email "+C.id+" a la corbeille"]].forEach(function(b){var x=h("button","",b[0]);x.onclick=function(){ask(b[1]);};add(a,x);});add(R,a);};
+K.analytics=function(){add(R,head(C.title,C.subtitle));var g=h("div","grid");C.stats.forEach(function(s){var t=h("div","tile");add(t,h("b","",s[1]),h("span","",s[0]));add(g,t);});add(R,g);
+if(C.senders.length)add(R,section("Principaux expediteurs (non lus)",bars(C.senders)));
+var hrs=h("div","cols"),mx=Math.max.apply(null,C.hours.concat([1]));C.hours.forEach(function(v,i){var b=h("div");b.style.height=Math.max(2,Math.round(v*100/mx))+"%";b.title=i+"h : "+v;add(hrs,b);});
+var ax=h("div","axis");for(var i=0;i<24;i++)add(ax,h("span","",i%3===0?i+"h":""));var hw=h("div");add(hw,hrs,ax);add(R,section("Heures de reception",hw));
+add(R,section("Jours de la semaine",bars(C.weekdays)));if(C.domains.length)add(R,section("Domaines",bars(C.domains)));
+if(C.pending.length){var w=h("div");C.pending.forEach(function(m){var r=h("div","row");var mn=h("div","main");add(mn,h("div","t",m.su),h("div","m",m.from));add(r,mn,h("div","right",m.date));r.onclick=function(){ask("Lis l'email "+m.id);};add(w,r);});add(R,section("Importants sans reponse",w));}};
+K.agenda=function(){add(R,head(C.title,C.subtitle,C.count+" evt"));if(!C.days.length)add(R,h("div","empty","Aucun evenement."));
+C.days.forEach(function(d){var s=h("div","day"),t=h("h3","",d.label);if(d.tag)add(t,h("em","",d.tag));add(s,t);d.events.forEach(function(e){var r=h("div","ev "+(e.free?"free ":"")+(e.st||""));add(r,h("div","tm",e.time));var mn=h("div","main");add(mn,h("div","t",e.title));
+var meta=[e.loc,e.org,e.status].filter(Boolean).join(" · ");if(meta)add(mn,h("div","m",meta));add(r,mn);r.onclick=function(){ask("Donne-moi les details de l'evenement "+e.id);};add(s,r);});add(R,s);});};
+K.slots=function(){add(R,head(C.title,C.subtitle,C.items.length+" creneau(x)"));if(!C.items.length)add(R,h("div","empty","Aucun creneau commun."));var w=h("div");
+C.items.forEach(function(x){var b=h("div","slot");add(b,h("b","",x.day),h("span","",x.start+" – "+x.end),h("span","","libre jusqu'a "+x.until));b.onclick=function(){ask("Cree une reunion le "+x.iso+" de "+x.start+" a "+x.end+(C.who?" avec "+C.who:"")+", titre : ");};add(w,b);});add(R,w);};
+K.tasks=function(){add(R,head(C.title,"",C.items.length+""));var lanes=[["A faire",["NEED","WAITING","DEFERRED"]],["En cours",["INPR"]],["Terminees",["COMP"]]];var b=h("div","board");
+lanes.forEach(function(l){var ln=h("div","lane"),items=C.items.filter(function(t){return l[1].indexOf(t.status)>=0;});add(ln,h("h2","",l[0]+" ("+items.length+")"));items.forEach(function(t){var c=h("div","task"+(t.overdue?" late":""));add(c,h("div","t",t.title));
+var ch=h("div","chips");if(t.due)add(ch,chip("echeance "+t.due,t.overdue?"red":""));if(t.prio!=="normale")add(ch,chip(t.prio,t.prio==="haute"?"warn":""));add(c,ch);if(t.pct){var p=h("div","prog"),f=h("div");f.style.width=t.pct+"%";add(p,f);add(c,p);}
+c.onclick=function(){ask(t.status==="COMP"?"Rouvre la tache "+t.id:"Marque la tache "+t.id+" comme terminee");};add(ln,c);});add(b,ln);});add(R,b);};
+K.quota=function(){add(R,head(C.title,C.subtitle));var g=h("div","gauge"),f=h("div",C.pct>=90?"hot":"");f.style.width=Math.min(100,C.pct||0)+"%";add(g,f);if(C.pct!=null){add(R,g);}
+add(R,section("Plus gros dossiers",bars(C.folders.map(function(x){return [x[0],x[1],x[2]];}))));};
+K.help=function(){add(R,head(C.title,C.subtitle,"v"+C.version));if(C.news&&C.news.length){var n=h("div","chips");C.news.forEach(function(x){add(n,chip("Nouveau : "+x,"ok"));});add(R,n);}
+var f=h("div","feat");C.sections.forEach(function(s){var d=h("div"),u=h("ul");add(d,h("h3","",s.title));s.items.forEach(function(i){var li=h("li","",i);li.style.cursor="pointer";li.onclick=function(){ask(i);};add(u,li);});add(d,u);add(f,d);});add(R,section("",f));
+add(R,h("div","foot","Cliquez sur un exemple pour le copier dans la zone de message."));};
+(K[C.kind]||K.emails)();
+var last=0;function size(){var v=Math.ceil(D.documentElement.getBoundingClientRect().height);if(Math.abs(v-last)<1)return;last=v;try{window.parent.postMessage({type:"iframe:height",height:v},"*");}catch(e){}}
+size();if(window.ResizeObserver)new ResizeObserver(size).observe(D.body);window.addEventListener("load",size);
+})();
+</script></body></html>"""
+
+
+def _card_json(data: Dict[str, Any]) -> str:
+    """JSON safe to place inside a <script> element."""
+    text = json.dumps(data, ensure_ascii=False, default=str)
+    for a, b in (("<", "\\u003c"), (">", "\\u003e"), ("&", "\\u0026"), (" ", "\\u2028"), (" ", "\\u2029")):
+        text = text.replace(a, b)
+    return text
+
+
+# ================================================================
 # REQUEST CONTEXT
 # ================================================================
 
@@ -843,6 +967,10 @@ class _Ctx:
         self.tz = ZoneInfo(config["timezone"])
         self.done = "Termine"
         self.folders: Optional[List[Dict[str, Any]]] = None
+        self.target = ""  # delegated / shared mailbox, empty = own mailbox
+        self.card: Optional[Dict[str, Any]] = None  # visual card for this result
+        self.user_id = ""
+        self.files: List[dict] = []
 
     @property
     def token(self) -> str:
@@ -954,6 +1082,14 @@ class Tools:
         work_day_end: str = Field(default="18:00", description="Fin de journee pour la recherche de creneaux")
         mark_as_read_on_open: bool = Field(default=False, description="Marquer un email comme lu quand il est ouvert")
 
+        enable_visual_cards: bool = Field(default=True, description="Afficher des cartes visuelles (listes, agenda, statistiques, taches)")
+        enable_delegated_mailboxes: bool = Field(default=True, description="Autoriser la lecture des boites partagees / deleguees (parametre mailbox)")
+        enable_filter_forwarding: bool = Field(default=False, description="Autoriser les filtres qui redirigent des emails vers une autre adresse")
+        use_zimbra_signature: bool = Field(default=True, description="Utiliser la signature Partage par defaut si l'utilisateur n'en a pas saisi")
+        max_parallel_requests_per_user: int = Field(default=4, ge=1, le=20, description="Requetes simultanees max par utilisateur")
+        duplicate_send_window_minutes: int = Field(default=10, ge=0, le=1440, description="Avertir si un email identique a ete envoye dans ce delai")
+        max_upload_mb: int = Field(default=25, ge=1, le=100, description="Taille max des fichiers du chat joints a un email")
+
     class UserValves(BaseModel):
         """Vos identifiants Partage. Ils ne sont visibles que par vous."""
 
@@ -971,7 +1107,8 @@ class Tools:
             description="Identifiant de connexion, si different de l'adresse (optionnel)",
         )
         timezone: str = Field(default="Europe/Paris", description="Fuseau horaire (IANA)")
-        email_signature: str = Field(default="", description="Signature ajoutee aux emails (optionnel)")
+        email_signature: str = Field(default="", description="Signature ajoutee aux emails (optionnel ; sinon signature Partage)")
+        visual_cards: bool = Field(default=True, description="Afficher les cartes visuelles dans le chat")
 
     def __init__(self):
         self.valves = self.Valves()
@@ -980,6 +1117,10 @@ class Tools:
         self._token_cache: Dict[str, Dict[str, Any]] = {}
         self._auth_locks: Dict[str, asyncio.Lock] = {}
         self._auth_blocked: Dict[str, float] = {}
+        self._semaphores: Dict[str, asyncio.Semaphore] = {}
+        self._inflight: set = set()
+        self._recent_sends: Dict[str, float] = {}
+        self._filter_locks: Dict[str, asyncio.Lock] = {}
 
     # ==================== CONFIG ====================
 
@@ -1085,6 +1226,7 @@ class Tools:
             "server": server,
             "timezone": tz_name,
             "signature": _clean_multiline(self._read(sources, "email_signature", strip=False).strip(), 2000),
+            "visual_cards": _safe_bool(self._read(sources, "visual_cards") or "true", True),
         }
 
     # ==================== UI EVENTS ====================
@@ -1176,7 +1318,7 @@ class Tools:
 
     async def _post_json(self, url: str, payload: Dict[str, Any]) -> Any:
         return await asyncio.to_thread(
-            requests.post,
+            lambda: _http_session().post(
             url,
             json=payload,
             headers={
@@ -1187,6 +1329,7 @@ class Tools:
             timeout=self._timeouts(),
             verify=self._verify(),
             allow_redirects=False,
+            )
         )
 
     @staticmethod
@@ -1256,6 +1399,35 @@ class Tools:
             self._auth_blocked.pop(key, None)
         if len(self._auth_locks) > 2000:
             self._auth_locks = {k: v for k, v in self._auth_locks.items() if k in self._token_cache}
+
+    def _semaphore(self, ctx: _Ctx) -> asyncio.Semaphore:
+        """Caps parallel requests per account, so bursts of tool calls from one
+        person cannot trip Zimbra's DoS filter or starve other users."""
+        key = self._cache_key(ctx.config)
+        sem = self._semaphores.get(key)
+        if sem is None:
+            if len(self._semaphores) > 5000:
+                self._semaphores.clear()
+            sem = self._semaphores[key] = asyncio.Semaphore(int(self.valves.max_parallel_requests_per_user))
+        return sem
+
+    def _send_fingerprint(self, ctx: _Ctx, m: Dict[str, Any]) -> str:
+        material = json.dumps({k: m.get(k) for k in ("su", "e", "mp", "origid", "attach", "did")}, sort_keys=True, default=str)
+        return hmac.new(self._secret, (self._cache_key(ctx.config) + material).encode("utf-8"), hashlib.sha256).hexdigest()
+
+    def _duplicate_warning(self, fp: str) -> str:
+        """Refuse an identical send already in progress; warn about a recent one."""
+        if fp in self._inflight:
+            raise UserInputError("Un email identique est deja en cours d'envoi. Attendez la fin de l'envoi precedent.")
+        now = time.monotonic()
+        for key in [k for k, t in self._recent_sends.items() if now - t > 3600]:
+            self._recent_sends.pop(key, None)
+        sent = self._recent_sends.get(fp)
+        window = int(self.valves.duplicate_send_window_minutes) * 60
+        if sent and now - sent < window:
+            minutes = max(1, int((now - sent) // 60))
+            return f"\n\n**Attention : un email identique a deja ete envoye il y a {minutes} min.** Confirmez seulement si c'est voulu."
+        return ""
 
     async def _auth(self, config: Dict[str, Any], emitter: Any = None, force: bool = False) -> Dict[str, Any]:
         key = self._cache_key(config)
@@ -1349,9 +1521,12 @@ class Tools:
                 },
                 "Body": {request_name: {"_jsns": ns, **(body or {})}},
             }
+            if ctx.target and ns == NS_MAIL:
+                payload["Header"]["context"]["account"] = {"by": "name", "_content": ctx.target}
             resp = None
             try:
-                resp = await self._post_json(url, payload)
+                async with self._semaphore(ctx):
+                    resp = await self._post_json(url, payload)
                 return self._parse(resp, request_name)
             except ZimbraAuthError as exc:
                 # An auth fault means the request was not executed: refreshing is safe.
@@ -1389,7 +1564,8 @@ class Tools:
     async def _download(self, ctx: _Ctx, message_id: str, part: str) -> Tuple[str, bytes, bool]:
         """Fetch one MIME part through Zimbra's REST content servlet, size-capped."""
         limit = int(self.valves.max_attachment_mb) * 1024 * 1024
-        url = f"{ctx.config['server']}/service/home/~/"
+        owner = ctx.target if ctx.target else "~"
+        url = f"{ctx.config['server']}/service/home/{owner}/"
 
         def fetch() -> Tuple[int, str, bytes, bool]:
             with requests.get(
@@ -1425,6 +1601,36 @@ class Tools:
             raise ZimbraTransportError(f"Telechargement refuse (HTTP {status}).", status_code=status)
         return ctype, data, truncated
 
+    # ==================== VISUAL CARDS ====================
+
+    def _render_card(self, card: Dict[str, Any], ctx: Optional[_Ctx] = None) -> Any:
+        try:
+            from fastapi.responses import HTMLResponse
+        except ImportError:  # outside Open WebUI: plain text only
+            return None
+        try:
+            html = CARD_TEMPLATE.replace("__DATA__", _card_json(card), 1)
+        except (TypeError, ValueError):
+            logger.info("Partage: card could not be serialised")
+            return None
+        return HTMLResponse(content=html, headers={"Content-Disposition": "inline"})
+
+    def _email_rows(self, items: List[dict], ctx: _Ctx, show_to: bool = False) -> List[Dict[str, Any]]:
+        rows = []
+        for m in items[:100]:
+            flags = _content(m.get("f"))
+            if show_to:
+                who = "A : " + ", ".join(n for n, _ in _addresses(m, "t")[:3])
+            else:
+                name, addr = _sender(m)
+                who = name if not addr or addr == name else f"{name} <{addr}>"
+            rows.append({
+                "id": _content(m.get("id")), "su": _content(m.get("su")) or "(sans sujet)", "from": who,
+                "date": _fmt_rel(m.get("d"), ctx.tz), "fr": _clean_line(_content(m.get("fr")), 120),
+                "u": "u" in flags, "f": "f" in flags, "a": "a" in flags, "r": "r" in flags,
+            })
+        return rows
+
     # ==================== RUNNER & ERRORS ====================
 
     async def _run(
@@ -1434,15 +1640,33 @@ class Tools:
         event_call: Any,
         operation: str,
         fn: Callable[[_Ctx], Awaitable[str]],
-    ) -> str:
+        mailbox: str = "",
+        files: Optional[List[dict]] = None,
+    ) -> Any:
         config = self._get_config(__user__)
         if not config.get("valid"):
             return config["error"]
         ctx = _Ctx(config, emitter, event_call)
+        ctx.user_id = str(__user__.get("id") or "") if isinstance(__user__, dict) else ""
+        ctx.files = [f for f in (files or []) if isinstance(f, dict)]
         try:
+            target = _clean_line(mailbox, 320).strip("`").casefold()
+            if target and target not in (config["login"].casefold(), "me", "moi"):
+                if not self.valves.enable_delegated_mailboxes:
+                    raise UserInputError("L'acces aux boites partagees est desactive par l'administrateur.")
+                if not re.fullmatch(r"[^@\s<>\"`]{1,64}@[A-Za-z0-9.-]{1,253}", target):
+                    raise UserInputError("Adresse de boite partagee invalide (ex : secretariat@univ-evry.fr).")
+                ctx.target = target
             ctx.entry = await self._auth(config, emitter)
             result = await fn(ctx)
             await self._emit(emitter, ctx.done, done=True)
+            if ctx.card and config.get("visual_cards") and self.valves.enable_visual_cards:
+                embed = self._render_card(ctx.card, ctx)
+                if embed is not None:
+                    return embed, (
+                        result + "\n\n_(Une carte visuelle de ce resultat est affichee a l'utilisateur : "
+                        "ne recopiez pas toute la liste, donnez l'essentiel ou la suite a faire.)_"
+                    )
             return result
         except Exception as exc:  # every failure becomes a readable answer
             if not isinstance(exc, (ZimbraError, UserInputError)):
@@ -1497,6 +1721,8 @@ class Tools:
                 return "**Erreur TLS** : le certificat du serveur n'a pas pu etre verifie."
             return f"**Serveur injoignable** : {detail} Reessayez dans un moment."
         if isinstance(exc, ZimbraProtocolError):
+            if code == "service.PERM_DENIED":
+                return f"**Acces refuse{op}** : vous n'avez pas les droits necessaires (boite ou dossier partage en lecture seule ?)."
             known = {
                 "mail.NO_SUCH_MSG": "Cet email n'existe plus ou l'ID est incorrect.",
                 "mail.NO_SUCH_CONV": "Cette conversation est introuvable.",
@@ -1566,6 +1792,7 @@ class Tools:
                     "email": addr,
                     "display": display,
                     "label": f"{display} <{addr}>" if display else addr,
+                    "sig_id": attrs.get("zimbraPrefDefaultSignatureId", ""),
                 }
             )
         if not out and me:
@@ -1687,7 +1914,7 @@ class Tools:
         if extra:
             body.update(extra)
         resp = await self._soap(ctx, "SearchRequest", body)
-        key = {"message": "m", "conversation": "c", "appointment": "appt", "contact": "cn"}.get(types, "m")
+        key = {"message": "m", "conversation": "c", "appointment": "appt", "contact": "cn", "task": "task"}.get(types, "m")
         return _as_list(resp.get(key)), _safe_bool(resp.get("more")), resp
 
     async def _collect(self, ctx: _Ctx, query: str, max_items: int) -> Tuple[List[dict], bool]:
@@ -1860,9 +2087,134 @@ class Tools:
             raise UserInputError("Le corps du message est trop volumineux (limite : 1 Mo).")
         return body
 
-    def _with_signature(self, ctx: _Ctx, body: str) -> str:
-        sig = ctx.config.get("signature")
+    async def _signed(self, ctx: _Ctx, body: str, sender: Dict[str, str]) -> str:
+        """Body + the user's signature: the one in User Valves, else Partage's default."""
+        sig = ctx.config.get("signature", "")
+        if not sig and self.valves.use_zimbra_signature and sender.get("sig_id"):
+            sigs = ctx.entry.get("signatures")
+            if sigs is None:
+                sigs = {}
+                try:
+                    resp = await self._soap(ctx, "GetSignaturesRequest", {}, ns=NS_ACCOUNT)
+                    for item in _as_list(resp.get("signature")):
+                        parts = {(_content(c.get("type")) or "text/plain"): _content(c) for c in _as_list(item.get("content"))}
+                        text = parts.get("text/plain") or _clean_html(parts.get("text/html", ""))
+                        sigs[_content(item.get("id"))] = _clean_multiline(text, 2000).strip()
+                except ZimbraError:
+                    pass
+                ctx.entry["signatures"] = sigs
+            sig = sigs.get(sender["sig_id"], "")
         return f"{body.rstrip()}\n\n-- \n{sig}" if sig else body
+
+    def _select_chat_files(self, ctx: _Ctx, selector: str) -> List[Dict[str, Any]]:
+        """Chat files chosen by name ("all" for every file). Content is read later."""
+        sel = _clean_line(selector, 1000)
+        if not sel:
+            return []
+        candidates = []
+        for f in ctx.files:
+            inner = f.get("file") if isinstance(f.get("file"), dict) else {}
+            fid = str(f.get("id") or inner.get("id") or "")
+            if f.get("type", "file") != "file" or not fid or fid.startswith(("http://", "https://", "data:")):
+                continue
+            meta = inner.get("meta") if isinstance(inner.get("meta"), dict) else {}
+            candidates.append({
+                "id": fid,
+                "name": _clean_line(f.get("name") or inner.get("filename") or meta.get("name") or "fichier", 200),
+                "size": _safe_int(f.get("size") or meta.get("size")),
+            })
+        if not candidates:
+            raise UserInputError("Aucun fichier n'est joint a cette conversation. Ajoutez-le au message, puis reessayez.")
+        if _normalise_text(sel) in ("all", "tous", "tout", "*", "toutes"):
+            chosen = candidates
+        else:
+            chosen = []
+            for want in [w.strip() for w in sel.split(",") if w.strip()]:
+                match = [c for c in candidates if _normalise_text(c["name"]) == _normalise_text(want)] or [
+                    c for c in candidates if _normalise_text(want) in _normalise_text(c["name"])]
+                if not match:
+                    names = ", ".join(c["name"] for c in candidates)
+                    raise UserInputError(f"Fichier << {_md_escape(want)} >> absent du chat. Fichiers disponibles : {names}")
+                for c in match:
+                    if c not in chosen:
+                        chosen.append(c)
+        if len(chosen) > 20:
+            raise UserInputError("20 pieces jointes maximum par email.")
+        return chosen
+
+    async def _read_chat_file(self, ctx: _Ctx, file_id: str) -> Tuple[str, str, bytes]:
+        """Read an Open WebUI file the current user owns. Raises if it is someone else's."""
+        try:
+            from open_webui.models.files import Files
+            from open_webui.storage.provider import Storage
+        except ImportError as exc:
+            raise UserInputError("Les fichiers du chat ne sont lisibles que dans Open WebUI.") from exc
+        rec = await Files.get_file_by_id(file_id)
+        if not rec or not ctx.user_id or str(rec.user_id) != ctx.user_id:
+            raise UserInputError("Fichier introuvable ou appartenant a un autre utilisateur.")
+        path = await asyncio.to_thread(Storage.get_file, rec.path)
+        cap = int(self.valves.max_upload_mb) * 1024 * 1024
+        size = await asyncio.to_thread(os.path.getsize, path)
+        if size > cap:
+            raise UserInputError(f"<< {rec.filename} >> depasse {self.valves.max_upload_mb} Mo.")
+
+        def read() -> bytes:
+            with open(path, "rb") as fh:
+                return fh.read(cap + 1)
+
+        data = await asyncio.to_thread(read)
+        ctype = ((rec.meta or {}).get("content_type") or "application/octet-stream")
+        return rec.filename, str(ctype), data
+
+    async def _upload_files(self, ctx: _Ctx, files: List[Dict[str, Any]]) -> List[str]:
+        """Upload chat files to Zimbra's upload servlet and return attachment ids."""
+        aids = []
+        total = 0
+        for f in files:
+            name, ctype, data = await self._read_chat_file(ctx, f["id"])
+            total += len(data)
+            if total > int(self.valves.max_upload_mb) * 1024 * 1024:
+                raise UserInputError(f"Pieces jointes trop volumineuses (total max {self.valves.max_upload_mb} Mo).")
+            aids.append(await self._upload(ctx, name, ctype, data))
+        return aids
+
+    async def _upload(self, ctx: _Ctx, name: str, ctype: str, data: bytes) -> str:
+        from urllib.parse import quote
+
+        safe = re.sub(r"[\x00-\x1f\x7f\"\\/]+", "_", name)[:200] or "fichier"
+        ascii_name = safe.encode("ascii", "replace").decode().replace("?", "_")
+        if not re.fullmatch(r"[\w.+-]+/[\w.+-]+", ctype or ""):
+            ctype = "application/octet-stream"
+        url = f"{ctx.config['server']}/service/upload?fmt=raw"
+
+        def post() -> Tuple[int, str]:
+            r = requests.post(
+                url,
+                data=data,
+                headers={
+                    "Content-Type": ctype,
+                    "Content-Disposition": f"attachment; filename=\"{ascii_name}\"; filename*=UTF-8''{quote(safe)}",
+                    "User-Agent": f"OpenWebUI-Partage/{VERSION}",
+                },
+                cookies={"ZM_AUTH_TOKEN": ctx.token},
+                timeout=self._timeouts(),
+                verify=self._verify(),
+                allow_redirects=False,
+            )
+            return r.status_code, r.text[:2000]
+
+        try:
+            async with self._semaphore(ctx):
+                status, text = await asyncio.to_thread(post)
+        except requests.exceptions.RequestException as exc:
+            raise ZimbraTransportError("Envoi de la piece jointe impossible.") from exc
+        m = re.match(r"\s*(\d+)\s*,\s*'?[^,]*'?\s*,\s*'([^']+)'", text)
+        if status != 200 or not m or m.group(1) != "200":
+            code = m.group(1) if m else str(status)
+            if code == "413":
+                raise UserInputError(f"<< {name} >> est trop volumineux pour le serveur.")
+            raise ZimbraProtocolError(f"Le serveur a refuse la piece jointe << {name} >> (code {code}).")
+        return m.group(2)
 
     def _send_preview(
         self,
@@ -1899,8 +2251,19 @@ class Tools:
             raise ZimbraProtocolError("Email introuvable.", code="mail.NO_SUCH_MSG")
         return msg
 
-    async def _send(self, ctx: _Ctx, m: Dict[str, Any]) -> dict:
-        resp = await self._soap(ctx, "SendMsgRequest", {"m": m}, retryable=False)
+    async def _send(self, ctx: _Ctx, m: Dict[str, Any], fp: str = "") -> dict:
+        fp = fp or self._send_fingerprint(ctx, m)
+        if fp in self._inflight:
+            raise UserInputError("Un email identique est deja en cours d'envoi.")
+        self._inflight.add(fp)
+        try:
+            resp = await self._soap(ctx, "SendMsgRequest", {"m": m}, retryable=False)
+            self._recent_sends[fp] = time.monotonic()
+        except ZimbraAmbiguousError:
+            self._recent_sends[fp] = time.monotonic()
+            raise
+        finally:
+            self._inflight.discard(fp)
         return _first(resp.get("m"))
 
     async def _apply_action(self, ctx: _Ctx, ids: List[str], op: str, **extra: Any) -> int:
@@ -1923,6 +2286,7 @@ class Tools:
         limit: int = 25,
         offset: int = 0,
         unread_only: bool = False,
+        mailbox: str = "",
         __user__: dict = None,
         __event_emitter__: Callable = None,
     ) -> str:
@@ -1934,6 +2298,7 @@ class Tools:
         :param limit: Nombre d'emails (1-100, defaut 25)
         :param offset: Decalage pour la page suivante (defaut 0)
         :param unread_only: True pour n'afficher que les non lus
+        :param mailbox: Boite partagee ou deleguee a consulter (adresse), vide = votre boite
         :return: Liste avec ID, expediteur, sujet, date, statut et apercu
         """
 
@@ -1947,6 +2312,9 @@ class Tools:
                 recip="1" if show_to else "0",
             )
             ctx.done = f"{len(items)} email(s)"
+            ctx.card = {"kind": "emails", "title": f["label"] + (" - non lus" if unread_only else ""),
+                        "subtitle": f"{f['n']} emails, {f['u']} non lus" + (f" - {ctx.target}" if ctx.target else ""),
+                        "items": self._email_rows(items, ctx, show_to), "more": more}
             if not items:
                 return f"**{f['label']}** : aucun email{' non lu' if unread_only else ''}."
             head = f"**{f['label']}** - {f['n']} email(s), {f['u']} non lu(s) au total\n\n"
@@ -1954,7 +2322,7 @@ class Tools:
             tail = f"\n\n_Page suivante : offset={_safe_int(offset) + len(items)}_" if more else ""
             return head + body + tail
 
-        return await self._run(__user__, __event_emitter__, None, "lister les emails", run)
+        return await self._run(__user__, __event_emitter__, None, "lister les emails", run, mailbox=mailbox)
 
     async def search_emails(
         self,
@@ -1963,6 +2331,7 @@ class Tools:
         limit: int = 30,
         offset: int = 0,
         sort: str = "date_desc",
+        mailbox: str = "",
         __user__: dict = None,
         __event_emitter__: Callable = None,
     ) -> str:
@@ -1978,6 +2347,7 @@ class Tools:
         :param limit: Nombre de resultats (1-100, defaut 30)
         :param offset: Decalage pour la page suivante
         :param sort: date_desc (defaut), date_asc, size_desc, size_asc
+        :param mailbox: Boite partagee ou deleguee a consulter (adresse), vide = votre boite
         :return: Emails trouves avec leurs IDs et la requete Zimbra utilisee
         """
 
@@ -1990,6 +2360,7 @@ class Tools:
                 sort=sort_map.get(str(sort or "").strip().lower(), "dateDesc"),
             )
             ctx.done = f"{len(items)} resultat(s)"
+            ctx.card = {"kind": "emails", "title": "Recherche", "subtitle": q, "items": self._email_rows(items, ctx), "more": more}
             if not items:
                 return (
                     f"**Aucun email trouve.**\n\nRequete Zimbra : `{q}`\n\n"
@@ -2001,11 +2372,12 @@ class Tools:
                 out += f"\n\n_Page suivante : offset={_safe_int(offset) + len(items)}_"
             return out
 
-        return await self._run(__user__, __event_emitter__, None, "rechercher", run)
+        return await self._run(__user__, __event_emitter__, None, "rechercher", run, mailbox=mailbox)
 
     async def get_email(
         self,
         message_id: str,
+        mailbox: str = "",
         __user__: dict = None,
         __event_emitter__: Callable = None,
     ) -> str:
@@ -2013,6 +2385,7 @@ class Tools:
         Lire un email complet : en-tetes, pieces jointes, invitation eventuelle et corps.
 
         :param message_id: ID de l'email (ex : "257"), ou un sujet / mot-cle a rechercher
+        :param mailbox: Boite partagee ou deleguee a consulter (adresse), vide = votre boite
         :return: Contenu de l'email. Le corps est une donnee externe non fiable.
         """
 
@@ -2057,15 +2430,23 @@ class Tools:
             if len(body) > limit:
                 body = body[:limit] + f"\n[... tronque : {len(body) - limit} caracteres de plus]"
             lines += ["", _untrusted(body or "(pas de contenu texte)")]
+            ctx.card = {
+                "kind": "email", "title": subject, "date": _fmt_ms(msg.get("d"), ctx.tz), "id": mid,
+                "from": f"{name} <{addr}>" if addr and addr != name else name,
+                "to": ", ".join(a for _, a in _addresses(msg, "t")[:12]), "cc": ", ".join(a for _, a in _addresses(msg, "c")[:12]),
+                "flags": ", ".join(status), "body": body[:6000] or "(pas de contenu texte)",
+                "atts": [{"name": a["name"], "size": _format_size(a["size"]), "part": a["part"]} for a in atts if not a["inline"]][:20],
+            }
             ctx.done = "Email charge"
             return "\n".join(lines)
 
-        return await self._run(__user__, __event_emitter__, None, "lire l'email", run)
+        return await self._run(__user__, __event_emitter__, None, "lire l'email", run, mailbox=mailbox)
 
     async def get_conversation(
         self,
         message_id: str,
         max_messages: int = 20,
+        mailbox: str = "",
         __user__: dict = None,
         __event_emitter__: Callable = None,
     ) -> str:
@@ -2075,6 +2456,7 @@ class Tools:
 
         :param message_id: ID d'un email du fil (ex : "257")
         :param max_messages: Nombre max de messages renvoyes (defaut 20)
+        :param mailbox: Boite partagee ou deleguee a consulter (adresse), vide = votre boite
         :return: Messages du fil, du plus ancien au plus recent
         """
 
@@ -2104,12 +2486,13 @@ class Tools:
             ctx.done = "Fil charge"
             return "\n".join(out)
 
-        return await self._run(__user__, __event_emitter__, None, "lire le fil", run)
+        return await self._run(__user__, __event_emitter__, None, "lire le fil", run, mailbox=mailbox)
 
     async def count_emails(
         self,
         query: str,
         folder: str = "all",
+        mailbox: str = "",
         __user__: dict = None,
         __event_emitter__: Callable = None,
     ) -> str:
@@ -2119,6 +2502,7 @@ class Tools:
 
         :param query: Recherche (syntaxe Zimbra ou texte libre, ex : "from:remy.boyer@univ-evry.fr", "is:unread")
         :param folder: Dossier (all par defaut)
+        :param mailbox: Boite partagee ou deleguee a consulter (adresse), vide = votre boite
         :return: Total et statistiques
         """
 
@@ -2151,13 +2535,14 @@ class Tools:
             out.append("\n**Exemples :**\n" + self._samples(msgs, ctx))
             return "\n".join(out)
 
-        return await self._run(__user__, __event_emitter__, None, "compter les emails", run)
+        return await self._run(__user__, __event_emitter__, None, "compter les emails", run, mailbox=mailbox)
 
     async def mailbox_analytics(
         self,
         period: str = "30 derniers jours",
         folder: str = "inbox",
         top: int = 10,
+        mailbox: str = "",
         __user__: dict = None,
         __event_emitter__: Callable = None,
     ) -> str:
@@ -2169,6 +2554,7 @@ class Tools:
         :param period: Periode (ex : "7 derniers jours", "ce mois", "semaine derniere", "du 2026-10-01 au 2026-10-31")
         :param folder: Dossier analyse (inbox par defaut, all pour tout)
         :param top: Nombre d'expediteurs dans le classement (defaut 10)
+        :param mailbox: Boite partagee ou deleguee a analyser (adresse), vide = votre boite
         :return: Rapport statistique
         """
 
@@ -2231,15 +2617,28 @@ class Tools:
                 out.append(f"\n**Importants sans reponse ({len(pending)}) :**\n" + self._samples(pending, ctx, 8))
             if truncated:
                 out.append(f"\n_Analyse limitee aux {n} emails les plus recents._")
+            ctx.card = {
+                "kind": "analytics", "title": "Analyse de la boite mail",
+                "subtitle": f"{start.strftime('%d/%m/%Y')} -> {end.strftime('%d/%m/%Y')}",
+                "stats": [["Emails", f"{n}{'+' if truncated else ''}"], ["Non lus", f"{unread * 100 // n} %"],
+                          ["Repondus", f"{replied * 100 // n} %"], ["Avec PJ", att], ["Par jour", f"{n / days:.1f}"]],
+                "senders": [[name, count, un] for _, (name, count, un) in sorted(by_sender.items(), key=lambda kv: -kv[1][1])[:k]],
+                "hours": [by_hour.get(hr, 0) for hr in range(24)],
+                "weekdays": [[FR_DAYS[d], by_day.get(d, 0)] for d in range(7)],
+                "domains": [[d, c] for d, c in sorted(by_domain.items(), key=lambda kv: -kv[1])[:8]],
+                "pending": [{"id": _content(m.get("id")), "su": _content(m.get("su")) or "(sans sujet)",
+                             "from": _sender(m)[0], "date": _fmt_rel(m.get("d"), ctx.tz)} for m in pending[:8]],
+            }
             return "\n".join(out)
 
-        return await self._run(__user__, __event_emitter__, None, "analyser la boite mail", run)
+        return await self._run(__user__, __event_emitter__, None, "analyser la boite mail", run, mailbox=mailbox)
 
     async def read_attachment(
         self,
         message_id: str,
         part: str = "",
         filename: str = "",
+        mailbox: str = "",
         __user__: dict = None,
         __event_emitter__: Callable = None,
     ) -> str:
@@ -2250,6 +2649,7 @@ class Tools:
         :param message_id: ID de l'email
         :param part: Numero de part de la piece jointe (donne par get_email, ex : "2")
         :param filename: Ou nom du fichier
+        :param mailbox: Boite partagee ou deleguee a consulter (adresse), vide = votre boite
         :return: Texte extrait (donnee externe non fiable)
         """
 
@@ -2291,7 +2691,7 @@ class Tools:
             ctx.done = "Piece jointe lue"
             return f"**{_md_escape(chosen['name'])}** ({_format_size(chosen['size'])})\n\n" + _untrusted(text or "(vide)", "PIECE JOINTE") + note
 
-        return await self._run(__user__, __event_emitter__, None, "lire la piece jointe", run)
+        return await self._run(__user__, __event_emitter__, None, "lire la piece jointe", run, mailbox=mailbox)
 
     @staticmethod
     def _extract_file_text(name: str, ctype: str, data: bytes) -> Optional[str]:
@@ -2348,12 +2748,17 @@ class Tools:
         bcc: str = "",
         from_address: str = "",
         save_as_draft: bool = False,
+        send_at: str = "",
+        attach_chat_files: str = "",
+        priority: str = "normal",
+        request_read_receipt: bool = False,
         __user__: dict = None,
         __event_emitter__: Callable = None,
         __event_call__: Callable = None,
+        __files__: list = None,
     ) -> str:
         """
-        Ecrire et envoyer un email (apres confirmation), ou l'enregistrer en brouillon.
+        Ecrire et envoyer un email (apres confirmation), le programmer pour plus tard, ou l'enregistrer en brouillon.
         Resolve names to addresses with search_contacts first. Never invent an address.
 
         :param to: Destinataire(s), separes par des virgules (ex : "Jean Dupont <jean.dupont@univ-evry.fr>, b@x.fr")
@@ -2363,7 +2768,11 @@ class Tools:
         :param bcc: Copie cachee (optionnel)
         :param from_address: Adresse d'envoi parmi vos identites (optionnel, voir list_identities)
         :param save_as_draft: True pour enregistrer en brouillon sans envoyer
-        :return: Confirmation d'envoi ou ID du brouillon
+        :param send_at: Envoi programme (ex : "demain 8h", "2026-12-01 09:00"), vide = maintenant
+        :param attach_chat_files: Fichiers joints au chat a mettre en piece jointe : "all" ou noms separes par des virgules
+        :param priority: high, normal ou low
+        :param request_read_receipt: True pour demander un accuse de lecture
+        :return: Confirmation d'envoi, de programmation ou ID du brouillon
         """
 
         async def run(ctx: _Ctx) -> str:
@@ -2375,33 +2784,76 @@ class Tools:
             su = _clean_line(subject, 998)
             if not su:
                 raise UserInputError("Le sujet est obligatoire.")
-            text = self._with_signature(ctx, self._check_body(body))
+            raw_body = self._check_body(body)
+            when = None
+            if str(send_at or "").strip():
+                when, _ = _parse_datetime(send_at, ctx.now())
+                if when < ctx.now() + timedelta(minutes=1):
+                    raise UserInputError("L'heure d'envoi programme doit etre dans le futur.")
+                if when > ctx.now() + timedelta(days=365):
+                    raise UserInputError("L'envoi ne peut pas etre programme a plus d'un an.")
+            files = self._select_chat_files(ctx, attach_chat_files)
             sender, identities = await self._pick_sender(ctx, from_address)
-            m = {
+            text = await self._signed(ctx, raw_body, sender)
+            m: Dict[str, Any] = {
                 "su": su,
                 "e": self._e(to_l, "t") + self._e(cc_l, "c") + self._e(bcc_l, "b") + [self._from_e(sender)],
                 "mp": {"ct": "text/plain", "content": text},
             }
-            if save_as_draft:
+            prio = _normalise_text(priority)
+            if prio in ("high", "haute", "urgent", "importante", "elevee"):
+                m["f"] = "!"
+            elif prio in ("low", "basse", "faible"):
+                m["f"] = "?"
+            if _safe_bool(request_read_receipt):
+                m["e"].append({"t": "n", "a": sender["email"]})
+            if save_as_draft and not when:
+                if files:
+                    m["attach"] = {"aid": ",".join(await self._upload_files(ctx, files))}
                 resp = await self._soap(ctx, "SaveDraftRequest", {"m": m})
                 did = _content(_first(resp.get("m")).get("id"))
                 ctx.done = "Brouillon enregistre"
                 return f"**Brouillon enregistre** (ID `{did}`) : {_md_escape(su)}\nEnvoyez-le avec `send_draft`."
             self._require(self.valves.enable_send, "L'envoi d'emails")
-            if self.valves.require_confirmation_for_send:
-                preview = self._send_preview("ENVOYER CET EMAIL", sender, to_l, cc_l, bcc_l, su, text, identities=identities)
-                if not await self._confirm(ctx, "Envoyer l'email ?", preview):
+            fp = self._send_fingerprint(ctx, m)
+            warning = self._duplicate_warning(fp)
+            names = [f"{f['name']} ({_format_size(f['size'])})" for f in files]
+            title = "PROGRAMMER CET EMAIL" if when else "ENVOYER CET EMAIL"
+            if self.valves.require_confirmation_for_send or warning:
+                preview = self._send_preview(title, sender, to_l, cc_l, bcc_l, su, text, attachments=names, identities=identities)
+                if when:
+                    preview += f"\n\n**Envoi programme :** {_fr_date(when)} a {when.strftime('%H:%M')}"
+                if m.get("f") == "!":
+                    preview += "\n**Priorite haute**"
+                preview += warning
+                if not await self._confirm(ctx, "Programmer l'email ?" if when else "Envoyer l'email ?", preview):
                     return await self._cancelled(ctx, "L'email n'a pas ete envoye.")
+            if files:
+                await self._emit(ctx.emitter, f"Envoi de {len(files)} piece(s) jointe(s)...")
+                m["attach"] = {"aid": ",".join(await self._upload_files(ctx, files))}
+            if when:
+                m["autoSendTime"] = ctx.ms(when)
+                resp = await self._soap(ctx, "SaveDraftRequest", {"m": m})
+                did = _content(_first(resp.get("m")).get("id"))
+                self._recent_sends[fp] = time.monotonic()
+                ctx.done = "Envoi programme"
+                return (
+                    f"**Email programme** pour le {_fr_date(when)} a {when.strftime('%H:%M')} (brouillon `{did}`).\n"
+                    "Pour annuler : supprimez ce brouillon (`delete_emails`)."
+                )
             await self._emit(ctx.emitter, "Envoi...")
-            sent = await self._send(ctx, m)
+            sent = await self._send(ctx, m, fp)
             ctx.done = "Envoye"
             await self._notify(ctx.emitter, "Email envoye", "success")
-            return (
+            out = (
                 f"**Email envoye.**\n\n**De :** {_md_escape(sender['label'])}\n**A :** {_fmt_people(to_l)}\n"
                 f"**Sujet :** {_md_escape(su)}\n**ID :** `{_content(sent.get('id'), '-')}`"
             )
+            if files:
+                out += f"\n**Pieces jointes :** {', '.join(_md_escape(n) for n in names)}"
+            return out
 
-        return await self._run(__user__, __event_emitter__, __event_call__, "envoyer l'email", run)
+        return await self._run(__user__, __event_emitter__, __event_call__, "envoyer l'email", run, files=__files__)
 
     @staticmethod
     def _prefixed(subject: str, prefix: str) -> str:
@@ -2459,7 +2911,7 @@ class Tools:
             su = self._prefixed(_content(orig.get("su")), "Re")
             name, addr = _sender(orig)
             quoted = "\n".join("> " + ln for ln in _extract_body(orig)[:6000].splitlines())
-            text = self._with_signature(ctx, self._check_body(body))
+            text = await self._signed(ctx, self._check_body(body), sender)
             text += f"\n\nLe {_fmt_ms(orig.get('d'), ctx.tz)}, {name} <{addr}> a ecrit :\n{quoted}"
             m: Dict[str, Any] = {
                 "su": su,
@@ -2474,12 +2926,14 @@ class Tools:
                 resp = await self._soap(ctx, "SaveDraftRequest", {"m": m})
                 return f"**Reponse enregistree en brouillon** (ID `{_content(_first(resp.get('m')).get('id'))}`)."
             self._require(self.valves.enable_send, "L'envoi d'emails")
-            if self.valves.require_confirmation_for_send:
-                preview = self._send_preview("ENVOYER LA REPONSE", sender, to_l, cc_l, [], su, body, identities=identities)
+            fp = self._send_fingerprint(ctx, m)
+            warning = self._duplicate_warning(fp)
+            if self.valves.require_confirmation_for_send or warning:
+                preview = self._send_preview("ENVOYER LA REPONSE", sender, to_l, cc_l, [], su, body, identities=identities) + warning
                 if not await self._confirm(ctx, "Envoyer la reponse ?", preview):
                     return await self._cancelled(ctx, "La reponse n'a pas ete envoyee.")
             await self._emit(ctx.emitter, "Envoi de la reponse...")
-            await self._send(ctx, m)
+            await self._send(ctx, m, fp)
             ctx.done = "Reponse envoyee"
             await self._notify(ctx.emitter, "Reponse envoyee", "success")
             return f"**Reponse envoyee** a {_fmt_people(to_l)}" + (f", copie {_fmt_people(cc_l)}" if cc_l else "") + f"\n**Sujet :** {_md_escape(su)}"
@@ -2525,7 +2979,7 @@ class Tools:
                 f"Sujet : {_content(orig.get('su'))}\n"
                 f"A : {', '.join(a for _, a in _addresses(orig, 't'))}\n\n"
             )
-            intro = self._with_signature(ctx, self._check_body(comment)) if comment.strip() else ""
+            intro = await self._signed(ctx, self._check_body(comment), sender) if comment.strip() else ""
             text = (intro + "\n\n" if intro else "") + header + _extract_body(orig)
             m: Dict[str, Any] = {
                 "su": su,
@@ -2537,16 +2991,18 @@ class Tools:
             atts = [a for a in _attachments(orig) if not a["inline"]] if include_attachments else []
             if atts:
                 m["attach"] = {"mp": [{"mid": mid, "part": a["part"]} for a in atts]}
-            if self.valves.require_confirmation_for_send:
+            fp = self._send_fingerprint(ctx, m)
+            warning = self._duplicate_warning(fp)
+            if self.valves.require_confirmation_for_send or warning:
                 preview = self._send_preview(
                     "TRANSFERER CET EMAIL", sender, to_l, cc_l, [], su, comment or "(sans commentaire)",
                     attachments=[a["name"] for a in atts], identities=identities,
                 )
-                preview += f"\n\n_Email d'origine de {_md_escape(name)} ({_fmt_ms(orig.get('d'), ctx.tz)})_"
+                preview += f"\n\n_Email d'origine de {_md_escape(name)} ({_fmt_ms(orig.get('d'), ctx.tz)})_" + warning
                 if not await self._confirm(ctx, "Transferer l'email ?", preview):
                     return await self._cancelled(ctx, "L'email n'a pas ete transfere.")
             await self._emit(ctx.emitter, "Transfert...")
-            await self._send(ctx, m)
+            await self._send(ctx, m, fp)
             ctx.done = "Transfere"
             await self._notify(ctx.emitter, "Email transfere", "success")
             return f"**Email transfere** a {_fmt_people(to_l)}" + (f" avec {len(atts)} piece(s) jointe(s)" if atts else "") + "."
@@ -2598,12 +3054,14 @@ class Tools:
             if _content(draft.get("origid")):
                 m["origid"] = _content(draft.get("origid"))
                 m["rt"] = _content(draft.get("rt")) or "r"
-            if self.valves.require_confirmation_for_send:
+            fp = self._send_fingerprint(ctx, m)
+            warning = self._duplicate_warning(fp)
+            if self.valves.require_confirmation_for_send or warning:
                 preview = self._send_preview("ENVOYER CE BROUILLON", sender, to_l, cc_l, bcc_l, su, text,
-                                             attachments=[a["name"] for a in atts], identities=identities)
+                                             attachments=[a["name"] for a in atts], identities=identities) + warning
                 if not await self._confirm(ctx, "Envoyer le brouillon ?", preview):
                     return await self._cancelled(ctx, "Le brouillon n'a pas ete envoye.")
-            await self._send(ctx, m)
+            await self._send(ctx, m, fp)
             ctx.done = "Envoye"
             return f"**Brouillon envoye** : {_md_escape(su)} -> {_fmt_people(to_l + cc_l)}"
 
@@ -2903,6 +3361,7 @@ class Tools:
     async def list_folders(
         self,
         include_calendars: bool = False,
+        mailbox: str = "",
         __user__: dict = None,
         __event_emitter__: Callable = None,
     ) -> str:
@@ -2910,6 +3369,7 @@ class Tools:
         Lister les dossiers de la boite mail (avec IDs, nombre d'emails et non lus) et les etiquettes.
 
         :param include_calendars: True pour inclure aussi calendriers, contacts et taches
+        :param mailbox: Boite partagee ou deleguee a consulter (adresse), vide = votre boite
         :return: Arborescence des dossiers
         """
 
@@ -2932,7 +3392,7 @@ class Tools:
                 out.append("\n**Etiquettes :** " + ", ".join(f"{_md_escape(_content(t.get('name')))} ({_safe_int(t.get('n'))})" for t in tags))
             return "\n".join(out)
 
-        return await self._run(__user__, __event_emitter__, None, "lister les dossiers", run)
+        return await self._run(__user__, __event_emitter__, None, "lister les dossiers", run, mailbox=mailbox)
 
     async def get_mailbox_info(
         self,
@@ -2964,8 +3424,15 @@ class Tools:
                 out.append(f"**Espace utilise :** {_format_size(used)} (pas de quota)")
             out.append(f"**Emails :** {sum(f['n'] for f in mail):,} dont {sum(f['u'] for f in mail):,} non lus".replace(",", " "))
             out.append("\n**Plus gros dossiers :**")
-            for f in sorted(mail, key=lambda x: -x["s"])[:8]:
+            biggest = sorted(mail, key=lambda x: -x["s"])[:8]
+            for f in biggest:
                 out.append(f"- {_md_escape(f['path'])} : {f['n']} email(s), {_format_size(f['s'])}")
+            ctx.card = {
+                "kind": "quota", "title": "Boite mail",
+                "subtitle": f"{_format_size(used)}" + (f" / {_format_size(quota)} ({used * 100 / quota:.1f} %)" if quota else " (pas de quota)"),
+                "pct": round(used * 100 / quota, 1) if quota else None,
+                "folders": [[f["path"], f["s"], _format_size(f["s"])] for f in biggest],
+            }
             return "\n".join(out)
 
         return await self._run(__user__, __event_emitter__, None, "lire les informations", run)
@@ -3323,6 +3790,7 @@ class Tools:
         search_keyword: str = "",
         calendar: str = "all",
         limit: int = 100,
+        mailbox: str = "",
         __user__: dict = None,
         __event_emitter__: Callable = None,
     ) -> str:
@@ -3334,6 +3802,7 @@ class Tools:
         :param search_keyword: Filtrer par mot-cle dans le titre, lieu ou description (optionnel)
         :param calendar: Nom ou ID d'un calendrier (all par defaut)
         :param limit: Nombre max d'evenements (defaut 100)
+        :param mailbox: Boite partagee ou deleguee a consulter (adresse), vide = votre boite
         :return: Evenements groupes par jour
         """
 
@@ -3386,7 +3855,14 @@ class Tools:
                     if appt.get("recur") or _safe_bool(appt.get("recur")) or inst.get("ridZ"):
                         line += " _(recurrent)_"
                     line += f"\n  ID `{_content(appt.get('id'))}` - invId `{_content(appt.get('invId'))}`"
-                    rows.append((st.timestamp(), st.date().isoformat(), line))
+                    ev = {
+                        "time": self._fmt_inst_time(st, en, all_day), "title": name, "loc": loc,
+                        "org": (_content(org.get("d")) or org_addr) if org_addr and org_addr.casefold() != me else "",
+                        "status": PTST_LABELS.get(ptst, "") if org_addr and org_addr.casefold() != me else "",
+                        "st": ptst if org_addr and org_addr.casefold() != me else "", "id": _content(appt.get("id")),
+                        "free": _content(appt.get("fba")) == "F" or _content(appt.get("fb")) == "F",
+                    }
+                    rows.append((st.timestamp(), st.date().isoformat(), line, ev))
             rows.sort()
             ctx.done = f"{len(rows)} evenement(s)"
             label = f"{start.strftime('%d/%m/%Y')}" + (f" -> {end.strftime('%d/%m/%Y')}" if start.date() != end.date() else "")
@@ -3394,22 +3870,28 @@ class Tools:
                 return f"**Aucun evenement** ({label}){' pour << ' + _md_escape(kw) + ' >>' if kw else ''}."
             out = [f"**Agenda : {label}** - {len(rows)} evenement(s)" + (f" (<< {_md_escape(kw)} >>)" if kw else "")]
             current = ""
-            for _, day, line in rows[:300]:
+            days: List[Dict[str, Any]] = []
+            for _, day, line, ev in rows[:300]:
                 if day != current:
                     current = day
                     d = datetime.fromisoformat(day)
                     tag = " (aujourd'hui)" if d.date() == now.date() else " (demain)" if d.date() == (now + timedelta(days=1)).date() else ""
                     out.append(f"\n### {_fr_date(d).capitalize()}{tag}")
+                    days.append({"label": _fr_date(d).capitalize(), "tag": tag.strip(" ()"), "events": []})
                 out.append(line)
+                days[-1]["events"].append(ev)
+            ctx.card = {"kind": "agenda", "title": "Agenda", "subtitle": label + (f" - {ctx.target}" if ctx.target else ""),
+                        "count": len(rows), "days": days}
             if more:
                 out.append("\n_D'autres evenements existent : reduisez la periode ou augmentez limit._")
             return "\n".join(out)
 
-        return await self._run(__user__, __event_emitter__, None, "lire l'agenda", run)
+        return await self._run(__user__, __event_emitter__, None, "lire l'agenda", run, mailbox=mailbox)
 
     async def get_event_details(
         self,
         event_id: str,
+        mailbox: str = "",
         __user__: dict = None,
         __event_emitter__: Callable = None,
     ) -> str:
@@ -3417,6 +3899,7 @@ class Tools:
         Details d'un evenement : horaires, lieu, description, organisateur, participants et leurs reponses.
 
         :param event_id: ID ou invId de l'evenement (donnes par get_calendar_events), ou ID d'un email d'invitation
+        :param mailbox: Boite partagee ou deleguee a consulter (adresse), vide = votre boite
         :return: Fiche de l'evenement
         """
 
@@ -3456,7 +3939,7 @@ class Tools:
             out.append(f"\nID `{ev['appt_id']}` - invId `{ev['inv_id']}`")
             return "\n".join(out)
 
-        return await self._run(__user__, __event_emitter__, None, "lire l'evenement", run)
+        return await self._run(__user__, __event_emitter__, None, "lire l'evenement", run, mailbox=mailbox)
 
     async def create_calendar_event(
         self,
@@ -3477,6 +3960,7 @@ class Tools:
         show_as: str = "busy",
         private: bool = False,
         calendar: str = "",
+        room: str = "",
         __user__: dict = None,
         __event_emitter__: Callable = None,
         __event_call__: Callable = None,
@@ -3502,6 +3986,7 @@ class Tools:
         :param show_as: busy, free, tentative, out_of_office
         :param private: True pour un evenement prive
         :param calendar: Calendrier cible (defaut : calendrier principal)
+        :param room: Adresse de la salle a reserver (voir find_rooms), optionnel
         :return: Confirmation avec l'ID de l'evenement
         """
 
@@ -3555,11 +4040,14 @@ class Tools:
             if desc:
                 comp["desc"] = {"_content": desc}
             people = [(p, "REQ") for p in req] + [(p, "OPT") for p in opt]
-            if people:
+            rooms = self._recipients(room, "salle")[:1]
+            if people or rooms:
                 comp["at"] = [
                     {"a": a, **({"d": n} if n and n != a else {}), "role": role, "ptst": "NE", "rsvp": "1"}
                     for (n, a), role in people
-                ]
+                ] + [{"a": a, "cutype": "RES", "role": "NON", "ptst": "NE", "rsvp": "1"} for _, a in rooms]
+                if rooms and not loc:
+                    comp["loc"] = loc = rooms[0][1]
             if rec:
                 comp["recur"] = rec
             rem = _safe_int(reminder_minutes, 15)
@@ -3572,14 +4060,14 @@ class Tools:
             }
             if calendar:
                 m["l"] = (await self._resolve_folder(ctx, calendar, views=("appointment",)))["id"]
-            if people:
-                m["e"] = [{"a": a, "t": "t"} for (_, a), _r in people]
+            if people or rooms:
+                m["e"] = [{"a": a, "t": "t"} for (_, a), _r in people] + [{"a": a, "t": "t"} for _, a in rooms]
 
             when = _fr_date(st).capitalize() + (" (toute la journee)" if whole else f", {st.strftime('%H:%M')} - {en.strftime('%H:%M')}")
             conflicts: List[str] = []
             if not whole:
                 try:
-                    users = [me] + [a for (_, a), _r in people]
+                    users = [me] + [a for (_, a), _r in people] + [a for _, a in rooms]
                     fbm = await self._freebusy(ctx, users, ctx.ms(st), ctx.ms(en))
                     for uid, data in fbm.items():
                         if data["busy"]:
@@ -3596,6 +4084,8 @@ class Tools:
                 lines.append(f"**Lieu :** {_md_escape(loc) or '(aucun)'}")
                 if people:
                     lines.append(f"**Invitations envoyees a :** {_fmt_people([p for p, _ in people])}")
+                if rooms:
+                    lines.append(f"**Salle reservee :** `{rooms[0][1]}`")
                 if desc:
                     lines += ["", _quote(desc, 600)]
                 if conflicts:
@@ -3983,13 +4473,18 @@ class Tools:
             if not slots:
                 return head + "\n\nAucun creneau commun. Essayez une periode plus longue ou une duree plus courte."
             out = [head, ""]
+            items = []
             for s, e in slots[:n]:
                 st, en = ctx.local(s), ctx.local(e)
                 propose = ctx.local(s + dur)
+                items.append({"day": _fr_date(st).capitalize(), "iso": st.strftime("%Y-%m-%d"), "start": st.strftime("%H:%M"),
+                              "end": propose.strftime("%H:%M"), "until": en.strftime("%H:%M")})
                 out.append(f"- **{_fr_date(st).capitalize()} {st.strftime('%H:%M')} - {propose.strftime('%H:%M')}** _(libre jusqu'a {en.strftime('%H:%M')})_")
             if unknown:
                 out.append(f"\n_Agenda non consultable pour : {', '.join(unknown)} (non pris en compte)._")
             out.append("\nPour reserver : `create_calendar_event` avec le creneau choisi.")
+            ctx.card = {"kind": "slots", "title": f"Creneaux de {dur // 60000} min", "subtitle": f"{start.strftime('%d/%m')} -> {end.strftime('%d/%m')}",
+                        "who": ", ".join(users[1:]), "items": items}
             return "\n".join(out)
 
         return await self._run(__user__, __event_emitter__, None, "chercher des creneaux", run)
@@ -4021,50 +4516,912 @@ class Tools:
 
         return await self._run(__user__, __event_emitter__, None, "tester la connexion", run)
 
+    HELP_SECTIONS = [
+        ("Lire et chercher", ["Montre mes emails non lus", "Cherche les emails de remy.boyer@univ-evry.fr avec piece jointe ce mois-ci",
+                              "Resume le fil de discussion de l'email 257", "Que dit la piece jointe de l'email 312 ?"]),
+        ("Analyser", ["Analyse ma boite des 30 derniers jours", "Combien d'emails j'ai recus de JumpServer ?",
+                      "Quels emails importants attendent une reponse ?"]),
+        ("Ecrire", ["Ecris a Jean Dupont pour decaler la reunion de demain", "Envoie le fichier joint a pierre@univ-evry.fr",
+                    "Programme cet email pour lundi 8h", "Reponds a tous sur l'email 257 que je serai present"]),
+        ("Ranger", ["Mets a la corbeille les emails de noreply@exemple.fr", "Cree un filtre : emails de JumpServer vers le dossier Notifications",
+                    "Bloque l'expediteur spam@exemple.com", "Vide la corbeille"]),
+        ("Calendrier", ["Qu'est-ce que j'ai demain ?", "Trouve un creneau d'une heure la semaine prochaine avec Marie et Paul",
+                        "Trouve une salle libre mardi de 14h a 16h pour 10 personnes", "Accepte l'invitation au conseil de laboratoire"]),
+        ("Taches", ["Quelles taches sont en retard ?", "Ajoute une tache : rapport ANR pour vendredi, priorite haute",
+                    "Marque la tache rapport ANR comme terminee"]),
+        ("Contacts et partages", ["Quelle est l'adresse de Remy Boyer ?", "Ajoute Marie Curie marie@exemple.fr a mes contacts",
+                                  "Qui est dans la liste equipe@univ-evry.fr ?", "Quels dossiers partage-t-on avec moi ?",
+                                  "Montre les emails de la boite secretariat@univ-evry.fr"]),
+        ("Compte", ["Teste ma connexion Partage", "Combien d'espace me reste-t-il ?", "Active mon message d'absence du 20 decembre au 5 janvier"]),
+    ]
+    WHATS_NEW = ["taches", "filtres de tri", "salles", "partages et boites deleguees", "envoi programme",
+                 "fichiers du chat en piece jointe", "contacts personnels", "cartes visuelles"]
+
     async def help(
         self,
         __user__: dict = None,
         __event_emitter__: Callable = None,
     ) -> str:
         """
-        Guide d'utilisation : ce que l'outil sait faire, avec des exemples de questions.
+        Guide d'utilisation : ce que l'outil sait faire, avec des exemples de questions et les nouveautes de la version.
         Call this when the user asks something unrelated to email or calendar.
 
         :return: Guide
         """
         await self._emit(__event_emitter__, "Aide", done=True)
-        return f"""# Partage (Zimbra) - v{VERSION}
+        text = [f"# Partage (Zimbra) - v{VERSION}", "", "Je gere **vos emails, votre calendrier, vos taches et vos contacts Partage**. "
+                "Toute action qui envoie, supprime ou modifie demande votre confirmation.", ""]
+        for title, examples in self.HELP_SECTIONS:
+            text.append(f"**{title}**")
+            text += [f"- << {e} >>" for e in examples]
+            text.append("")
+        text.append(f"_Nouveau dans la v{VERSION} : {', '.join(self.WHATS_NEW)}._")
+        text.append("\n**Configuration** : Outils -> Partage (Zimbra) -> reglages utilisateur : adresse Partage et mot de passe.")
+        result = "\n".join(text)
+        config = self._get_config(__user__) if __user__ else {}
+        wants_cards = config.get("visual_cards", True) if config.get("valid") else _safe_bool(
+            self._read(self._valve_sources(__user__), "visual_cards") or "true", True) if isinstance(__user__, dict) else True
+        if self.valves.enable_visual_cards and wants_cards:
+            embed = self._render_card({
+                "kind": "help", "title": "Partage (Zimbra)", "subtitle": "emails, calendrier, taches, contacts",
+                "version": VERSION, "news": self.WHATS_NEW,
+                "sections": [{"title": t, "items": e} for t, e in self.HELP_SECTIONS],
+            })
+            if embed is not None:
+                return embed, result + "\n\n_(Le guide est affiche en carte visuelle : resumez en une phrase.)_"
+        return result
 
-Je peux gerer **vos emails et votre calendrier Partage**. Exemples :
+    # ================================================================
+    # TASKS
+    # ================================================================
 
-**Lire et chercher**
-- << Montre mes emails non lus >> - << Qu'y a-t-il dans mon dossier Projets ? >>
-- << Cherche les emails de remy.boyer@univ-evry.fr avec piece jointe ce mois-ci >>
-- << Lis l'email 257 >> - << Resume le fil de discussion de cet email >>
-- << Que dit la piece jointe PDF de l'email 312 ? >>
+    TASK_STATUS = {
+        "NEED": "a faire", "INPR": "en cours", "WAITING": "en attente", "DEFERRED": "reportee", "COMP": "terminee",
+    }
 
-**Analyser**
-- << Combien d'emails j'ai recus de JumpServer ? >>
-- << Analyse ma boite des 30 derniers jours : qui m'ecrit le plus ? >>
-- << Quels emails importants attendent une reponse ? >>
+    @staticmethod
+    def _priority_code(value: str) -> str:
+        v = _normalise_text(value)
+        if v in ("high", "haute", "urgent", "urgente", "importante", "elevee", "1"):
+            return "1"
+        if v in ("low", "basse", "faible", "9"):
+            return "9"
+        return "5"
 
-**Ecrire** (toujours avec confirmation)
-- << Ecris a Jean Dupont pour decaler la reunion de demain >>
-- << Reponds a tous sur l'email 257 que je serai present >>
-- << Transfere l'email 312 a pierre@univ-evry.fr >> - << Garde-le en brouillon >>
+    async def _task_folders(self, ctx: _Ctx) -> List[Dict[str, Any]]:
+        tasks = [f for f in await self._load_folders(ctx) if f["view"] == "task" and not f["path"].startswith("/Trash")]
+        return tasks or [{"id": "15", "name": "Taches", "path": "/Tasks", "link": False, "label": "Taches"}]
 
-**Ranger** (confirmation pour les suppressions et les gros volumes)
-- << Mets a la corbeille les emails de noreply@exemple.fr >>
-- << Deplace l'email 257 dans Projets/2026 >> - << Marque tout comme lu >>
-- << Etiquette ces emails "Urgent" >> - << Cree un dossier Conferences >> - << Vide la corbeille >>
+    async def _load_task(self, ctx: _Ctx, task_id: str) -> Dict[str, Any]:
+        ref = _clean_line(task_id, 120).strip("`")
+        if not re.fullmatch(r"\d+(?:-\d+)?", ref):
+            raise UserInputError("ID de tache invalide (ex : 612). Utilisez list_tasks.")
+        tid = ref.split("-")[0]
+        resp = await self._soap(ctx, "GetTaskRequest", {"id": tid})
+        task = _first(resp.get("task"))
+        inv = _first(task.get("inv"))
+        comp = _first(inv.get("comp"))
+        if not comp:
+            raise ZimbraProtocolError("Tache introuvable.", code="mail.NO_SUCH_TASK")
+        return {"id": tid, "inv_id": f"{tid}-{_content(inv.get('id'))}", "comp": comp}
 
-**Calendrier**
-- << Qu'est-ce que j'ai demain ? >> - << Mon agenda de la semaine prochaine >>
-- << Cree une reunion jeudi 14h-15h avec pierre@univ-evry.fr en salle B204 >>
-- << Trouve un creneau d'une heure la semaine prochaine avec Marie et Paul >>
-- << Accepte l'invitation au conseil de laboratoire >> - << Decale ma reunion de 10h a 11h >>
+    async def list_tasks(
+        self,
+        status: str = "open",
+        search_keyword: str = "",
+        limit: int = 50,
+        mailbox: str = "",
+        __user__: dict = None,
+        __event_emitter__: Callable = None,
+    ) -> str:
+        """
+        Lister les taches Partage (onglet Taches), avec echeance, priorite, avancement et retards.
 
-**Autres** : contacts de l'annuaire, adresses d'envoi, message d'absence, quota, dossiers, test de connexion.
+        :param status: open (a faire, defaut), done (terminees), overdue (en retard) ou all
+        :param search_keyword: Filtrer par mot-cle (optionnel)
+        :param limit: Nombre max de taches (defaut 50)
+        :param mailbox: Boite partagee ou deleguee a consulter (adresse), vide = votre boite
+        :return: Taches avec leurs IDs
+        """
 
-**Configuration** : Outils -> Partage (Zimbra) -> reglages utilisateur : adresse Partage et mot de passe.
-"""
+        async def run(ctx: _Ctx) -> str:
+            folders = await self._task_folders(ctx)
+            q = "(" + " OR ".join(f"inid:{f['id']}" for f in folders) + ")"
+            kw = _clean_line(search_keyword, 200).replace('"', "")
+            if kw:
+                q += f' "{kw}"'
+            st = _normalise_text(status) or "open"
+            extra: Dict[str, Any] = {}
+            if st in ("open", "a faire", "ouvertes", "overdue", "en retard"):
+                extra["allowableTaskStatus"] = "need,inprogress,waiting,deferred"
+            elif st in ("done", "terminees", "completed", "finies"):
+                extra["allowableTaskStatus"] = "completed"
+            items, more, _ = await self._search(ctx, q, types="task", limit=max(1, min(_safe_int(limit, 50), 200)), sort="taskDueAsc", extra=extra)
+            now_ms = int(time.time() * 1000)
+            rows = []
+            for t in items:
+                due = _safe_int(t.get("dueDate"))
+                status_code = _content(t.get("status")) or "NEED"
+                overdue = bool(due) and due < now_ms and status_code != "COMP"
+                if st in ("overdue", "en retard") and not overdue:
+                    continue
+                rows.append({
+                    "id": _content(t.get("id")), "title": _content(t.get("name")) or "(sans titre)",
+                    "status": status_code, "pct": _safe_int(t.get("percentComplete")),
+                    "prio": {"1": "haute", "9": "basse"}.get(_content(t.get("priority")), "normale"),
+                    "due": _fmt_ms(due, ctx.tz)[:10] if due else "", "overdue": overdue,
+                    "fr": _clean_line(_content(t.get("fr")), 120),
+                })
+            ctx.done = f"{len(rows)} tache(s)"
+            ctx.card = {"kind": "tasks", "title": "Taches", "items": rows}
+            if not rows:
+                return "**Aucune tache** ne correspond."
+            out = [f"**{len(rows)} tache(s)**", ""]
+            for r in rows:
+                line = f"- **{_md_escape(r['title'])}** - {self.TASK_STATUS.get(r['status'], r['status'])}"
+                if r["pct"]:
+                    line += f" ({r['pct']} %)"
+                if r["due"]:
+                    line += f" - echeance {r['due']}" + (" **EN RETARD**" if r["overdue"] else "")
+                if r["prio"] != "normale":
+                    line += f" - priorite {r['prio']}"
+                line += f" - ID `{r['id']}`"
+                out.append(line)
+            if more:
+                out.append("\n_D'autres taches existent : augmentez limit._")
+            return "\n".join(out)
+
+        return await self._run(__user__, __event_emitter__, None, "lister les taches", run, mailbox=mailbox)
+
+    async def create_task(
+        self,
+        title: str,
+        due_date: str = "",
+        priority: str = "normal",
+        notes: str = "",
+        start_date: str = "",
+        reminder: str = "",
+        task_list: str = "",
+        __user__: dict = None,
+        __event_emitter__: Callable = None,
+    ) -> str:
+        """
+        Creer une tache dans Partage (onglet Taches).
+
+        :param title: Intitule de la tache
+        :param due_date: Echeance (ex : "vendredi", "2026-12-15"), optionnel
+        :param priority: high, normal ou low
+        :param notes: Notes / description (optionnel)
+        :param start_date: Date de debut (optionnel)
+        :param reminder: Rappel a une date et heure (ex : "jeudi 9h"), optionnel
+        :param task_list: Liste de taches cible (defaut : Taches)
+        :return: Confirmation avec l'ID de la tache
+        """
+
+        async def run(ctx: _Ctx) -> str:
+            name = _clean_line(title, 255)
+            if not name:
+                raise UserInputError("L'intitule de la tache est obligatoire.")
+            now = ctx.now()
+            comp: Dict[str, Any] = {
+                "name": name, "priority": self._priority_code(priority), "percentComplete": "0",
+                "status": "NEED", "allDay": "1", "or": {"a": await self._account_name(ctx)},
+            }
+            due = start = None
+            if str(due_date or "").strip():
+                due = _parse_period(due_date, now)[0]
+                comp["e"] = {"d": due.strftime("%Y%m%d")}
+            if str(start_date or "").strip():
+                start = _parse_period(start_date, now)[0]
+                comp["s"] = {"d": start.strftime("%Y%m%d")}
+            elif due:
+                comp["s"] = {"d": min(_sod(now), due).strftime("%Y%m%d")}
+            if due and start and due < start:
+                raise UserInputError("L'echeance est avant la date de debut.")
+            text = _clean_multiline(notes, 20000).strip()
+            if text:
+                comp["desc"] = {"_content": text}
+            if str(reminder or "").strip():
+                at, _ = _parse_datetime(reminder, now)
+                utc = at.replace(tzinfo=ctx.tz).astimezone(timezone.utc)
+                comp["alarm"] = [{"action": "DISPLAY", "trigger": {"abs": {"d": utc.strftime("%Y%m%dT%H%M%SZ")}}, "desc": {}}]
+            folder = (await self._resolve_folder(ctx, task_list, views=("task",)))["id"] if task_list else "15"
+            m = {"su": name, "l": folder, "inv": {"comp": [comp]}, "mp": {"ct": "text/plain", "content": text}}
+            resp = await self._soap(ctx, "CreateTaskRequest", {"m": m}, retryable=False)
+            ctx.done = "Tache creee"
+            out = f"**Tache creee** : {_md_escape(name)}"
+            if due:
+                out += f" - echeance {_fr_date(due)}"
+            return out + f"\nID `{_content(resp.get('calItemId'))}`"
+
+        return await self._run(__user__, __event_emitter__, None, "creer la tache", run)
+
+    async def update_task(
+        self,
+        task_id: str,
+        title: str = "",
+        due_date: str = "",
+        priority: str = "",
+        status: str = "",
+        percent_complete: int = -1,
+        notes: str = "",
+        __user__: dict = None,
+        __event_emitter__: Callable = None,
+    ) -> str:
+        """
+        Modifier une tache, ou la marquer terminee (status="done"). Champ vide = inchange ; "-" efface l'echeance ou les notes.
+
+        :param task_id: ID de la tache (donne par list_tasks)
+        :param title: Nouvel intitule
+        :param due_date: Nouvelle echeance ("-" pour l'effacer)
+        :param priority: high, normal ou low
+        :param status: todo, in_progress, waiting, deferred ou done
+        :param percent_complete: Avancement 0-100 (-1 = inchange)
+        :param notes: Nouvelles notes ("-" pour effacer)
+        :return: Confirmation
+        """
+        status_map = {
+            "todo": "NEED", "a faire": "NEED", "need": "NEED", "in_progress": "INPR", "en cours": "INPR",
+            "waiting": "WAITING", "en attente": "WAITING", "deferred": "DEFERRED", "reportee": "DEFERRED",
+            "done": "COMP", "terminee": "COMP", "complete": "COMP", "completed": "COMP", "fini": "COMP",
+        }
+
+        async def run(ctx: _Ctx) -> str:
+            task = await self._load_task(ctx, task_id)
+            comp = task["comp"]
+            new = self._comp_copy(comp)
+            for key in ("percentComplete", "priority", "status"):
+                if key in comp:
+                    new[key] = comp[key]
+            new.setdefault("status", "NEED")
+            new.pop("at", None)
+            changes = []
+            if title.strip():
+                new["name"] = _clean_line(title, 255)
+                changes.append(f"intitule -> {_md_escape(new['name'])}")
+            if due_date.strip():
+                if due_date.strip() == "-":
+                    new.pop("e", None)
+                    changes.append("echeance effacee")
+                else:
+                    due = _parse_period(due_date, ctx.now())[0]
+                    new["e"] = {"d": due.strftime("%Y%m%d")}
+                    new["allDay"] = "1"
+                    if "s" in new and _content(new["s"].get("d"))[:8] > due.strftime("%Y%m%d"):
+                        new["s"] = {"d": due.strftime("%Y%m%d")}
+                    changes.append(f"echeance -> {_fr_date(due)}")
+            if priority.strip():
+                new["priority"] = self._priority_code(priority)
+                changes.append(f"priorite -> {priority}")
+            if status.strip():
+                code = status_map.get(_normalise_text(status).replace("-", "_"))
+                if not code:
+                    raise UserInputError("Statut inconnu : todo, in_progress, waiting, deferred ou done.")
+                new["status"] = code
+                if code == "COMP":
+                    new["percentComplete"] = "100"
+                elif _content(new.get("percentComplete")) == "100":
+                    new["percentComplete"] = "0"
+                changes.append(f"statut -> {self.TASK_STATUS[code]}")
+            pct = _safe_int(percent_complete, -1)
+            if pct >= 0:
+                pct = min(pct, 100)
+                new["percentComplete"] = str(pct)
+                if pct == 100:
+                    new["status"] = "COMP"
+                elif new.get("status") == "COMP":
+                    new["status"] = "INPR"
+                changes.append(f"avancement -> {pct} %")
+            if notes.strip():
+                if notes.strip() == "-":
+                    new.pop("desc", None)
+                    changes.append("notes effacees")
+                else:
+                    new["desc"] = {"_content": _clean_multiline(notes, 20000).strip()}
+                    changes.append("notes modifiees")
+            if not changes:
+                raise UserInputError("Aucune modification demandee.")
+            m = {"su": new.get("name", ""), "inv": {"comp": [new]}, "mp": {"ct": "text/plain", "content": _content(new.get("desc"))}}
+            await self._soap(ctx, "ModifyTaskRequest", {"id": task["inv_id"], "comp": "0", "m": m}, retryable=False)
+            ctx.done = "Tache modifiee"
+            return f"**Tache << {_md_escape(_content(comp.get('name')))} >> modifiee** : " + ", ".join(changes) + "."
+
+        return await self._run(__user__, __event_emitter__, None, "modifier la tache", run)
+
+    async def delete_task(
+        self,
+        task_id: str,
+        __user__: dict = None,
+        __event_emitter__: Callable = None,
+        __event_call__: Callable = None,
+    ) -> str:
+        """
+        Supprimer une tache (apres confirmation).
+
+        :param task_id: ID de la tache
+        :return: Confirmation
+        """
+
+        async def run(ctx: _Ctx) -> str:
+            self._require(self.valves.enable_delete, "La suppression")
+            task = await self._load_task(ctx, task_id)
+            name = _content(task["comp"].get("name")) or "(sans titre)"
+            if self.valves.require_confirmation_for_delete:
+                if not await self._confirm(ctx, "Supprimer la tache ?", f"**SUPPRIMER LA TACHE** {_md_escape(name)}"):
+                    return await self._cancelled(ctx, "La tache est conservee.")
+            await self._soap(ctx, "CancelTaskRequest", {"id": task["inv_id"], "comp": "0"}, retryable=False)
+            ctx.done = "Tache supprimee"
+            return f"**Tache supprimee** : {_md_escape(name)}."
+
+        return await self._run(__user__, __event_emitter__, __event_call__, "supprimer la tache", run)
+
+    # ================================================================
+    # CONTACTS & LISTS
+    # ================================================================
+
+    CONTACT_FIELDS = {
+        "first_name": "firstName", "last_name": "lastName", "email": "email", "phone": "workPhone",
+        "mobile": "mobilePhone", "company": "company", "job_title": "jobTitle", "notes": "notes",
+    }
+
+    @staticmethod
+    def _contact_attrs(cn: dict) -> Dict[str, str]:
+        attrs: Dict[str, str] = {}
+        if isinstance(cn.get("_attrs"), dict):
+            attrs.update({k: _content(v) for k, v in cn["_attrs"].items()})
+        for a in _as_list(cn.get("a")):
+            attrs[_content(a.get("n") or a.get("name"))] = _content(a)
+        return attrs
+
+    async def list_contacts(
+        self,
+        query: str = "",
+        limit: int = 25,
+        __user__: dict = None,
+        __event_emitter__: Callable = None,
+    ) -> str:
+        """
+        Lister ou chercher dans vos contacts personnels (carnet d'adresses Partage), avec leurs IDs.
+        For the university directory, use search_contacts.
+
+        :param query: Nom, adresse ou societe a chercher (vide = tous)
+        :param limit: Nombre max de contacts (defaut 25)
+        :return: Contacts avec ID, adresse, telephone et societe
+        """
+
+        async def run(ctx: _Ctx) -> str:
+            q = _clean_line(query, 200).replace('"', "")
+            search = f'"{q}"' if q else "inid:7"
+            items, more, _ = await self._search(ctx, search, types="contact", limit=max(1, min(_safe_int(limit, 25), 200)), sort="nameAsc")
+            ctx.done = f"{len(items)} contact(s)"
+            if not items:
+                return "Aucun contact personnel ne correspond."
+            out = [f"**{len(items)} contact(s)**", ""]
+            for cn in items:
+                a = self._contact_attrs(cn)
+                name = _content(cn.get("fileAsStr")) or " ".join(filter(None, [a.get("firstName"), a.get("lastName")])) or a.get("email", "?")
+                details = [x for x in (a.get("email") and f"`{a['email']}`", a.get("workPhone") or a.get("mobilePhone"), a.get("company")) if x]
+                out.append(f"- **{_md_escape(name)}** - " + " - ".join(_md_escape(d) if not d.startswith("`") else d for d in details) + f" - ID `{_content(cn.get('id'))}`")
+            if more:
+                out.append("\n_D'autres contacts existent._")
+            return "\n".join(out)
+
+        return await self._run(__user__, __event_emitter__, None, "lister les contacts", run)
+
+    async def manage_contact(
+        self,
+        action: str,
+        contact_id: str = "",
+        first_name: str = "",
+        last_name: str = "",
+        email: str = "",
+        phone: str = "",
+        mobile: str = "",
+        company: str = "",
+        job_title: str = "",
+        notes: str = "",
+        __user__: dict = None,
+        __event_emitter__: Callable = None,
+        __event_call__: Callable = None,
+    ) -> str:
+        """
+        Creer, modifier ou supprimer un contact personnel.
+
+        :param action: create, update ou delete
+        :param contact_id: ID du contact (update / delete, voir list_contacts)
+        :param first_name: Prenom
+        :param last_name: Nom
+        :param email: Adresse email
+        :param phone: Telephone professionnel
+        :param mobile: Telephone mobile
+        :param company: Societe / service
+        :param job_title: Fonction
+        :param notes: Notes
+        :return: Confirmation
+        """
+
+        async def run(ctx: _Ctx) -> str:
+            act = {"creer": "create", "ajouter": "create", "add": "create", "modifier": "update", "supprimer": "delete"}.get(
+                _normalise_text(action), _normalise_text(action))
+            values = {"first_name": first_name, "last_name": last_name, "email": email, "phone": phone, "mobile": mobile,
+                      "company": company, "job_title": job_title, "notes": notes}
+            if email.strip():
+                addr = self._recipients(email, "email")
+                if len(addr) != 1:
+                    raise UserInputError("Donnez une seule adresse email.")
+                values["email"] = addr[0][1]
+            attrs = [{"n": self.CONTACT_FIELDS[k], "_content": _clean_multiline(v, 5000).strip() if k == "notes" else _clean_line(v, 300)}
+                     for k, v in values.items() if str(v or "").strip()]
+            if act == "create":
+                if not any(a["n"] in ("firstName", "lastName", "email", "company") for a in attrs):
+                    raise UserInputError("Donnez au moins un nom ou une adresse.")
+                if values["email"]:
+                    dup, _, _ = await self._search(ctx, f'"{values["email"]}"', types="contact", limit=3)
+                    if dup:
+                        return f"Un contact avec l'adresse `{values['email']}` existe deja (ID `{_content(dup[0].get('id'))}`). Utilisez action=update."
+                resp = await self._soap(ctx, "CreateContactRequest", {"cn": {"l": "7", "a": attrs}})
+                ctx.done = "Contact cree"
+                return f"**Contact cree** (ID `{_content(_first(resp.get('cn')).get('id'))}`)."
+            ids = self._parse_ids(contact_id)
+            if len(ids) != 1:
+                raise UserInputError("Donnez l'ID du contact (voir list_contacts).")
+            if act == "update":
+                if not attrs:
+                    raise UserInputError("Aucune modification demandee.")
+                await self._soap(ctx, "ModifyContactRequest", {"replace": "0", "cn": {"id": ids[0], "a": attrs}})
+                ctx.done = "Contact modifie"
+                return f"**Contact `{ids[0]}` modifie** : " + ", ".join(a["n"] for a in attrs) + "."
+            if act == "delete":
+                self._require(self.valves.enable_delete, "La suppression")
+                if self.valves.require_confirmation_for_delete and not await self._confirm(
+                        ctx, "Supprimer le contact ?", f"**SUPPRIMER LE CONTACT** `{ids[0]}` (il ira dans la corbeille)"):
+                    return await self._cancelled(ctx, "Le contact est conserve.")
+                await self._soap(ctx, "ContactActionRequest", {"action": {"id": ids[0], "op": "trash"}})
+                ctx.done = "Contact supprime"
+                return f"**Contact `{ids[0]}` mis a la corbeille.**"
+            raise UserInputError("Action inconnue : create, update ou delete.")
+
+        return await self._run(__user__, __event_emitter__, __event_call__, "gerer le contact", run)
+
+    async def get_list_members(
+        self,
+        list_address: str,
+        __user__: dict = None,
+        __event_emitter__: Callable = None,
+    ) -> str:
+        """
+        Afficher les membres d'une liste de diffusion de l'universite (ex : equipe@univ-evry.fr).
+
+        :param list_address: Adresse de la liste
+        :return: Membres de la liste
+        """
+
+        async def run(ctx: _Ctx) -> str:
+            addr = self._recipients(list_address, "liste", required=True)[0][1]
+            members: List[str] = []
+            offset = 0
+            while len(members) < 2000:
+                resp = await self._soap(ctx, "GetDistributionListMembersRequest", {"dl": {"_content": addr}, "limit": 500, "offset": offset}, ns=NS_ACCOUNT)
+                batch = [_content(x) for x in _as_list(resp.get("dlm")) or [{"_content": v} for v in (resp.get("dlm") or []) if isinstance(v, str)]]
+                members += [b for b in batch if b]
+                if not _safe_bool(resp.get("more")) or not batch:
+                    break
+                offset += len(batch)
+            ctx.done = f"{len(members)} membre(s)"
+            if not members:
+                return f"La liste `{addr}` est vide ou ses membres ne sont pas visibles."
+            return f"**{addr}** - {len(members)} membre(s)\n\n" + "\n".join(f"- `{m}`" for m in members[:500]) + (
+                "\n- _..._" if len(members) > 500 else "")
+
+        return await self._run(__user__, __event_emitter__, None, "lire la liste", run)
+
+    # ================================================================
+    # MAIL FILTERS & SENDER LISTS
+    # ================================================================
+
+    async def _get_filters(self, ctx: _Ctx) -> List[dict]:
+        resp = await self._soap(ctx, "GetFilterRulesRequest", {})
+        return _as_list(_first(resp.get("filterRules")).get("filterRule"))
+
+    @staticmethod
+    def _describe_filter(rule: dict) -> str:
+        tests = _first(rule.get("filterTests"))
+        conds = []
+        for t in _as_list(tests.get("headerTest")):
+            conds.append(f"{_content(t.get('header'))} {'ne ' if _safe_bool(t.get('negative')) else ''}{_content(t.get('stringComparison'))} << {_content(t.get('value'))} >>")
+        for t in _as_list(tests.get("addressTest")):
+            conds.append(f"{_content(t.get('header'))} {_content(t.get('stringComparison'))} << {_content(t.get('value'))} >>")
+        for t in _as_list(tests.get("bodyTest")):
+            conds.append(f"corps contient << {_content(t.get('value'))} >>")
+        if tests.get("attachmentTest"):
+            conds.append("a une piece jointe")
+        acts = []
+        actions = _first(rule.get("filterActions"))
+        for a in _as_list(actions.get("actionFileInto")):
+            acts.append(f"deplacer vers {_content(a.get('folderPath'))}")
+        for a in _as_list(actions.get("actionTag")):
+            acts.append(f"etiqueter {_content(a.get('tagName'))}")
+        for a in _as_list(actions.get("actionFlag")):
+            acts.append("marquer lu" if _content(a.get("flagName")) == "read" else "marquer important")
+        for a in _as_list(actions.get("actionRedirect")):
+            acts.append(f"rediriger vers {_content(a.get('a'))}")
+        if actions.get("actionDiscard"):
+            acts.append("SUPPRIMER")
+        if actions.get("actionKeep"):
+            acts.append("garder")
+        joiner = " ET " if _content(tests.get("condition")) == "allof" else " OU "
+        return f"si {joiner.join(conds) or '(toujours)'} -> {', '.join(acts) or '(aucune action)'}"
+
+    async def list_mail_filters(
+        self,
+        __user__: dict = None,
+        __event_emitter__: Callable = None,
+    ) -> str:
+        """
+        Lister les filtres (regles) de tri automatique des emails entrants.
+
+        :return: Filtres avec conditions, actions et etat
+        """
+
+        async def run(ctx: _Ctx) -> str:
+            rules = await self._get_filters(ctx)
+            ctx.done = f"{len(rules)} filtre(s)"
+            if not rules:
+                return "Aucun filtre de tri. Creez-en un avec `create_mail_filter`."
+            out = [f"**{len(rules)} filtre(s)**, appliques dans cet ordre :", ""]
+            for i, r in enumerate(rules, 1):
+                state = "actif" if _safe_bool(r.get("active"), True) else "desactive"
+                out.append(f"{i}. **{_md_escape(_content(r.get('name')))}** ({state}) : {_md_escape(self._describe_filter(r))}")
+            return "\n".join(out)
+
+        return await self._run(__user__, __event_emitter__, None, "lister les filtres", run)
+
+    def _filter_lock(self, ctx: _Ctx) -> asyncio.Lock:
+        key = self._cache_key(ctx.config)
+        lock = self._filter_locks.get(key)
+        if lock is None:
+            lock = self._filter_locks[key] = asyncio.Lock()
+        return lock
+
+    async def create_mail_filter(
+        self,
+        name: str,
+        action: str,
+        from_contains: str = "",
+        to_contains: str = "",
+        subject_contains: str = "",
+        body_contains: str = "",
+        has_attachment: bool = False,
+        match: str = "all",
+        folder: str = "",
+        tag: str = "",
+        forward_to: str = "",
+        apply_to_inbox: bool = False,
+        __user__: dict = None,
+        __event_emitter__: Callable = None,
+        __event_call__: Callable = None,
+    ) -> str:
+        """
+        Creer un filtre de tri automatique des emails entrants (apres confirmation).
+        Example: name="JumpServer", from_contains="jumpserver.org", action="move", folder="Notifications".
+
+        :param name: Nom du filtre
+        :param action: move (deplacer), tag (etiqueter), flag (important), mark_read, discard (supprimer) ou forward (rediriger)
+        :param from_contains: Expediteur contient
+        :param to_contains: Destinataire (A ou Cc) contient
+        :param subject_contains: Sujet contient
+        :param body_contains: Corps contient
+        :param has_attachment: True = seulement les emails avec piece jointe
+        :param match: all (toutes les conditions) ou any (au moins une)
+        :param folder: Dossier cible (action move), cree si besoin
+        :param tag: Etiquette (action tag)
+        :param forward_to: Adresse de redirection (action forward)
+        :param apply_to_inbox: True pour appliquer aussi aux emails deja dans la boite de reception
+        :return: Confirmation
+        """
+
+        async def run(ctx: _Ctx) -> str:
+            self._require(self.valves.enable_settings_write, "La modification des reglages")
+            fname = _clean_line(name, 128)
+            if not fname:
+                raise UserInputError("Le nom du filtre est obligatoire.")
+            tests: Dict[str, Any] = {"condition": "anyof" if _normalise_text(match) in ("any", "une", "au moins une", "ou") else "allof"}
+            idx = 0
+            headers = []
+            for header, value in (("from", from_contains), ("to,cc", to_contains), ("subject", subject_contains)):
+                v = _clean_line(value, 300)
+                if v:
+                    headers.append({"header": header, "stringComparison": "contains", "value": v, "index": idx})
+                    idx += 1
+            if headers:
+                tests["headerTest"] = headers
+            if body_contains.strip():
+                tests["bodyTest"] = [{"value": _clean_line(body_contains, 300), "index": idx}]
+                idx += 1
+            if _safe_bool(has_attachment):
+                tests["attachmentTest"] = [{"index": idx}]
+                idx += 1
+            if idx == 0:
+                raise UserInputError("Donnez au moins une condition (expediteur, destinataire, sujet, corps ou piece jointe).")
+            act = _normalise_text(action).replace("-", "_")
+            act = {"deplacer": "move", "etiqueter": "tag", "important": "flag", "lu": "mark_read", "supprimer": "discard",
+                   "delete": "discard", "rediriger": "forward", "transferer": "forward", "redirect": "forward"}.get(act, act)
+            actions: Dict[str, Any] = {}
+            warn = ""
+            if act == "move":
+                if not folder.strip():
+                    raise UserInputError("Indiquez le dossier cible (folder).")
+                try:
+                    path = (await self._resolve_folder(ctx, folder))["path"]
+                except UserInputError:
+                    path = "/" + _clean_line(folder, 200).strip("/")
+                    if "/" in path.strip("/"):
+                        raise
+                actions["actionFileInto"] = [{"folderPath": path, "index": 0}]
+                label = f"deplacer vers {path}"
+            elif act == "tag":
+                t = _clean_line(tag, 128)
+                if not t:
+                    raise UserInputError("Indiquez l'etiquette (tag).")
+                actions["actionTag"] = [{"tagName": t, "index": 0}]
+                label = f"etiqueter << {t} >>"
+            elif act == "flag":
+                actions["actionFlag"] = [{"flagName": "flagged", "index": 0}]
+                label = "marquer important"
+            elif act == "mark_read":
+                actions["actionFlag"] = [{"flagName": "read", "index": 0}]
+                label = "marquer comme lu"
+            elif act == "discard":
+                self._require(self.valves.enable_delete, "La suppression")
+                actions["actionDiscard"] = [{"index": 0}]
+                label = "SUPPRIMER sans les voir"
+                warn = "\n\n**Attention : ces emails seront supprimes des leur arrivee, sans passer par la corbeille.**"
+            elif act == "forward":
+                if not self.valves.enable_filter_forwarding:
+                    raise UserInputError("Les filtres de redirection sont desactives par l'administrateur (risque de fuite de donnees).")
+                dest = self._recipients(forward_to, "redirection", required=True)
+                actions["actionRedirect"] = [{"a": dest[0][1], "index": 0}]
+                label = f"rediriger vers {dest[0][1]}"
+                warn = f"\n\n**Attention : tous les emails correspondants partiront automatiquement vers {dest[0][1]}.**"
+            else:
+                raise UserInputError("Action inconnue : move, tag, flag, mark_read, discard ou forward.")
+            actions["actionStop"] = [{"index": 1}]
+            rule = {"name": fname, "active": True, "filterTests": [tests], "filterActions": [actions]}
+            description = self._describe_filter(rule)
+            if not await self._confirm(ctx, "Creer le filtre ?", f"**CREER LE FILTRE** << {_md_escape(fname)} >>\n\n{_md_escape(description)}\n\n**Action :** {_md_escape(label)}{warn}"):
+                return await self._cancelled(ctx, "Le filtre n'a pas ete cree.")
+            async with self._filter_lock(ctx):
+                rules = await self._get_filters(ctx)
+                if any(_content(r.get("name")).casefold() == fname.casefold() for r in rules):
+                    raise UserInputError(f"Un filtre << {fname} >> existe deja.")
+                await self._soap(ctx, "ModifyFilterRulesRequest", {"filterRules": [{"filterRule": rules + [rule]}]})
+            out = f"**Filtre << {_md_escape(fname)} >> cree** : {_md_escape(description)}."
+            if _safe_bool(apply_to_inbox) and act not in ("discard", "forward"):
+                resp = await self._soap(ctx, "ApplyFilterRulesRequest", {"filterRules": {"filterRule": [{"name": fname}]}, "query": "in:inbox"})
+                count = len([x for x in _content(_first(resp.get("m")).get("ids")).split(",") if x])
+                out += f"\nApplique aux emails existants de la boite de reception ({count} concerne(s))."
+            ctx.done = "Filtre cree"
+            return out
+
+        return await self._run(__user__, __event_emitter__, __event_call__, "creer le filtre", run)
+
+    async def manage_mail_filter(
+        self,
+        name: str,
+        action: str,
+        __user__: dict = None,
+        __event_emitter__: Callable = None,
+        __event_call__: Callable = None,
+    ) -> str:
+        """
+        Activer, desactiver ou supprimer un filtre de tri existant.
+
+        :param name: Nom du filtre (voir list_mail_filters)
+        :param action: enable, disable ou delete
+        :return: Confirmation
+        """
+
+        async def run(ctx: _Ctx) -> str:
+            self._require(self.valves.enable_settings_write, "La modification des reglages")
+            act = {"activer": "enable", "desactiver": "disable", "supprimer": "delete"}.get(_normalise_text(action), _normalise_text(action))
+            if act not in ("enable", "disable", "delete"):
+                raise UserInputError("Action inconnue : enable, disable ou delete.")
+            if act == "delete" and not await self._confirm(ctx, "Supprimer le filtre ?", f"**SUPPRIMER LE FILTRE** << {_md_escape(name)} >>"):
+                return await self._cancelled(ctx, "Le filtre est conserve.")
+            async with self._filter_lock(ctx):
+                rules = await self._get_filters(ctx)
+                target = [r for r in rules if _content(r.get("name")).casefold() == _clean_line(name, 128).casefold()]
+                if not target:
+                    raise UserInputError(f"Aucun filtre nomme << {_md_escape(name)} >>. Voir list_mail_filters.")
+                if act == "delete":
+                    rules = [r for r in rules if r is not target[0]]
+                else:
+                    target[0]["active"] = act == "enable"
+                await self._soap(ctx, "ModifyFilterRulesRequest", {"filterRules": [{"filterRule": rules}]})
+            ctx.done = "Filtre modifie"
+            return f"**Filtre << {_md_escape(name)} >> {'supprime' if act == 'delete' else 'active' if act == 'enable' else 'desactive'}.**"
+
+        return await self._run(__user__, __event_emitter__, __event_call__, "modifier le filtre", run)
+
+    async def manage_sender_lists(
+        self,
+        action: str = "list",
+        address: str = "",
+        __user__: dict = None,
+        __event_emitter__: Callable = None,
+        __event_call__: Callable = None,
+    ) -> str:
+        """
+        Expediteurs bloques et autorises (liste blanche / noire anti-spam).
+
+        :param action: list, block, unblock, allow ou disallow
+        :param address: Adresse ou domaine (ex : spam@exemple.com ou @exemple.com)
+        :return: Listes actuelles ou confirmation
+        """
+
+        async def run(ctx: _Ctx) -> str:
+            act = {"bloquer": "block", "debloquer": "unblock", "autoriser": "allow", "lister": "list"}.get(_normalise_text(action), _normalise_text(action) or "list")
+            if act == "list":
+                resp = await self._soap(ctx, "GetWhiteBlackListRequest", {}, ns=NS_ACCOUNT)
+
+                def addrs(key: str) -> List[str]:
+                    return [_content(a) for a in _as_list(_first(resp.get(key)).get("addr"))]
+
+                white, black = addrs("whiteList"), addrs("blackList")
+                return ("**Expediteurs bloques :** " + (", ".join(f"`{a}`" for a in black) or "aucun") +
+                        "\n**Expediteurs autorises :** " + (", ".join(f"`{a}`" for a in white) or "aucun"))
+            self._require(self.valves.enable_settings_write, "La modification des reglages")
+            value = _clean_line(address, 320).strip("`").lower()
+            if not re.fullmatch(r"(?:[^@\s<>\"`]{1,64})?@[a-z0-9.-]{1,253}\.[a-z]{2,}", value):
+                raise UserInputError("Adresse invalide : donnez une adresse (a@b.fr) ou un domaine (@b.fr).")
+            ops = {"block": ("blackList", "+", "Bloquer"), "unblock": ("blackList", "-", "Debloquer"),
+                   "allow": ("whiteList", "+", "Autoriser"), "disallow": ("whiteList", "-", "Retirer des autorises")}
+            if act not in ops:
+                raise UserInputError("Action inconnue : list, block, unblock, allow ou disallow.")
+            key, op, label = ops[act]
+            if not await self._confirm(ctx, f"{label} {value} ?", f"**{label.upper()}** `{value}`"):
+                return await self._cancelled(ctx, "Aucune modification.")
+            await self._soap(ctx, "ModifyWhiteBlackListRequest", {key: {"addr": [{"op": op, "_content": value}]}}, ns=NS_ACCOUNT)
+            ctx.done = "Liste mise a jour"
+            return f"**{label} : `{value}`** - fait."
+
+        return await self._run(__user__, __event_emitter__, __event_call__, "modifier les expediteurs", run)
+
+    # ================================================================
+    # ROOMS & SHARES
+    # ================================================================
+
+    async def find_rooms(
+        self,
+        date: str,
+        start_time: str,
+        end_time: str,
+        min_capacity: int = 0,
+        name: str = "",
+        __user__: dict = None,
+        __event_emitter__: Callable = None,
+    ) -> str:
+        """
+        Trouver les salles reservables (ressources Partage) et indiquer celles qui sont libres sur un creneau.
+        To book one, call create_calendar_event with room=<room email>.
+
+        :param date: Jour (ex : "mardi", "2026-12-02")
+        :param start_time: Debut (HH:MM)
+        :param end_time: Fin (HH:MM)
+        :param min_capacity: Capacite minimale (0 = toutes)
+        :param name: Filtrer par nom, batiment ou etage (optionnel)
+        :return: Salles libres et occupees
+        """
+
+        async def run(ctx: _Ctx) -> str:
+            now = ctx.now()
+            day, _ = _parse_datetime(date, now, need_time=False)
+            (h1, m1), (h2, m2) = _parse_hhmm(start_time), _parse_hhmm(end_time)
+            st, en = day.replace(hour=h1, minute=m1), day.replace(hour=h2, minute=m2)
+            if en <= st:
+                raise UserInputError("L'heure de fin doit etre apres l'heure de debut.")
+            conds = [{"attr": "zimbraCalResType", "op": "eq", "value": "Location"}]
+            body = {
+                "attrs": "fullName,email,zimbraCalResLocationDisplayName,zimbraCalResCapacity,zimbraCalResBuilding,zimbraCalResFloor,description",
+                "limit": 200, "searchFilter": {"conds": {"cond": conds}},
+            }
+            resp = await self._soap(ctx, "SearchCalendarResourcesRequest", body, ns=NS_ACCOUNT)
+            rooms = []
+            filt = _normalise_text(name)
+            for r in _as_list(resp.get("calresource")):
+                a = self._contact_attrs(r)
+                addr = a.get("email") or _content(r.get("name"))
+                label = a.get("zimbraCalResLocationDisplayName") or a.get("fullName") or addr
+                cap = _safe_int(a.get("zimbraCalResCapacity"))
+                where = " ".join(filter(None, [a.get("zimbraCalResBuilding"), a.get("zimbraCalResFloor")]))
+                if not addr or (min_capacity and cap and cap < _safe_int(min_capacity)):
+                    continue
+                if filt and filt not in _normalise_text(f"{label} {where} {addr} {a.get('description', '')}"):
+                    continue
+                rooms.append({"email": addr, "label": label, "cap": cap, "where": where})
+            if not rooms:
+                return "Aucune salle reservable ne correspond (ou l'annuaire des ressources n'est pas visible)."
+            busy: Dict[str, Any] = {}
+            for i in range(0, len(rooms), 50):
+                busy.update(await self._freebusy(ctx, [r["email"] for r in rooms[i:i + 50]], ctx.ms(st), ctx.ms(en)))
+            free = [r for r in rooms if not busy.get(r["email"].casefold(), {}).get("busy")]
+            taken = [r for r in rooms if r not in free]
+            ctx.done = f"{len(free)} salle(s) libre(s)"
+            out = [f"**Salles - {_fr_date(st).capitalize()}, {st.strftime('%H:%M')} - {en.strftime('%H:%M')}**", ""]
+            out.append(f"**Libres ({len(free)}) :**" if free else "**Aucune salle libre.**")
+            for r in free[:30]:
+                out.append(f"- **{_md_escape(r['label'])}**" + (f" - {r['cap']} places" if r["cap"] else "") + (f" - {_md_escape(r['where'])}" if r["where"] else "") + f" - `{r['email']}`")
+            if taken:
+                out.append(f"\n_Occupees : {', '.join(_md_escape(r['label']) for r in taken[:15])}_")
+            return "\n".join(out)
+
+        return await self._run(__user__, __event_emitter__, None, "chercher une salle", run)
+
+    async def list_shares(
+        self,
+        __user__: dict = None,
+        __event_emitter__: Callable = None,
+    ) -> str:
+        """
+        Lister les dossiers, calendriers et carnets que d'autres personnes partagent avec vous, et s'ils sont deja ajoutes.
+
+        :return: Partages disponibles
+        """
+
+        async def run(ctx: _Ctx) -> str:
+            resp = await self._soap(ctx, "GetShareInfoRequest", {"includeSelf": "0"}, ns=NS_ACCOUNT)
+            shares = _as_list(resp.get("share"))
+            ctx.done = f"{len(shares)} partage(s)"
+            if not shares:
+                return "Personne ne partage de dossier avec vous pour le moment."
+            views = {"message": "emails", "appointment": "calendrier", "contact": "contacts", "task": "taches", "document": "documents"}
+            rights = {"r": "lecture", "rw": "lecture/ecriture", "rwidx": "edition", "rwidxa": "administration"}
+            out = [f"**{len(shares)} partage(s) avec vous :**", ""]
+            for sh in shares:
+                mounted = " _(deja ajoute)_" if _content(sh.get("mid")) else ""
+                r = _content(sh.get("rights"))
+                out.append(
+                    f"- **{_md_escape(_content(sh.get('folderPath')))}** ({views.get(_content(sh.get('view')), _content(sh.get('view')))}) "
+                    f"de {_md_escape(_content(sh.get('ownerName')) or _content(sh.get('ownerEmail')))} `{_content(sh.get('ownerEmail'))}` - "
+                    f"{rights.get(r, r)}{mounted}"
+                )
+            out.append("\nPour ajouter un partage a vos dossiers : `mount_shared_folder`. Pour lire une boite deleguee : parametre `mailbox`.")
+            return "\n".join(out)
+
+        return await self._run(__user__, __event_emitter__, None, "lister les partages", run)
+
+    async def mount_shared_folder(
+        self,
+        owner_email: str,
+        folder_path: str,
+        display_name: str = "",
+        __user__: dict = None,
+        __event_emitter__: Callable = None,
+    ) -> str:
+        """
+        Ajouter a vos dossiers un dossier, calendrier ou carnet partage avec vous (voir list_shares).
+
+        :param owner_email: Adresse du proprietaire du partage
+        :param folder_path: Chemin du dossier partage (ex : "/Calendar" ou "/Inbox/Projets")
+        :param display_name: Nom a afficher chez vous (optionnel)
+        :return: Confirmation
+        """
+
+        async def run(ctx: _Ctx) -> str:
+            resp = await self._soap(ctx, "GetShareInfoRequest", {"includeSelf": "0"}, ns=NS_ACCOUNT)
+            owner = _clean_line(owner_email, 320).casefold()
+            path = "/" + _clean_line(folder_path, 300).strip("/")
+            match = [sh for sh in _as_list(resp.get("share"))
+                     if _content(sh.get("ownerEmail")).casefold() == owner and _normalise_text(_content(sh.get("folderPath"))) == _normalise_text(path)]
+            if not match:
+                raise UserInputError("Ce partage n'existe pas ou ne vous est pas destine. Voir list_shares.")
+            sh = match[0]
+            if _content(sh.get("mid")):
+                return "Ce partage est deja dans vos dossiers."
+            label = _clean_line(display_name, 128).replace("/", "-") or f"{path.strip('/').split('/')[-1] or 'Partage'} ({_content(sh.get('ownerName')) or owner})"
+            link = {"l": "1", "name": label, "zid": _content(sh.get("ownerId")), "rid": _content(sh.get("folderId")), "view": _content(sh.get("view")) or "message"}
+            created = await self._soap(ctx, "CreateMountpointRequest", {"link": link})
+            ctx.done = "Partage ajoute"
+            return f"**Partage ajoute** : << {_md_escape(label)} >> (ID `{_content(_first(created.get('link')).get('id'))}`)."
+
+        return await self._run(__user__, __event_emitter__, None, "ajouter le partage", run)

@@ -24,7 +24,7 @@ jobs:
           python-version: "3.11"
 
       - name: Install test dependencies
-        run: python -m pip install --upgrade pip requests pydantic pytest pyflakes
+        run: python -m pip install --upgrade pip requests pydantic fastapi pytest pyflakes
 
       - name: Compile and lint Tool
         run: |

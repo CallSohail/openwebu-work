@@ -3,6 +3,36 @@
 All notable changes to the Partage (Zimbra) Tool are documented here.
 This project follows [Semantic Versioning](https://semver.org/).
 
+## [11.0.0] - 2026-11-26
+
+Adds tasks, mail rules, rooms, sharing, richer sending and visual cards. Request shapes were checked against Zimbra's own client (`@zimbra/api-client` 104).
+
+### Added
+
+- Tasks: `list_tasks` (open, overdue, done), `create_task`, `update_task` (including completing a task), `delete_task`.
+- Mail rules: `list_mail_filters`, `create_mail_filter` (move, tag, flag, mark read, discard, forward), `manage_mail_filter` (enable, disable, delete), optional apply to the inbox; `manage_sender_lists` for blocked and allowed senders.
+- Rooms: `find_rooms` with capacity and availability; `create_calendar_event(room=...)` books the room.
+- Sharing: `list_shares`, `mount_shared_folder`, and a `mailbox` parameter for reading delegated mailboxes in mail, calendar, tasks and analytics.
+- Sending: files attached in the chat as email attachments (`attach_chat_files`), send-later (`send_at`), priority, read receipts, and the Partage default signature.
+- People: `list_contacts`, `manage_contact` (with duplicate detection), `get_list_members`.
+- Visual cards (Open WebUI Rich UI embeds) for email lists, a single email, analytics, agenda, free slots, tasks, quota, and a help card with what's new. Admin valve `enable_visual_cards` and user valve `visual_cards` switch them off, returning plain text.
+- Valves: `enable_visual_cards`, `enable_delegated_mailboxes`, `enable_filter_forwarding`, `use_zimbra_signature`, `max_parallel_requests_per_user`, `duplicate_send_window_minutes`, `max_upload_mb`; user valve `visual_cards`.
+- 17 new tests (91 in total), and Chromium screenshots of every card in light and dark mode.
+
+### Changed
+
+- Parallel calls from one person share a login and are capped per account.
+- HTTP connections are pooled per worker thread, and the pooled sessions never store cookies.
+- `help` lists every area with clickable examples and the version's new features.
+
+### Security
+
+- An identical email already being sent is refused, and a recent identical send is flagged in the confirmation.
+- Chat files are attached only if the caller owns them, and uploads are size-capped.
+- Forwarding filters are off by default (exfiltration risk) and follow `allowed_recipient_domains`. Discard filters carry an explicit warning.
+- Cards use a `default-src 'none'` Content-Security-Policy and write all data with `textContent`. Clicks only pre-fill the message box.
+- Filter rule changes are serialised per account, so concurrent edits cannot drop a rule.
+
 ## [10.0.0] - 2026-11-26
 
 A rewrite of the 9.0 tool for Open WebUI 0.13, checked against the 0.13.5 source.

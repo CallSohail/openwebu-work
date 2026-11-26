@@ -71,8 +71,22 @@ class FakeZimbra:
             "GetTagRequest": lambda b: ok("GetTagRequest", {"tag": [{"name": "Urgent", "n": 1}]}),
         }
 
+    delays = {}
+    active = 0
+    peak = 0
+
     async def post(self, url, payload):
         name = next(iter(payload["Body"]))
+        self.active += 1
+        self.peak = max(self.peak, self.active)
+        try:
+            if self.delays.get(name):
+                await asyncio.sleep(self.delays[name])
+            return await self._dispatch(url, payload, name)
+        finally:
+            self.active -= 1
+
+    async def _dispatch(self, url, payload, name):
         body = payload["Body"][name]
         self.calls.append({"name": name, "body": body, "header": payload["Header"], "url": url})
         handler = self.handlers.get(name)
@@ -89,6 +103,7 @@ class FakeZimbra:
 
 def make_tool(fake=None, **valves):
     tool = partage.Tools()
+    valves.setdefault("enable_visual_cards", False)  # text assertions; cards have their own tests
     tool.valves = tool.Valves(retry_backoff_seconds=0, **valves)
     fake = fake or FakeZimbra()
     tool._post_json = fake.post
@@ -586,3 +601,279 @@ def test_every_parameter_is_documented_for_the_model():
         for param in inspect.signature(fn).parameters:
             if param != "self" and not param.startswith("__"):
                 assert f":param {param}:" in fn.__doc__, f"{name}.{param}"
+
+
+
+# ================================================================ v11
+
+
+def test_cards_on_return_embed_with_text_for_the_model():
+    fake = FakeZimbra()
+    fake.handlers["SearchRequest"] = lambda b: ok("SearchRequest", {"m": [{
+        "id": "7", "su": "</script><img src=x onerror=alert(1)>", "d": 1764000000000, "f": "u",
+        "e": [{"t": "f", "a": "a@b.fr", "p": "A&B"}]}]})
+    tool, _ = make_tool(fake, enable_visual_cards=True)
+    result = run(tool.list_emails(__user__=user()))
+    assert isinstance(result, tuple)
+    embed, text = result
+    html = embed.body.decode()
+    assert embed.headers["content-disposition"] == "inline"
+    assert "default-src 'none'" in html
+    assert "</script><img" not in html and "\\u003c/script\\u003e" in html
+    assert "ID `7`" in text and "carte visuelle" in text
+
+
+def test_cards_can_be_turned_off_by_admin_or_user():
+    tool, _ = make_tool(enable_visual_cards=False)
+    assert isinstance(run(tool.list_emails(__user__=user())), str)
+    tool, _ = make_tool(enable_visual_cards=True)
+    assert isinstance(run(tool.list_emails(__user__=user(visual_cards=False))), str)
+    assert isinstance(run(tool.help(__user__=user(visual_cards=False))), str)
+    assert isinstance(run(tool.help(__user__=user())), tuple)
+
+
+def test_every_card_kind_renders():
+    tool, _ = make_tool(enable_visual_cards=True)
+    kinds = {
+        "emails": {"title": "x", "items": [], "more": False},
+        "email": {"title": "x", "body": "hi", "atts": []},
+        "analytics": {"title": "x", "stats": [], "senders": [], "hours": [0] * 24, "weekdays": [], "domains": [], "pending": []},
+        "agenda": {"title": "x", "days": [], "count": 0},
+        "slots": {"title": "x", "items": []},
+        "tasks": {"title": "x", "items": []},
+        "quota": {"title": "x", "pct": 50, "folders": []},
+        "help": {"title": "x", "version": "1", "news": [], "sections": []},
+    }
+    for kind, data in kinds.items():
+        html = tool._render_card({"kind": kind, **data}).body.decode()
+        assert '"kind": "' + kind + '"' in html
+
+
+def test_parallel_calls_share_one_login_and_respect_concurrency_cap():
+    fake = FakeZimbra()
+    fake.delays = {"SearchRequest": 0.02, "AuthRequest": 0.02}
+    tool, _ = make_tool(fake, max_parallel_requests_per_user=2)
+
+    async def burst():
+        u1, u2 = user(), {"id": "u2", "valves": partage.Tools.UserValves(zimbra_email="other@univ-evry.fr", zimbra_password="pw2")}
+        await asyncio.gather(*[tool.search_emails("x", __user__=u) for u in [u1] * 6 + [u2] * 6])
+
+    run(burst())
+    assert len(fake.named("AuthRequest")) == 2
+    assert fake.peak <= 4  # two users x two parallel requests
+
+
+def test_identical_parallel_sends_only_go_out_once():
+    fake = FakeZimbra()
+    fake.delays = {"SendMsgRequest": 0.05}
+    tool, _ = make_tool(fake)
+
+    async def twice():
+        return await asyncio.gather(*[
+            tool.compose_email("a@univ-evry.fr", "Hi", "Same body", __user__=user(), __event_call__=Caller(True)) for _ in range(2)])
+
+    outs = run(twice())
+    assert len(fake.named("SendMsgRequest")) == 1
+    assert any("deja en cours" in o for o in outs)
+
+
+def test_recent_duplicate_is_flagged_in_confirmation():
+    tool, fake = make_tool()
+    run(tool.compose_email("a@univ-evry.fr", "Hi", "Body", __user__=user(), __event_call__=Caller(True)))
+    caller = Caller(False)
+    run(tool.compose_email("a@univ-evry.fr", "Hi", "Body", __user__=user(), __event_call__=caller))
+    assert "deja ete envoye" in caller.events[0]["data"]["message"]
+
+
+def test_delegated_mailbox_header_and_validation():
+    tool, fake = make_tool()
+    run(tool.list_emails(mailbox="secretariat@univ-evry.fr", __user__=user()))
+    search = fake.named("SearchRequest")[0]
+    assert search["header"]["context"]["account"] == {"by": "name", "_content": "secretariat@univ-evry.fr"}
+    out = run(tool.list_emails(mailbox="not an address", __user__=user()))
+    assert "invalide" in out
+    tool, fake = make_tool(enable_delegated_mailboxes=False)
+    assert "desactive" in run(tool.list_emails(mailbox="secretariat@univ-evry.fr", __user__=user()))
+
+
+def test_send_later_saves_scheduled_draft():
+    tool, fake = make_tool()
+    assert "plus d'un an" in run(tool.compose_email("a@univ-evry.fr", "Hi", "B", send_at="2099-12-02 08:00",
+                                                     __user__=user(), __event_call__=Caller(True)))
+    assert "futur" in run(tool.compose_email("a@univ-evry.fr", "Hi", "B", send_at="2001-01-01 08:00",
+                                             __user__=user(), __event_call__=Caller(True)))
+    out = run(tool.compose_email("a@univ-evry.fr", "Hi", "B", send_at="demain 8h", priority="high",
+                                 request_read_receipt=True, __user__=user(), __event_call__=Caller(True)))
+    assert "programme" in out.lower() and not fake.named("SendMsgRequest")
+    m = fake.named("SaveDraftRequest")[0]["body"]["m"]
+    assert m["autoSendTime"] > 0 and m["f"] == "!"
+    assert {"t": "n", "a": "me@univ-evry.fr"} in m["e"]
+
+
+def test_chat_files_are_uploaded_and_attached():
+    tool, fake = make_tool()
+    read = []
+
+    async def fake_read(ctx, fid):
+        read.append(fid)
+        return "rapport.pdf", "application/pdf", b"%PDF-1"
+
+    async def fake_upload(ctx, name, ctype, data):
+        return "aid-" + name
+
+    tool._read_chat_file = fake_read
+    tool._upload = fake_upload
+    files = [{"type": "file", "id": "f1", "name": "rapport.pdf", "size": 6}, {"type": "file", "id": "f2", "name": "notes.txt"}]
+    caller = Caller(True)
+    out = run(tool.compose_email("a@univ-evry.fr", "Rapport", "Voici", attach_chat_files="rapport",
+                                 __user__=user(), __event_call__=caller, __files__=files))
+    assert read == ["f1"] and "rapport.pdf" in caller.events[0]["data"]["message"] and "Pieces jointes" in out
+    assert fake.named("SendMsgRequest")[0]["body"]["m"]["attach"] == {"aid": "aid-rapport.pdf"}
+    assert "absent du chat" in run(tool.compose_email("a@univ-evry.fr", "R", "V", attach_chat_files="budget.xlsx",
+                                                      __user__=user(), __event_call__=Caller(True), __files__=files))
+    assert "Aucun fichier" in run(tool.compose_email("a@univ-evry.fr", "R", "V", attach_chat_files="all",
+                                                     __user__=user(), __event_call__=Caller(True)))
+
+
+def test_chat_file_of_another_user_is_refused(monkeypatch):
+    import sys
+    import types
+
+    class Rec:
+        user_id = "someone-else"
+        path = "/tmp/x"
+        filename = "x"
+        meta = {}
+
+    files_mod = types.ModuleType("open_webui.models.files")
+
+    class Files:
+        @staticmethod
+        async def get_file_by_id(fid):
+            return Rec()
+
+    files_mod.Files = Files
+    storage_mod = types.ModuleType("open_webui.storage.provider")
+    storage_mod.Storage = types.SimpleNamespace(get_file=lambda p: p)
+    for name, mod in {"open_webui": types.ModuleType("open_webui"), "open_webui.models": types.ModuleType("open_webui.models"),
+                      "open_webui.models.files": files_mod, "open_webui.storage": types.ModuleType("open_webui.storage"),
+                      "open_webui.storage.provider": storage_mod}.items():
+        monkeypatch.setitem(sys.modules, name, mod)
+    tool, fake = make_tool()
+    out = run(tool.compose_email("a@univ-evry.fr", "R", "V", attach_chat_files="all", __user__=user(),
+                                 __event_call__=Caller(True), __files__=[{"type": "file", "id": "f9", "name": "x"}]))
+    assert "autre utilisateur" in out and not fake.named("SendMsgRequest")
+
+
+def test_partage_signature_is_used_when_user_has_none():
+    fake = FakeZimbra()
+    base = fake.handlers["GetIdentitiesRequest"]
+
+    def idents(b):
+        resp = base(b)
+        resp._data["Body"]["GetIdentitiesResponse"]["identity"][0]["_attrs"]["zimbraPrefDefaultSignatureId"] = "s1"
+        return resp
+
+    fake.handlers["GetIdentitiesRequest"] = idents
+    fake.handlers["GetSignaturesRequest"] = lambda b: ok("GetSignaturesRequest", {"signature": [
+        {"id": "s1", "name": "Pro", "content": [{"type": "text/html", "_content": "<b>Dr X</b><br>Labo"}]}]})
+    tool, _ = make_tool(fake)
+    run(tool.compose_email("a@univ-evry.fr", "Hi", "Body", __user__=user(), __event_call__=Caller(True)))
+    assert fake.named("SendMsgRequest")[0]["body"]["m"]["mp"]["content"].endswith("-- \nDr X\nLabo")
+
+
+def test_tasks_list_create_update_delete():
+    fake = FakeZimbra()
+    fake.handlers["SearchRequest"] = lambda b: ok("SearchRequest", {"task": [
+        {"id": "61", "name": "Rapport ANR", "status": "NEED", "priority": "1", "dueDate": 1000, "percentComplete": "0"},
+        {"id": "62", "name": "Relire these", "status": "INPR", "dueDate": 4102444800000, "percentComplete": "40"}]})
+    fake.handlers["GetTaskRequest"] = lambda b: ok("GetTaskRequest", {"task": [{"id": "61", "inv": [{"id": "60", "comp": [
+        {"name": "Rapport ANR", "status": "NEED", "priority": "1", "percentComplete": "0", "allDay": "1",
+         "s": [{"d": "20261120"}], "e": [{"d": "20261201"}]}]}]}]})
+    fake.handlers["CreateTaskRequest"] = lambda b: ok("CreateTaskRequest", {"calItemId": "70", "invId": "70-69"})
+    tool, _ = make_tool(fake)
+    out = run(tool.list_tasks(status="overdue", __user__=user()))
+    assert "Rapport ANR" in out and "EN RETARD" in out and "Relire" not in out
+    assert fake.named("SearchRequest")[0]["body"]["types"] == "task"
+    out = run(tool.create_task("Budget", due_date="2030-12-05", priority="haute", notes="n", __user__=user()))
+    comp = fake.named("CreateTaskRequest")[0]["body"]["m"]["inv"]["comp"][0]
+    assert comp["e"] == {"d": "20301205"} and comp["priority"] == "1" and comp["status"] == "NEED" and "70" in out
+    run(tool.update_task("61", status="done", __user__=user()))
+    mod = fake.named("ModifyTaskRequest")[0]["body"]
+    assert mod["id"] == "61-60" and mod["m"]["inv"]["comp"][0]["status"] == "COMP"
+    assert mod["m"]["inv"]["comp"][0]["percentComplete"] == "100"
+    assert "Annule" in run(tool.delete_task("61", __user__=user(), __event_call__=Caller(False)))
+    run(tool.delete_task("61", __user__=user(), __event_call__=Caller(True)))
+    assert fake.named("CancelTaskRequest")[0]["body"] == {"_jsns": "urn:zimbraMail", "id": "61-60", "comp": "0"}
+
+
+def test_contacts_create_detects_duplicates_and_delete_confirms():
+    fake = FakeZimbra()
+    fake.handlers["CreateContactRequest"] = lambda b: ok("CreateContactRequest", {"cn": [{"id": "88"}]})
+    tool, _ = make_tool(fake)
+    out = run(tool.manage_contact("create", first_name="Marie", last_name="Curie", email="marie@ex.fr", __user__=user()))
+    assert "88" in out
+    attrs = fake.named("CreateContactRequest")[0]["body"]["cn"]["a"]
+    assert {"n": "email", "_content": "marie@ex.fr"} in attrs and {"n": "firstName", "_content": "Marie"} in attrs
+    fake.handlers["SearchRequest"] = lambda b: ok("SearchRequest", {"cn": [{"id": "88"}]})
+    assert "existe deja" in run(tool.manage_contact("create", email="marie@ex.fr", __user__=user()))
+    assert "Annule" in run(tool.manage_contact("delete", contact_id="88", __user__=user(), __event_call__=Caller(False)))
+
+
+def test_filters_append_to_existing_rules_and_block_forwarding():
+    fake = FakeZimbra()
+    existing = {"name": "Old", "active": True, "filterTests": [{"condition": "anyof", "headerTest": [{"header": "subject", "stringComparison": "contains", "value": "x"}]}],
+                "filterActions": [{"actionKeep": [{}]}]}
+    fake.handlers["GetFilterRulesRequest"] = lambda b: ok("GetFilterRulesRequest", {"filterRules": [{"filterRule": [existing]}]})
+    tool, _ = make_tool(fake)
+    caller = Caller(True)
+    out = run(tool.create_mail_filter("JumpServer", "move", from_contains="jumpserver.org", folder="Projets",
+                                      __user__=user(), __event_call__=caller))
+    assert "cree" in out
+    rules = fake.named("ModifyFilterRulesRequest")[0]["body"]["filterRules"][0]["filterRule"]
+    assert [r["name"] for r in rules] == ["Old", "JumpServer"]
+    new = rules[1]
+    assert new["filterTests"][0]["headerTest"][0] == {"header": "from", "stringComparison": "contains", "value": "jumpserver.org", "index": 0}
+    assert new["filterActions"][0]["actionFileInto"][0]["folderPath"] == "/Projets"
+    out = run(tool.create_mail_filter("Leak", "forward", subject_contains="x", forward_to="evil@x.org", __user__=user(), __event_call__=Caller(True)))
+    assert "desactives" in out
+    assert "existe deja" in run(tool.create_mail_filter("old", "flag", subject_contains="y", __user__=user(), __event_call__=Caller(True)))
+    run(tool.manage_mail_filter("Old", "delete", __user__=user(), __event_call__=Caller(True)))
+    assert fake.named("ModifyFilterRulesRequest")[-1]["body"]["filterRules"][0]["filterRule"] == []
+
+
+def test_sender_lists():
+    tool, fake = make_tool()
+    run(tool.manage_sender_lists("block", "@spam.example.com", __user__=user(), __event_call__=Caller(True)))
+    body = fake.named("ModifyWhiteBlackListRequest")[0]["body"]
+    assert body["blackList"] == {"addr": [{"op": "+", "_content": "@spam.example.com"}]}
+    assert "invalide" in run(tool.manage_sender_lists("block", "nope", __user__=user(), __event_call__=Caller(True)))
+
+
+def test_find_rooms_and_book_one():
+    fake = FakeZimbra()
+    fake.handlers["SearchCalendarResourcesRequest"] = lambda b: ok("SearchCalendarResourcesRequest", {"calresource": [
+        {"name": "b204@univ-evry.fr", "_attrs": {"email": "b204@univ-evry.fr", "fullName": "Salle B204", "zimbraCalResCapacity": "12"}},
+        {"name": "a1@univ-evry.fr", "_attrs": {"email": "a1@univ-evry.fr", "fullName": "Amphi A1", "zimbraCalResCapacity": "200"}},
+        {"name": "c3@univ-evry.fr", "_attrs": {"email": "c3@univ-evry.fr", "fullName": "Salle C3", "zimbraCalResCapacity": "4"}}]})
+    fake.handlers["GetFreeBusyRequest"] = lambda b: ok("GetFreeBusyRequest", {"usr": [
+        {"id": "b204@univ-evry.fr", "f": [{}]}, {"id": "a1@univ-evry.fr", "b": [{"s": b["s"], "e": b["e"]}]}]})
+    tool, _ = make_tool(fake)
+    out = run(tool.find_rooms("2030-12-03", "14:00", "16:00", min_capacity=10, __user__=user()))
+    assert "Salle B204" in out and "Libres (1)" in out and "Amphi A1" in out and "C3" not in out
+    run(tool.create_calendar_event("Jury", "2030-12-03 14:00", "16:00", room="b204@univ-evry.fr", __user__=user(), __event_call__=Caller(True)))
+    comp = fake.named("CreateAppointmentRequest")[0]["body"]["m"]["inv"]["comp"][0]
+    assert {"a": "b204@univ-evry.fr", "cutype": "RES", "role": "NON", "ptst": "NE", "rsvp": "1"} in comp["at"]
+
+
+def test_shares_list_and_mount():
+    fake = FakeZimbra()
+    fake.handlers["GetShareInfoRequest"] = lambda b: ok("GetShareInfoRequest", {"share": [
+        {"ownerId": "zid1", "ownerEmail": "boss@univ-evry.fr", "ownerName": "Boss", "folderId": "10", "folderPath": "/Calendar", "view": "appointment", "rights": "r"}]})
+    fake.handlers["CreateMountpointRequest"] = lambda b: ok("CreateMountpointRequest", {"link": [{"id": "900"}]})
+    tool, _ = make_tool(fake)
+    assert "Boss" in run(tool.list_shares(__user__=user()))
+    out = run(tool.mount_shared_folder("boss@univ-evry.fr", "/Calendar", __user__=user()))
+    link = fake.named("CreateMountpointRequest")[0]["body"]["link"]
+    assert link["zid"] == "zid1" and link["rid"] == "10" and link["view"] == "appointment" and "900" in out
+    assert "n'existe pas" in run(tool.mount_shared_folder("boss@univ-evry.fr", "/Inbox", __user__=user()))

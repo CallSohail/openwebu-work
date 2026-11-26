@@ -20,7 +20,7 @@ Open WebUI gives plugins four places to run, and this repository uses all of the
 
 Filters sit in the chat pipeline. They see the request on its way to the model (`inlet`), each chunk as it streams back (`stream`), and the finished answer (`outlet`). Rich Responses, Rich Visuals, Study Mode and Artifacts mode work this way.
 
-Tools are functions the model decides to call. Generative UI, the Email Composer, the RAGFlow connector and the Partage (Zimbra) agent are Tools. The first two answer with an HTML embed, which Open WebUI shows in a sandboxed iframe inside the answer.
+Tools are functions the model decides to call. Generative UI, the Email Composer, the RAGFlow connector and the Partage (Zimbra) agent are Tools. Generative UI, the Email Composer and the Partage agent answer with HTML embeds, which Open WebUI shows in a sandboxed iframe inside the answer.
 
 Actions are buttons under an answer. Quick Actions is one.
 
@@ -33,7 +33,7 @@ Event functions react to things that happen on the server: a sign-up, a login, a
 | [Generative UI](tools/generative-ui/) | Tool + Filter | 1.2.0 | Interactive cards in answers: charts, tables, calculators, checklists, comparisons, timelines, diagrams, maps, live weather. The model writes a JSON spec; the Tool validates it and renders it. |
 | [Rich Email Composer](tools/email-composer/) | Tool | 1.0.0 | An editable email card in the chat, with formatting, recipient checks, *Ask for changes*, copy, `.eml` export and a hand-off to the person's own mail app. |
 | [RAGFlow Advanced Connector](tools/ragflow/) | Tool | 3.0.0 | Retrieval from RAGFlow: datasets, multi-query search, document search and knowledge graphs, with sources. |
-| [Partage (Zimbra)](tools/partage-zimbra/) | Tool | 10.0.0 | Email and calendar in Zimbra / Partage: read, search, analyse, send, reply, forward, organise; events, invitations, free-slot finding, contacts and out-of-office. Every send, delete or change asks the person first. |
+| [Partage (Zimbra)](tools/partage-zimbra/) | Tool | 11.0.0 | Email, calendar, tasks and contacts in Zimbra / Partage: read, search, analyse, send (with chat files, send-later), filters, rooms, shared mailboxes, invitations and free-slot finding, with visual cards. Every send, delete or change asks the person first. |
 | [Rich Responses](functions/filters/rich-responses/) | Filter | 1.0.1 | Works out what kind of answer is wanted (explain, compare, how-to, ...), asks the model for a matching structure, and adds icons to headings as they stream. |
 | [Rich Visuals](functions/filters/rich-visuals/) | Filter | 1.1.0 | Real icons in Open WebUI 0.13.4's built-in Visualization: the model places `[[icon:thermometer]]` tokens and the filter turns them, and any emojis, into SVG icons in the visual's text, never in its scripts. Greetings are left alone and it emits no events. |
 | [Study Mode](functions/filters/study-mode/) | Filter | 1.1.0 | Guided learning and Socratic tutoring, with interactive quizzes built from hidden data in the answer. |
