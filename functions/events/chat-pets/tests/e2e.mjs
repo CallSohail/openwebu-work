@@ -31,7 +31,7 @@ const resetPet = account => api(account, 'POST', '/api/v1/users/user/settings/up
 const serverPet = async account => ((await api(account, 'GET', '/api/v1/users/user/settings')).json || {}).owui_pets || null;
 const PNG = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAACgAAAAeCAIAAADRv8uKAAAAlUlEQVR4nO2WwQ2AMAwDC2IbNoApmIehmIIR2IcHH6RW9BwJEqHmSe0cDlRtN61H8qjehdrAX9Zg8OzLmD+cN+0n1cBF5H2J44VRP1AljQbmHaESgTmV6+tglQpdUfexLS7xRk3cwA38Glg9c7g3auJkDV11ocQqm+jpqDkbKoVvTDry99OuPldfhzuXjVGswNvpb+ATXSUtjT3SU+AAAAAASUVORK5CYII=', 'base64');
 
-const browser = await chromium.launch();
+const browser = await chromium.launch({ args: ['--use-fake-ui-for-media-stream', '--use-fake-device-for-media-stream'] });
 const contexts = [];
 async function session(account, { viewport = { width: 1280, height: 820 }, locale = 'en-US', extra = {}, storage = null } = {}) {
   const context = await browser.newContext({ viewport, ...extra });
@@ -65,6 +65,37 @@ async function adopt(page, id) {
   await page.click(`.owp-card[data-id=${id}]`);
   await page.click('.owp-dfoot .owp-primary');
   await page.waitForTimeout(700);
+}
+async function record(page) {
+  await page.evaluate(() => {
+    window.__rec = { modes: [], emotes: [], bubbles: [] };
+    clearInterval(window.__recTimer);
+    window.__recTimer = setInterval(() => {
+      const d = window.__owuiChatPetsDebug, r = window.__rec;
+      if (!d) return;
+      const m = d.mode, e = d.emote, b = document.getElementById('owp-bubble');
+      if (r.modes[r.modes.length - 1] !== m) r.modes.push(m);
+      if (e && r.emotes[r.emotes.length - 1] !== e) r.emotes.push(e);
+      const t = b && !b.hidden ? b.textContent : '';
+      if (t && r.bubbles[r.bubbles.length - 1] !== t) r.bubbles.push(t);
+    }, 80);
+  });
+}
+const recorded = page => page.evaluate(() => { clearInterval(window.__recTimer); return window.__rec; });
+async function sendInChat(page, text) {
+  await page.click('#chat-input');
+  await page.keyboard.type(text);
+  await page.keyboard.press('Enter');
+}
+async function settleAnswer(page, ms = 20000) {
+  const end = Date.now() + ms;
+  await page.waitForTimeout(800);
+  while (Date.now() < end) {
+    const busy = await page.evaluate(() => (window.__owuiChatPetsDebug.activities || []).includes('think'));
+    if (!busy) break;
+    await page.waitForTimeout(200);
+  }
+  await page.waitForTimeout(900);
 }
 async function waitMode(page, want, ms = 6000) {
   const end = Date.now() + ms;
@@ -127,7 +158,7 @@ try {
     await ready(page);
     await page.click('#owp-pet .owp-hit');
     check('menu opens', await visible(page, '#owp-menu') && await page.$eval('#owp-pet .owp-hit', b => b.getAttribute('aria-expanded') === 'true'));
-    check('menu lists four shortcuts', await page.$$eval('#owp-menu .owp-mi', b => b.length) >= 4 + 5);
+    check('menu lists four shortcuts and four actions', await page.$$eval('#owp-menu .owp-mi', b => b.length) === 4 + 4);
     const menuBox = await rect(page, '#owp-menu'), petBox = await rect(page, '#owp-pet');
     check('menu opens next to the pet', Math.abs((menuBox.left + menuBox.width / 2) - (petBox.left + petBox.width / 2)) < menuBox.width && (menuBox.bottom <= petBox.top + 2 || menuBox.top >= petBox.bottom - 2), { menuBox, petBox });
     await page.waitForTimeout(250);
@@ -398,8 +429,232 @@ try {
     await setValves({ sleep_after_minutes: 1 });
   }
 
+
+  console.log('\nFollowing the AI: tools, reasoning, results (2.0)');
+  {
+    await setValves({ bubble_interval_minutes: 1 });
+    const { page, state } = await session(seed.user);
+    await ready(page, '/?model=fake-agent');
+    check('Open WebUI socket is followed', (await page.evaluate(() => window.__owuiChatPetsDebug.socket)).ever === true);
+    await record(page);
+    await sendInChat(page, 'TOOLS write_note create_tasks search_calendar_events');
+    await settleAnswer(page);
+    let rec = await recorded(page);
+    check('thinks when the answer starts', rec.modes.includes('think'), rec.modes);
+    check('acts out the tools (writing a note or task, reading the calendar)', rec.modes.includes('write') || rec.modes.includes('read'), rec.modes);
+    check('shows tool icons in its badge', new Set(rec.emotes).size >= 2, rec.emotes);
+    check('ends happy or celebrating', rec.modes.some(m => m === 'happy' || m === 'celebrate'), rec.modes);
+    await shot(page, '10-tools');
+
+    await ready(page, '/?model=fake-agent');
+    await record(page);
+    await sendInChat(page, 'TOOLS add_memory');
+    await settleAnswer(page);
+    rec = await recorded(page);
+    check('a failed tool makes it puzzled', rec.modes.includes('puzzled'), rec.modes);
+    check('a failed tool is explained', rec.bubbles.some(b => /didn.t work/.test(b) && /embedding/i.test(b)), rec.bubbles);
+    check('failure badge is a warning', rec.emotes.some(e => e.startsWith('warn:')), rec.emotes);
+
+    await ready(page, '/?model=fake-agent');
+    await record(page);
+    await sendInChat(page, 'REASON about cats');
+    await settleAnswer(page);
+    rec = await recorded(page);
+    check('ponders while the model reasons', rec.modes.includes('ponder'), rec.modes);
+    check('no errors while following the AI', state.errors.length === 0, state.errors);
+  }
+
+  console.log('\nErrors, stop, uploads, microphone, offline (2.0)');
+  {
+    const { context, page, state } = await session(seed.user);
+    await context.grantPermissions(['microphone'], { origin: seed.base });
+    await ready(page);
+    await record(page);
+    await sendInChat(page, 'ERROR500 please');
+    await page.waitForTimeout(3500);
+    let rec = await recorded(page);
+    check('an error makes it worried', rec.modes.includes('worried'), rec.modes);
+    check('an error is explained', rec.bubbles.some(b => b.includes('The provider had an internal error')), rec.bubbles);
+    check('error badge is red', rec.emotes.some(e => e.startsWith('err:')), rec.emotes);
+    await shot(page, '11-error');
+
+    await ready(page);
+    await record(page);
+    await sendInChat(page, 'RATELIMIT please');
+    await page.waitForTimeout(3500);
+    rec = await recorded(page);
+    check('rate limits get plain words', rec.bubbles.some(b => b.startsWith('Too many requests')), rec.bubbles);
+
+    await ready(page);
+    await record(page);
+    await sendInChat(page, 'SLOW long answer');
+    await page.waitForTimeout(1800);
+    await page.click('#message-input-container button[aria-label="Stop"]');
+    await page.waitForTimeout(2500);
+    rec = await recorded(page);
+    check('stopping an answer makes it shrug', rec.modes.includes('shrug'), rec.modes);
+
+    await ready(page);
+    await record(page);
+    const fileInput = await page.$('input[type=file]:not(.owp-sr)');
+    if (fileInput) await fileInput.setInputFiles({ name: 'notes.txt', mimeType: 'text/plain', buffer: Buffer.from('hello pets') });
+    await page.waitForTimeout(800);
+    rec = await recorded(page);
+    check('sniffs a file you attach', !!fileInput && rec.modes.includes('sniff'), rec.modes);
+
+    await record(page);
+    await page.evaluate(async () => { window.__mic = await navigator.mediaDevices.getUserMedia({ audio: true }); });
+    await page.waitForTimeout(1600);
+    check('listens while the microphone is on', await mode(page) === 'listen', await mode(page));
+    await page.evaluate(() => window.__mic.getTracks().forEach(t => t.stop()));
+    await page.waitForTimeout(1600);
+    check('stops listening when the microphone is off', await mode(page) !== 'listen', await mode(page));
+
+    await record(page);
+    await context.setOffline(true);
+    await page.evaluate(() => window.dispatchEvent(new Event('offline')));
+    await page.waitForTimeout(1200);
+    check('goes grey when the connection is lost', await mode(page) === 'offline', await mode(page));
+    await shot(page, '12-offline');
+    await context.setOffline(false);
+    await page.evaluate(() => window.dispatchEvent(new Event('online')));
+    await page.waitForTimeout(1500);
+    check('comes back when the connection returns', await mode(page) !== 'offline');
+    check('no script errors', state.errors.filter(e => !/Failed to fetch|NetworkError|ERR_INTERNET/i.test(e)).length === 0, state.errors);
+  }
+
+  console.log('\nSettings (2.0)');
+  {
+    const { page, state } = await session(seed.user);
+    await ready(page);
+    await page.click('#owp-pet .owp-hit');
+    await page.click('#owp-menu .owp-mi >> text=Pet settings');
+    check('settings dialog opens', !!(await page.$('.owp-dialog .owp-settings')));
+    await shot(page, '13-settings');
+    await page.click('.owp-seg[data-pref=size] button[data-value=large]');
+    await page.waitForTimeout(500);
+    check('size changes the pet', Math.round((await rect(page, '#owp-pet')).width) === 70, (await rect(page, '#owp-pet')).width);
+    await page.fill('.owp-settings input[type=text]', 'Biscuit');
+    await page.keyboard.press('Tab');
+    await page.click('.owp-switch[data-pref=activity]');
+    await page.click('.owp-seg[data-pref=bubbles] button[data-value=never]');
+    await page.waitForTimeout(900);
+    const saved = await serverPet(seed.user);
+    check('settings are saved in the account', saved.prefs.size === 'large' && saved.prefs.nickname === 'Biscuit' && saved.prefs.activity === false && saved.prefs.bubbles === 'never', saved.prefs);
+    await page.keyboard.press('Escape');
+    check('nickname is used', (await page.$eval('#owp-pet .owp-hit', b => b.getAttribute('aria-label'))).includes('Biscuit'));
+    await page.goto(seed.base + '/?model=fake-agent', { waitUntil: 'load' }); await page.waitForSelector('#chat-input'); await page.waitForTimeout(1800);
+    await record(page);
+    await sendInChat(page, 'TOOLS write_note');
+    await settleAnswer(page);
+    let rec = await recorded(page);
+    check('with "Follow the AI" off, tools are not acted out', !rec.modes.includes('write') && !rec.emotes.some(e => e.startsWith('info:')), rec);
+    await ready(page);
+    await record(page);
+    await sendInChat(page, 'ERROR500 again');
+    await page.waitForTimeout(3000);
+    rec = await recorded(page);
+    check('with bubbles set to never, errors stay silent but visible', rec.bubbles.length === 0 && rec.modes.includes('worried'), rec);
+    await page.evaluate(() => window.__owuiChatPetsDebug.openSettings());
+    await page.click('.owp-dfoot .owp-link');
+    await page.waitForTimeout(800);
+    const reset = (await serverPet(seed.user)).prefs;
+    check('reset restores the defaults', reset.size === 'medium' && reset.activity === true && reset.bubbles === 'normal' && reset.nickname === '', reset);
+    await page.keyboard.press('Escape');
+    check('no errors in settings', state.errors.length === 0, state.errors);
+  }
+
+  console.log('\nAnswer ready in another chat (2.0)');
+  {
+    await setValves({ bubble_interval_minutes: 1 });
+    const { page } = await session(seed.user);
+    await ready(page);
+    await sendInChat(page, 'SLOW background answer');
+    await page.waitForURL(/\/c\//, { timeout: 15000 });
+    const chatUrl = new URL(page.url()).pathname;
+    await page.waitForTimeout(800);
+    await page.keyboard.press('Control+Shift+O');
+    await page.waitForTimeout(800);
+    if (new URL(page.url()).pathname !== '/') await page.evaluate(() => { history.pushState({}, '', '/'); window.dispatchEvent(new PopStateEvent('popstate')); });
+    await record(page);
+    await page.waitForTimeout(9000);
+    const rec = await recorded(page);
+    const bubble = rec.bubbles.find(b => /Answer ready in/.test(b));
+    check('tells you when an answer is ready in another chat', !!bubble, rec.bubbles);
+    if (bubble && await visible(page, '#owp-bubble')) {
+      await page.click('#owp-bubble');
+      await page.waitForTimeout(1500);
+      check('clicking the bubble opens that chat', new URL(page.url()).pathname === chatUrl, page.url());
+    }
+  }
+
+  console.log('\nNotices from the server (2.0)');
+  {
+    await setValves({ bubble_interval_minutes: 1 });
+    const { page, state } = await session(seed.admin);
+    await ready(page);
+    if (!(await visible(page, '#owp-pet'))) await adopt(page, 'hibou');
+    await page.waitForTimeout(7000);
+    await record(page);
+    const auto = (await api(seed.admin, 'POST', '/api/v1/automations/create', { name: 'Pet check', data: { prompt: 'Say hello', model_id: 'fake-gpt-4o', rrule: '' } })).json;
+    await api(seed.admin, 'POST', `/api/v1/automations/${auto.id}/run`);
+    await page.waitForTimeout(6000);
+    let rec = await recorded(page);
+    check('announces an automation run', rec.bubbles.some(b => /Automation .Pet check. (is starting|has finished)/.test(b)), rec.bubbles);
+    check('automation badge shows a clock', rec.emotes.length > 0, rec.emotes);
+    await shot(page, '14-automation');
+    let cals = (await api(seed.admin, 'GET', '/api/v1/calendars/')).json;
+    if (!Array.isArray(cals) || !cals.length) { await api(seed.admin, 'POST', '/api/v1/calendars/create', { name: 'Pets' }); cals = (await api(seed.admin, 'GET', '/api/v1/calendars/')).json; }
+    const startNs = (Date.now() + 3 * 60000) * 1e6;
+    await record(page);
+    const ev = await api(seed.admin, 'POST', '/api/v1/calendars/events/create', { calendar_id: cals[0].id, title: 'Pet standup', start_at: startNs, end_at: startNs + 1800 * 1e9 });
+    check('calendar event created for the test', ev.status === 200, ev);
+    const until = Date.now() + 30000;
+    let saw = false;
+    while (Date.now() < until && !saw) { await page.waitForTimeout(1000); saw = (await page.evaluate(() => window.__rec.bubbles)).some(b => b.includes('Pet standup')); }
+    rec = await recorded(page);
+    check('rings a calendar reminder', saw && rec.modes.includes('alarm'), rec);
+    await shot(page, '15-calendar');
+    check('no errors with notices', state.errors.length === 0, state.errors);
+    await api(seed.admin, 'DELETE', `/api/v1/automations/${auto.id}/delete`);
+  }
+
+  console.log('\nWho gets a pet: roles, groups, people (2.0)');
+  {
+    await setValves({ access_mode: 'selected', allowed_roles: '', allowed_groups: seed.group.name });
+    const loader = await (await fetch(seed.base + '/static/loader.js')).text();
+    check('group names are not published', !loader.includes(seed.group.name) && !loader.includes('Pet testers'));
+    const member = await session(seed.user);
+    await ready(member.page);
+    check('a group member keeps the pet', await visible(member.page, '#owp-pet'));
+    const outsider = await session(seed.other);
+    await ready(outsider.page);
+    check('someone outside the group sees nothing at all', !(await outsider.page.$('#owp-pet')) && !(await outsider.page.$('#owp-paw')) && !(await outsider.page.$('#owp-style')));
+    check('Alt+Shift+P does nothing for them', await (async () => { await outsider.page.keyboard.press('Alt+Shift+P'); return !(await outsider.page.$('.owp-modal')); })());
+    await setValves({ access_mode: 'selected', allowed_roles: 'user', allowed_groups: '' });
+    const byRole = await session(seed.other);
+    await ready(byRole.page);
+    check('a role can be allowed', await visible(byRole.page, '#owp-pet') || await visible(byRole.page, '#owp-paw'));
+    await setValves({ access_mode: 'everyone', blocked_users: 'user@example.test' });
+    const blocked = await session(seed.user);
+    await ready(blocked.page);
+    check('a blocked person sees nothing', !(await blocked.page.$('#owp-pet')));
+    await setValves({ access_mode: 'everyone', custom_pets_for: 'nobody@example.test' });
+    const noCustom = await session(seed.user);
+    await ready(noCustom.page);
+    await noCustom.page.evaluate(() => window.__owuiChatPetsDebug.openPicker());
+    check('only listed people may make their own pet', !(await noCustom.page.$('.owp-card[data-id=custom]')));
+    await setValves({ access_mode: 'everyone', custom_pets_for: seed.group.name });
+    const withCustom = await session(seed.user);
+    await ready(withCustom.page);
+    await withCustom.page.evaluate(() => window.__owuiChatPetsDebug.openPicker());
+    check('group members listed for own pets may make one', !!(await withCustom.page.$('.owp-card[data-id=custom]')));
+    await setValves({});
+  }
+
   console.log('\nFalling asleep');
   {
+    await setValves({ sleep_after_minutes: 1 });
     const { page } = await session(seed.user);
     await page.clock.install();
     await ready(page);

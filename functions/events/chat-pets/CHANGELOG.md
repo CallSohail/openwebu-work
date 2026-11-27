@@ -3,6 +3,30 @@
 All notable changes to Chat Pets are documented here.
 This project follows [Semantic Versioning](https://semver.org/).
 
+## [2.0.0] - 2026-11-27
+
+### Added
+
+- **Follows the AI.** The pet listens (read-only) to Open WebUI's live socket and acts out each step of an answer, with a badge: web search, documents and knowledge, notes, memory, tasks, calendar, automations, code, images, sub-agents and channels, skills, other tools (tool servers, MCP, Function tools), reasoning, a tool asking you something, context compaction. 16 new animations: sniff, read, write, type, paint, ponder, listen, wait, worried, puzzled, celebrate, alarm, offline, shrug, squish.
+- **Problems in plain words.** Failed tools, errors (rate limit, context too long, access refused, model not found, timeout, network, or Open WebUI's message), error and warning toasts, stopped and empty answers, lost connection (the pet greys out until it is back).
+- **Notices.** Automation started, done or failed; calendar reminders; a file that couldn't be read; a note or memory saved; an image ready; an answer ready in another chat, with a link to it. Uploads and voice input get their own reactions.
+- **Pet settings** dialog: nickname, size, place, how often it talks (often, normal, rarely, never), wander, nap, animations, follow the AI, report problems, notices.
+- **Who gets a pet:** `access_mode` (`everyone` or `selected`), `allowed_roles`, `allowed_groups` (sub-groups count), `allowed_users`, `blocked_users` and `custom_pets_for`. Lists reach the browser only as salted SHA-256 hashes; server notices are checked on the server.
+- Admin valves `react_to_activity`, `react_to_errors` and `notices`.
+- `tests/fake_model.py`: a model that streams, reasons, calls built-in tools and fails on demand.
+- 52 unit tests and 129 browser checks against a real Open WebUI 0.13.5.
+
+### Changed
+
+- The menu now holds the shortcuts, Pet settings, Change pet, Hide for an hour and Remove; the toggles moved to the settings dialog.
+- Saved preferences gained new fields; 1.0 saves are read and upgraded.
+- Answers are tracked per chat from socket events; the 1.0 page watcher remains as a fallback.
+
+### Security
+
+- The socket and microphone hooks only listen: they never send, click, or change a frame or a message.
+- Server notices go only to the `user:<id>` room of the person concerned, carry only a type, a 60-character title, a chat UUID and minutes, and are skipped for people not allowed a pet. A failure in the relay never affects Open WebUI.
+
 ## [1.0.0] - 2026-11-27
 
 First version.

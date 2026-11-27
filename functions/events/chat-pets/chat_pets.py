@@ -1,8 +1,8 @@
 """
 title: Chat Pets
-description: A companion that lives on Open WebUI's message box, the way ChatGPT's pets do. Each person picks one of six animals or makes their own (name, colour, photo). It watches you type, thinks while the model answers, cheers when it is done, naps when you are away, and offers shortcuts for its job: mail, notes, tasks, research, calendar or revision.
+description: A companion that lives on Open WebUI's message box, the way ChatGPT's pets do. Each person picks one of six animals or makes their own. It follows what the AI does live (web search, documents, notes, memory, tasks, calendar, automations, code, images, skills, sub-agents), reacts to errors, warnings and lost connections, announces automations and calendar reminders, and offers shortcuts for its job. Admins choose who gets a pet by role, group or person.
 author: Muhammad Sohail
-version: 1.0.0
+version: 2.0.0
 license: MIT
 required_open_webui_version: 0.13.0
 """
@@ -10,8 +10,10 @@ required_open_webui_version: 0.13.0
 # The two protocol blocks below are Classic298's Shared Assets Protocol and its
 # live reload add-on (BSD 3-Clause), copied byte for byte from Chat Inspector.
 
+import hashlib as _hashlib
 import json as _json
 import re as _re
+import time as _time
 from typing import Literal
 
 from pydantic import BaseModel, Field
@@ -562,7 +564,92 @@ html.dark .owp-err{color:#ff8b7f}
 .owp-sw[aria-checked=true]{box-shadow:0 0 0 2.5px var(--owp-accent)}
 .owp-sr{position:absolute!important;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
 @media (max-width:560px){.owp-form{grid-template-columns:1fr}.owp-preview{flex-direction:row;justify-content:center}.owp-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.owp-dialog{padding:16px}.owp-card .owp-cv{width:60px;height:60px}}
-@media (prefers-reduced-motion:reduce){.owp-card .owp-cv *,.owp-preview .owp-cv *,.owp-card:hover .owp-cv,#owp-paw.owp-invite,#owp-bubble,#owp-menu,.owp-modal{animation:none!important}}
+#owp-pet .owp-emote{position:absolute;right:-12%;top:-16%;width:24px;height:24px;border-radius:50%;background:var(--owp-surface);border:1.5px solid var(--owp-tone);color:var(--owp-tone);display:flex;align-items:center;justify-content:center;box-shadow:0 3px 10px -4px rgba(0,0,0,.35);pointer-events:none;--owp-tone:var(--owp-accent);animation:owp-pop-in .28s cubic-bezier(.3,1.6,.6,1)}
+#owp-pet.owp-left .owp-emote{right:auto;left:-12%}
+#owp-pet .owp-emote svg{width:14px;height:14px;display:block}
+#owp-pet .owp-emote[data-tone=ok]{--owp-tone:#1f9d55}
+#owp-pet .owp-emote[data-tone=warn]{--owp-tone:#c27c0e}
+#owp-pet .owp-emote[data-tone=err]{--owp-tone:#d64545}
+#owp-pet .owp-emote[data-tone=muted]{--owp-tone:var(--owp-muted)}
+html.dark #owp-pet .owp-emote[data-tone=ok]{--owp-tone:#4cc38a}
+html.dark #owp-pet .owp-emote[data-tone=warn]{--owp-tone:#f0b45c}
+html.dark #owp-pet .owp-emote[data-tone=err]{--owp-tone:#ff7a6b}
+#owp-pet .owp-emote.owp-pulse{animation:owp-pop-in .28s cubic-bezier(.3,1.6,.6,1),owp-pulse 1.5s ease-in-out .3s infinite}
+#owp-pet.owp-corner .owp-emote{width:20px;height:20px}
+#owp-pet.owp-corner .owp-emote svg{width:12px;height:12px}
+@keyframes owp-pop-in{from{transform:scale(.2);opacity:0}to{transform:scale(1);opacity:1}}
+@keyframes owp-pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.13)}}
+#owp-pet[data-state=sniff] .owp-head{animation:owp-sniff .45s ease-in-out infinite alternate}
+#owp-pet[data-state=sniff] .owp-tail{animation-duration:.6s}
+#owp-pet[data-state=read] .owp-head{animation:owp-read 2.4s ease-in-out infinite}
+#owp-pet[data-state=read] .owp-pupils{transform:translate(0,1.8px)}
+#owp-pet[data-state=write] .owp-head{animation:owp-scribble .32s ease-in-out infinite alternate}
+#owp-pet[data-state=write] .owp-pupils{transform:translate(.8px,1.8px)}
+#owp-pet[data-state=type] .owp-head{animation:owp-scribble .22s ease-in-out infinite alternate}
+#owp-pet[data-state=type] .owp-leg-a{animation:owp-step .22s ease-in-out infinite}
+#owp-pet[data-state=type] .owp-leg-b{animation:owp-step .22s ease-in-out infinite .11s}
+#owp-pet[data-state=type] .owp-pupils{transform:translate(0,1.8px)}
+#owp-pet[data-state=paint] .owp-jump{animation:owp-sway-body 1.3s ease-in-out infinite;transform-origin:50% 100%}
+#owp-pet[data-state=paint] .owp-head{transform:rotate(-6deg)}
+#owp-pet[data-state=ponder] .owp-head{animation:owp-ponder 2.6s ease-in-out infinite}
+#owp-pet[data-state=ponder] .owp-pupils{transform:translate(1.4px,-1.8px)}
+#owp-pet[data-state=listen] .owp-head{transform:rotate(-11deg) translateY(-1px)}
+#owp-pet[data-state=listen] .owp-pupils{transform:translate(-1.4px,0)}
+#owp-pet[data-state=listen] .owp-tail{animation-duration:1.6s}
+#owp-pet[data-state=worried] .owp-jump{animation:owp-shake .45s ease-in-out 3}
+#owp-pet[data-state=worried] .owp-eyes{animation:none;transform:scaleY(.55)}
+#owp-pet[data-state=worried] .owp-head{transform:rotate(6deg) translateY(2px)}
+#owp-pet[data-state=worried] .owp-tail{animation:none;transform:rotate(-14deg)}
+#owp-pet[data-state=puzzled] .owp-head{transform:rotate(15deg)}
+#owp-pet[data-state=puzzled] .owp-pupils{transform:translate(1.5px,-1px)}
+#owp-pet[data-state=celebrate] .owp-jump{animation:owp-hop .7s ease-out 3}
+#owp-pet[data-state=celebrate] .owp-tail{animation-duration:.35s}
+#owp-pet[data-state=celebrate] .owp-fx span{animation:owp-spark .9s ease-out 3;opacity:0;color:#e8a316}
+#owp-pet[data-state=alarm] .owp-jump{animation:owp-ring .11s linear 14;transform-origin:50% 100%}
+#owp-pet[data-state=alarm] .owp-eyes{animation:none;transform:scale(1.15)}
+#owp-pet[data-state=offline] .owp-flip{filter:grayscale(.85);opacity:.7}
+#owp-pet[data-state=offline] .owp-head{transform:rotate(8deg) translateY(2px)}
+#owp-pet[data-state=offline] .owp-tail,#owp-pet[data-state=offline] .owp-body{animation:none}
+#owp-pet[data-state=shrug] .owp-jump{animation:owp-shrug .9s ease-in-out 1}
+#owp-pet[data-state=shrug] .owp-head{transform:rotate(-9deg)}
+#owp-pet[data-state=squish] .owp-jump{animation:owp-squish .8s ease-in-out 1;transform-origin:50% 100%}
+#owp-pet[data-state=wait] .owp-head{animation:owp-ponder 1.6s ease-in-out infinite}
+#owp-pet[data-state=wait] .owp-pupils{transform:translate(-1.5px,.5px)}
+@keyframes owp-sniff{from{transform:rotate(3deg) translate(0,1px)}to{transform:rotate(9deg) translate(1.5px,3px)}}
+@keyframes owp-read{0%,100%{transform:rotate(7deg) translateY(2px)}50%{transform:rotate(3deg) translateY(1px)}}
+@keyframes owp-scribble{from{transform:rotate(4deg) translateY(1.5px)}to{transform:rotate(8deg) translateY(2.5px)}}
+@keyframes owp-sway-body{0%,100%{transform:rotate(-4deg)}50%{transform:rotate(4deg)}}
+@keyframes owp-ponder{0%,100%{transform:rotate(-8deg) translateY(-1px)}50%{transform:rotate(-4deg) translateY(-2px)}}
+@keyframes owp-shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-3px)}75%{transform:translateX(3px)}}
+@keyframes owp-ring{0%,100%{transform:rotate(-5deg)}50%{transform:rotate(5deg)}}
+@keyframes owp-shrug{0%,100%{transform:translateY(0)}40%{transform:translateY(-4px) scale(1.03,.97)}}
+@keyframes owp-squish{0%,100%{transform:scale(1,1)}35%{transform:scale(1.14,.78)}65%{transform:scale(.94,1.07)}}
+#owp-pet.owp-calm .owp-emote{animation:none!important}
+#owp-bubble.owp-action{cursor:pointer}
+#owp-bubble .owp-bact{display:block;margin-top:4px;color:var(--owp-accent);font-weight:600;font-size:12px}
+#owp-bubble[data-tone=err]{border-color:#e5a3a3}
+#owp-bubble[data-tone=warn]{border-color:#e7c48a}
+html.dark #owp-bubble[data-tone=err]{border-color:#7a3a36}
+html.dark #owp-bubble[data-tone=warn]{border-color:#6e5527}
+.owp-settings{display:flex;flex-direction:column;gap:14px}
+.owp-sgroup{border:1px solid var(--owp-line);border-radius:14px;padding:12px 14px;display:flex;flex-direction:column;gap:10px}
+.owp-sgroup h3{margin:0;font-size:12px;text-transform:uppercase;letter-spacing:.05em;color:var(--owp-muted);font-weight:650}
+.owp-srow{display:flex;align-items:center;gap:12px;justify-content:space-between;min-width:0}
+.owp-srow > span{min-width:0}
+.owp-srow b{display:block;font-weight:600;font-size:13.5px}
+.owp-srow small{display:block;color:var(--owp-muted);font-size:12px;margin-top:1px}
+.owp-switch{position:relative;flex:none;width:40px;height:24px;border-radius:999px;border:0;background:var(--owp-line);cursor:pointer;padding:0;transition:background .15s}
+.owp-switch::after{content:"";position:absolute;left:3px;top:3px;width:18px;height:18px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.3);transition:transform .15s}
+.owp-switch[aria-checked=true]{background:var(--owp-accent)}
+.owp-switch[aria-checked=true]::after{transform:translateX(16px)}
+.owp-switch:focus-visible{outline:none;box-shadow:0 0 0 3px var(--owp-ring)}
+.owp-seg{display:inline-flex;flex:none;border:1px solid var(--owp-line);border-radius:10px;overflow:hidden}
+.owp-seg button{height:30px;padding:0 10px;border:0;background:transparent;color:var(--owp-muted);font:inherit;font-size:12.5px;cursor:pointer}
+.owp-seg button + button{border-left:1px solid var(--owp-line)}
+.owp-seg button[aria-checked=true]{background:var(--owp-soft);color:var(--owp-text);font-weight:600}
+.owp-seg button:focus-visible{outline:none;box-shadow:inset 0 0 0 2px var(--owp-ring)}
+@media (max-width:560px){.owp-srow{flex-wrap:wrap}}
+@media (prefers-reduced-motion:reduce){.owp-card .owp-cv *,.owp-preview .owp-cv *,.owp-card:hover .owp-cv,#owp-paw.owp-invite,#owp-bubble,#owp-menu,.owp-modal,#owp-pet .owp-emote,.owp-switch,.owp-switch::after{animation:none!important;transition:none!important}}
 """
 
 # ===========================================================================
@@ -579,7 +666,61 @@ LOADER_SCRIPT = r"""
   const D = document;
   const now = () => Date.now();
 
-  /* ---------------- language ---------------- */
+  /* ================================================================
+     Early hooks. loader.js runs before Open WebUI opens its socket,
+     so these must be in place before anything else. Both only listen:
+     they never change, delay or drop what Open WebUI sends or receives.
+     ================================================================ */
+  const frameQueue = [];
+  let frameSink = null, socketOpen = false;
+  const pushFrame = data => { if (frameSink) frameSink(data); else if (frameQueue.length < 200) frameQueue.push(data); };
+  (function hookSocket() {
+    const Native = window.WebSocket;
+    if (!Native || Native.__owpHooked) return;
+    const Hooked = function (url, protocols) {
+      const ws = protocols === undefined ? new Native(url) : new Native(url, protocols);
+      try {
+        const u = new URL(String(url), location.href);
+        if (u.host === location.host && u.pathname.indexOf('/ws/socket.io') === 0) {
+          ws.addEventListener('open', () => { socketOpen = true; pushFrame({ kind: 'open' }); });
+          ws.addEventListener('close', () => { socketOpen = false; pushFrame({ kind: 'close' }); });
+          ws.addEventListener('message', e => { if (typeof e.data === 'string' && e.data.charCodeAt(0) === 52 && e.data.charCodeAt(1) === 50) pushFrame(e.data); });
+        }
+      } catch {}
+      return ws;
+    };
+    Hooked.prototype = Native.prototype;
+    for (const k of ['CONNECTING', 'OPEN', 'CLOSING', 'CLOSED']) { try { Object.defineProperty(Hooked, k, { value: Native[k] }); } catch {} }
+    Object.defineProperty(Hooked, '__owpHooked', { value: true });
+    try { Object.setPrototypeOf(Hooked, Native); } catch {}
+    window.WebSocket = Hooked;
+  })();
+  let micTracks = 0;
+  (function hookMic() {
+    const md = navigator.mediaDevices;
+    if (!md || typeof md.getUserMedia !== 'function' || md.getUserMedia.__owpHooked) return;
+    const original = md.getUserMedia.bind(md);
+    const wrapped = async constraints => {
+      const stream = await original(constraints);
+      try {
+        for (const track of stream.getAudioTracks()) {
+          micTracks++;
+          let live = true;
+          const done = () => { if (live) { live = false; micTracks = Math.max(0, micTracks - 1); } };
+          track.addEventListener('ended', done);
+          const stop = track.stop.bind(track);
+          track.stop = () => { done(); stop(); };
+        }
+      } catch {}
+      return stream;
+    };
+    Object.defineProperty(wrapped, '__owpHooked', { value: true });
+    try { md.getUserMedia = wrapped; } catch {}
+  })();
+
+  /* ================================================================
+     Words
+     ================================================================ */
   const lang = (() => {
     if (CONFIG.language === 'fr' || CONFIG.language === 'en') return CONFIG.language;
     let loc = '';
@@ -596,13 +737,37 @@ LOADER_SCRIPT = r"""
       f_name: 'Nom', f_name_ph: 'Biscotte', f_animal: 'Animal', f_color: 'Couleur', f_role: 'Ce qu’il fait pour vous', f_role_hint: 'Facultatif. Ses raccourcis sont ceux de l’animal choisi.',
       f_photo: 'Photo', f_photo_btn: 'Choisir une photo', f_photo_remove: 'Retirer la photo', f_photo_hint: 'PNG, JPEG, WebP ou GIF, 5 Mo maximum. Elle reste dans votre compte.',
       original: 'Couleur d’origine', err_name: 'Donnez-lui un nom (24 caractères au maximum).', err_photo_type: 'Ce format d’image n’est pas accepté.', err_photo_size: 'Cette image est trop lourde.', err_photo_read: 'Impossible de lire cette image.',
-      shortcuts: 'Raccourcis', change: 'Changer de compagnon…', bubbles_on: 'Bulles : activées', bubbles_off: 'Bulles : désactivées',
-      motion_on: 'Animations : activées', motion_off: 'Animations : réduites', place_composer: 'Place : sur la barre de message', place_corner: 'Place : dans le coin',
+      shortcuts: 'Raccourcis', change: 'Changer de compagnon…', settings: 'Réglages du compagnon…',
       nap: 'Le cacher pendant 1 h', remove: 'Retirer mon compagnon', paw: 'Choisir un compagnon', pet_label: '{name}, votre compagnon. Ouvrir son menu.',
-      menu_label: 'Menu de {name}', picker_label: 'Choix du compagnon', invite: 'Psst… un compagnon pour vous accompagner ?',
+      menu_label: 'Menu de {name}', picker_label: 'Choix du compagnon', settings_label: 'Réglages du compagnon',
       hello_morning: 'Bonjour{name} !', hello_afternoon: 'Bon après-midi{name} !', hello_evening: 'Bonsoir{name} !',
-      adopted: 'Coucou, je suis {name} ! Cliquez sur moi pour mes raccourcis.', woke: 'Hmm ? Je suis là !', removed: 'Votre compagnon est parti se reposer. La patte en bas à droite le fait revenir.',
-      custom_role: 'Compagnon', on_pet: 'Vous', snoozed: 'À tout à l’heure !'
+      adopted: 'Coucou, je suis {name} ! Cliquez sur moi pour mes raccourcis.', removed: 'Votre compagnon est parti se reposer. La patte en bas à droite le fait revenir.',
+      custom_role: 'Compagnon', snoozed: 'À tout à l’heure !',
+      s_title: 'Réglages de {name}', s_sub: 'Choisissez comment il se comporte. Les changements sont enregistrés tout de suite.',
+      s_look: 'Apparence', s_behaviour: 'Comportement', s_reactions: 'Réactions', s_nick: 'Surnom', s_nick_hint: 'Vide : son nom d’origine.',
+      s_size: 'Taille', s_small: 'Petit', s_medium: 'Moyen', s_large: 'Grand',
+      s_place: 'Place', s_composer: 'Barre de message', s_corner: 'Coin',
+      s_talk: 'Bulles', s_often: 'Souvent', s_normal: 'Normal', s_rare: 'Rarement', s_never: 'Jamais',
+      s_walk: 'Se promener', s_walk_hint: 'Il marche le long de la barre de temps en temps.',
+      s_sleep: 'Faire la sieste', s_sleep_hint: 'Il s’endort quand vous vous absentez.',
+      s_motion: 'Animations', s_motion_hint: 'Désactivé : il reste calme, sans sauts ni marche.',
+      s_activity: 'Suivre l’IA', s_activity_hint: 'Recherche web, notes, mémoire, code, images, outils…',
+      s_errors: 'Signaler les problèmes', s_errors_hint: 'Erreurs, outils en échec, connexion perdue.',
+      s_notices: 'Annonces', s_notices_hint: 'Automatisations, rappels d’agenda, fichiers, notes et souvenirs enregistrés.',
+      s_reset: 'Réglages par défaut', s_done: 'Terminé',
+      a_think: 'Je réfléchis…', a_ponder: 'Le modèle raisonne…', a_write: 'Il écrit la réponse…', a_search: 'Je cherche…', a_web: 'Je fouille le web…', a_read: 'Je lis vos documents…',
+      a_note: 'Je prends des notes…', a_memory: 'Je consulte ma mémoire…', a_tasks: 'Je fais une liste de tâches…', a_calendar: 'Je regarde l’agenda…', a_automation: 'Je règle une automatisation…',
+      a_timer: 'Je surveille l’heure…', a_code: 'J’exécute du code…', a_image: 'Je dessine…', a_agents: 'J’envoie des renforts…', a_skill: 'J’utilise une compétence…', a_tool: 'J’utilise un outil…',
+      a_plug: 'J’appelle un service externe…', a_chats: 'Je relis vos conversations…', a_mail: 'Je regarde vos emails…', a_ask: 'L’IA attend votre réponse.', a_listen: 'Je vous écoute…', a_compact: 'Je résume le début de la conversation.',
+      r_done: 'C’est prêt !', r_sources: 'Réponse prête, avec ses sources.', r_image: 'Votre image est prête !', r_tasks_done: 'Toutes les tâches sont faites !', r_slow: 'Ouf, c’était long !',
+      r_stopped: 'D’accord, j’arrête.', r_empty: 'Hmm, la réponse est vide.', r_tool_failed: 'L’outil « {tool} » n’a pas marché.', r_tools_failed: '{n} outils n’ont pas marché.',
+      r_upload: 'Fichier reçu !', r_uploads: '{n} fichiers reçus !', r_offline: 'Connexion perdue… je patiente.', r_online: 'Re-connecté !', r_toast_warn: 'Attention : {text}',
+      e_rate: 'Trop de demandes en même temps. Réessayez dans un instant.', e_context: 'La conversation est trop longue pour ce modèle. Ouvrez une nouvelle conversation.',
+      e_auth: 'Le modèle a refusé l’accès (clé ou droits).', e_model: 'Ce modèle est introuvable ou indisponible.', e_network: 'Le modèle ne répond pas (réseau).',
+      e_timeout: 'Le modèle a mis trop de temps à répondre.', e_generic: 'Oups, une erreur : {text}', e_unknown: 'Oups, quelque chose s’est mal passé.',
+      n_auto_start: 'L’automatisation « {name} » démarre.', n_auto_done: 'L’automatisation « {name} » est terminée.', n_auto_fail: 'L’automatisation « {name} » a échoué.',
+      n_calendar: '« {name} » commence {when}.', n_now: 'maintenant', n_file_fail: 'Le fichier « {name} » n’a pas pu être lu.', n_note: 'Note enregistrée : « {name} »',
+      n_memory: 'C’est noté, je m’en souviendrai.', n_image: 'Une image vient d’être créée.', n_open: 'Ouvrir', n_background: 'Réponse prête dans « {name} ».'
     },
     en: {
       pick_title: 'Choose your pet', pick_sub: 'Pick a companion or add one of your own.',
@@ -612,13 +777,37 @@ LOADER_SCRIPT = r"""
       f_name: 'Name', f_name_ph: 'Biscuit', f_animal: 'Animal', f_color: 'Colour', f_role: 'What it helps you with', f_role_hint: 'Optional. Its shortcuts come from the animal you pick.',
       f_photo: 'Photo', f_photo_btn: 'Choose a photo', f_photo_remove: 'Remove photo', f_photo_hint: 'PNG, JPEG, WebP or GIF, up to 5 MB. It stays in your account.',
       original: 'Original colour', err_name: 'Give it a name (up to 24 characters).', err_photo_type: 'This image format isn’t supported.', err_photo_size: 'This image is too large.', err_photo_read: 'This image couldn’t be read.',
-      shortcuts: 'Shortcuts', change: 'Change pet…', bubbles_on: 'Speech bubbles: on', bubbles_off: 'Speech bubbles: off',
-      motion_on: 'Animations: on', motion_off: 'Animations: reduced', place_composer: 'Place: on the message box', place_corner: 'Place: in the corner',
+      shortcuts: 'Shortcuts', change: 'Change pet…', settings: 'Pet settings…',
       nap: 'Hide for 1 hour', remove: 'Remove my pet', paw: 'Choose a pet', pet_label: '{name}, your pet. Open its menu.',
-      menu_label: '{name}’s menu', picker_label: 'Pet picker', invite: 'Psst… want a companion to keep you company?',
+      menu_label: '{name}’s menu', picker_label: 'Pet picker', settings_label: 'Pet settings',
       hello_morning: 'Good morning{name}!', hello_afternoon: 'Good afternoon{name}!', hello_evening: 'Good evening{name}!',
-      adopted: 'Hi, I’m {name}! Click me for shortcuts.', woke: 'Hm? I’m here!', removed: 'Your pet went to rest. The paw at the bottom right brings it back.',
-      custom_role: 'Companion', on_pet: 'You', snoozed: 'See you soon!'
+      adopted: 'Hi, I’m {name}! Click me for shortcuts.', removed: 'Your pet went to rest. The paw at the bottom right brings it back.',
+      custom_role: 'Companion', snoozed: 'See you soon!',
+      s_title: '{name}’s settings', s_sub: 'Choose how it behaves. Changes are saved right away.',
+      s_look: 'Look', s_behaviour: 'Behaviour', s_reactions: 'Reactions', s_nick: 'Nickname', s_nick_hint: 'Empty: its own name.',
+      s_size: 'Size', s_small: 'Small', s_medium: 'Medium', s_large: 'Large',
+      s_place: 'Place', s_composer: 'Message box', s_corner: 'Corner',
+      s_talk: 'Speech bubbles', s_often: 'Often', s_normal: 'Normal', s_rare: 'Rarely', s_never: 'Never',
+      s_walk: 'Wander', s_walk_hint: 'It walks along the box now and then.',
+      s_sleep: 'Nap', s_sleep_hint: 'It falls asleep when you step away.',
+      s_motion: 'Animations', s_motion_hint: 'Off: it stays calm, no hops or walks.',
+      s_activity: 'Follow the AI', s_activity_hint: 'Web search, notes, memory, code, images, tools…',
+      s_errors: 'Report problems', s_errors_hint: 'Errors, failed tools, lost connection.',
+      s_notices: 'Notices', s_notices_hint: 'Automations, calendar reminders, files, notes and memories saved.',
+      s_reset: 'Reset to defaults', s_done: 'Done',
+      a_think: 'Thinking…', a_ponder: 'The model is reasoning…', a_write: 'Writing the answer…', a_search: 'Searching…', a_web: 'Digging through the web…', a_read: 'Reading your documents…',
+      a_note: 'Taking notes…', a_memory: 'Checking my memory…', a_tasks: 'Making a task list…', a_calendar: 'Looking at the calendar…', a_automation: 'Setting up an automation…',
+      a_timer: 'Keeping an eye on the time…', a_code: 'Running code…', a_image: 'Drawing…', a_agents: 'Calling in helpers…', a_skill: 'Using a skill…', a_tool: 'Using a tool…',
+      a_plug: 'Calling an outside service…', a_chats: 'Reading your past chats…', a_mail: 'Looking at your emails…', a_ask: 'The AI is waiting for your answer.', a_listen: 'Listening…', a_compact: 'Summarising the start of the chat.',
+      r_done: 'All done!', r_sources: 'Answer ready, with sources.', r_image: 'Your image is ready!', r_tasks_done: 'Every task is done!', r_slow: 'Phew, that was a long one!',
+      r_stopped: 'Okay, stopping.', r_empty: 'Hmm, the answer is empty.', r_tool_failed: 'The “{tool}” tool didn’t work.', r_tools_failed: '{n} tools didn’t work.',
+      r_upload: 'File received!', r_uploads: '{n} files received!', r_offline: 'Connection lost… waiting.', r_online: 'Back online!', r_toast_warn: 'Heads up: {text}',
+      e_rate: 'Too many requests at once. Try again in a moment.', e_context: 'This chat is too long for the model. Start a new chat.',
+      e_auth: 'The model refused access (key or permissions).', e_model: 'This model can’t be found or isn’t available.', e_network: 'The model isn’t answering (network).',
+      e_timeout: 'The model took too long to answer.', e_generic: 'Oops, an error: {text}', e_unknown: 'Oops, something went wrong.',
+      n_auto_start: 'Automation “{name}” is starting.', n_auto_done: 'Automation “{name}” has finished.', n_auto_fail: 'Automation “{name}” failed.',
+      n_calendar: '“{name}” starts {when}.', n_now: 'now', n_file_fail: 'The file “{name}” couldn’t be read.', n_note: 'Note saved: “{name}”',
+      n_memory: 'Noted, I’ll remember that.', n_image: 'An image was just created.', n_open: 'Open', n_background: 'Answer ready in “{name}”.'
     }
   };
   const T = (key, vars) => {
@@ -628,7 +817,9 @@ LOADER_SCRIPT = r"""
   };
   const L = obj => (obj && (obj[lang] || obj.en)) || '';
 
-  /* ---------------- catalogue ---------------- */
+  /* ================================================================
+     Pets
+     ================================================================ */
   const SPECIES = {
     hibou: { name: 'Plume', colors: { main: '#8a5a3b', belly: '#f0ddc2', dark: '#3a281c', accent: '#f0a234' },
       kind: { fr: 'le hibou', en: 'the owl' }, role: { fr: 'Courrier', en: 'Mail' },
@@ -757,14 +948,163 @@ LOADER_SCRIPT = r"""
     if (img && pet.photo) img.setAttribute('href', pet.photo);
   }
 
-  /* ---------------- state ---------------- */
+
+  /* ================================================================
+     Emote icons (24 px, stroke) shown in a badge above the pet's head
+     ================================================================ */
+  const EMOTE = {
+    bulb: '<path d="M9 18h6M10 21h4M12 3a6 6 0 00-3.5 10.9c.6.5 1 1.2 1 2.1h5c0-.9.4-1.6 1-2.1A6 6 0 0012 3z"/>',
+    pen: '<path d="M4 20l4-1L19 8l-3-3L5 16z"/><path d="M14 7l3 3"/>',
+    search: '<circle cx="11" cy="11" r="6"/><path d="M20 20l-4.5-4.5"/>',
+    globe: '<circle cx="12" cy="12" r="8.5"/><path d="M3.5 12h17M12 3.5c2.5 3 2.5 14 0 17M12 3.5c-2.5 3-2.5 14 0 17"/>',
+    book: '<path d="M4 5.5A2.5 2.5 0 016.5 3H20v15H6.5A2.5 2.5 0 004 20.5z"/><path d="M4 20.5A2.5 2.5 0 016.5 23H20"/>',
+    note: '<path d="M6 3h9l4 4v14H6z"/><path d="M15 3v4h4M9 12h7M9 16h5"/>',
+    brain: '<path d="M9 4a3 3 0 00-3 3 3 3 0 00-2 5 3 3 0 002 5 3 3 0 003 3h1V4z"/><path d="M15 4a3 3 0 013 3 3 3 0 012 5 3 3 0 01-2 5 3 3 0 01-3 3h-1V4z"/>',
+    list: '<path d="M9 6h11M9 12h11M9 18h11"/><path d="M4 6l1 1 2-2M4 12l1 1 2-2M4 18l1 1 2-2"/>',
+    calendar: '<rect x="3.5" y="5" width="17" height="15" rx="2.5"/><path d="M3.5 10h17M8 3v4M16 3v4"/>',
+    clock: '<circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/>',
+    hourglass: '<path d="M7 3h10M7 21h10M8 3c0 5 8 5 8 9s-8 4-8 9M16 3c0 5-8 5-8 9s8 4 8 9"/>',
+    code: '<path d="M8 8l-4 4 4 4M16 8l4 4-4 4M14 5l-4 14"/>',
+    brush: '<path d="M14 4l6 6-7 7-6-6z"/><path d="M7 11l-3 3c-1 1-1 4-1 6 2 0 5 0 6-1l3-3"/>',
+    users: '<circle cx="9" cy="8" r="3.2"/><path d="M3.5 19c.6-3 3-4.8 5.5-4.8S13.9 16 14.5 19"/><path d="M16 5.2a3 3 0 010 5.6M18 14.6c1.4.8 2.3 2.4 2.5 4.4"/>',
+    wand: '<path d="M4 20L15 9M14 4v2M19 9h2M18 5l-1.4 1.4M10 5l1 1M19 14l-1-1"/>',
+    wrench: '<path d="M14.5 6a4 4 0 00-5 5L4 16.5 7.5 20 13 14.5a4 4 0 005-5L15.5 12 12 8.5z"/>',
+    plug: '<path d="M9 3v5M15 3v5M6 8h12v3a6 6 0 01-12 0zM12 17v4"/>',
+    chat: '<path d="M5 5h14v10H9l-4 4z"/>',
+    mail: '<rect x="3.5" y="5.5" width="17" height="13" rx="2"/><path d="M4 7l8 6 8-6"/>',
+    help: '<circle cx="12" cy="12" r="8.5"/><path d="M9.5 9.5a2.5 2.5 0 015 .5c0 1.7-2.5 2-2.5 3.5M12 17h.01"/>',
+    mic: '<rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0013 0M12 17.5V21"/>',
+    cloudoff: '<path d="M7 18h10a4 4 0 00.5-8 6 6 0 00-11-1.5A4.5 4.5 0 007 18z"/><path d="M4 4l16 16"/>',
+    squeeze: '<path d="M4 9l4 3-4 3M20 9l-4 3 4 3M12 4v16"/>',
+    clip: '<path d="M20 11.5l-8 8a5 5 0 01-7-7l8.5-8.5a3.5 3.5 0 015 5L10 17.5a2 2 0 01-3-3L14.5 7"/>',
+    check: '<path d="M5 12.5l4.5 4.5L19 7.5"/>',
+    sparkle: '<path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z"/>',
+    alert: '<path d="M12 4l9 16H3z"/><path d="M12 10v4M12 17h.01"/>',
+    error: '<circle cx="12" cy="12" r="8.5"/><path d="M12 7.5v5.5M12 16.5h.01"/>',
+    stop: '<rect x="6" y="6" width="12" height="12" rx="2"/>',
+    bell: '<path d="M6 16V11a6 6 0 0112 0v5l2 2H4zM10 20a2 2 0 004 0"/>',
+    image: '<rect x="3.5" y="4.5" width="17" height="15" rx="2.5"/><circle cx="9" cy="10" r="1.8"/><path d="M4 18l5-5 4 4 3-3 4 4"/>',
+    gear: '<circle cx="12" cy="12" r="3"/><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5.3 5.3l2.1 2.1M16.6 16.6l2.1 2.1M5.3 18.7l2.1-2.1M16.6 7.4l2.1-2.1"/>',
+    sweat: '<path d="M12 4c3 4 5 7 5 9.5a5 5 0 01-10 0C7 11 9 8 12 4z"/>'
+  };
+  const emoteSvg = name => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + (EMOTE[name] || EMOTE.sparkle) + '</svg>';
+
+  /* What each activity looks like: animation state, badge icon, tone, words key. */
+  const ACT = {
+    think: { anim: 'think', icon: '', tone: 'info', key: 'a_think', rank: 10 },
+    write: { anim: 'write', icon: 'pen', tone: 'info', key: 'a_write', rank: 12 },
+    ponder: { anim: 'ponder', icon: 'bulb', tone: 'info', key: 'a_ponder', rank: 14 },
+    search: { anim: 'sniff', icon: 'search', tone: 'info', key: 'a_search', rank: 20 },
+    web: { anim: 'sniff', icon: 'globe', tone: 'info', key: 'a_web', rank: 20 },
+    read: { anim: 'read', icon: 'book', tone: 'info', key: 'a_read', rank: 20 },
+    note: { anim: 'write', icon: 'note', tone: 'info', key: 'a_note', rank: 20 },
+    memory: { anim: 'ponder', icon: 'brain', tone: 'info', key: 'a_memory', rank: 20 },
+    tasks: { anim: 'write', icon: 'list', tone: 'info', key: 'a_tasks', rank: 20 },
+    calendar: { anim: 'read', icon: 'calendar', tone: 'info', key: 'a_calendar', rank: 20 },
+    automation: { anim: 'type', icon: 'clock', tone: 'info', key: 'a_automation', rank: 20 },
+    timer: { anim: 'ponder', icon: 'hourglass', tone: 'info', key: 'a_timer', rank: 20 },
+    code: { anim: 'type', icon: 'code', tone: 'info', key: 'a_code', rank: 20 },
+    image: { anim: 'paint', icon: 'brush', tone: 'info', key: 'a_image', rank: 20 },
+    agents: { anim: 'think', icon: 'users', tone: 'info', key: 'a_agents', rank: 20 },
+    skill: { anim: 'ponder', icon: 'wand', tone: 'info', key: 'a_skill', rank: 20 },
+    tool: { anim: 'type', icon: 'wrench', tone: 'info', key: 'a_tool', rank: 18 },
+    plug: { anim: 'type', icon: 'plug', tone: 'info', key: 'a_plug', rank: 18 },
+    chats: { anim: 'read', icon: 'chat', tone: 'info', key: 'a_chats', rank: 20 },
+    mail: { anim: 'read', icon: 'mail', tone: 'info', key: 'a_mail', rank: 20 },
+    ask: { anim: 'wait', icon: 'help', tone: 'warn', key: 'a_ask', rank: 40, pulse: true },
+    listen: { anim: 'listen', icon: 'mic', tone: 'info', key: 'a_listen', rank: 45, pulse: true },
+    offline: { anim: 'offline', icon: 'cloudoff', tone: 'err', key: 'r_offline', rank: 60 }
+  };
+  /* Tool or status name -> activity. First match wins; names are lower-cased. */
+  const TOOL_RULES = [
+    [/^(ask_user|request_user_input)$/, 'ask'],
+    [/(search_web|web_search|fetch_url|browse|websearch|search_the_web|google|bing|duckduckgo|tavily|exa_)/, 'web'],
+    [/(knowledge|chat_files|view_file|grep_.*files|query_.*files|list_.*files|retriev|document|rag)/, 'read'],
+    [/note/, 'note'],
+    [/memor/, 'memory'],
+    [/^(create_tasks|update_task)$/, 'tasks'],
+    [/automation/, 'automation'],
+    [/(calendar|availability|meeting|slot|room|invitation)/, 'calendar'],
+    [/^timer$/, 'timer'],
+    [/(execute_code|code_interpreter|run_code|python|terminal|shell|jupyter|execute)/, 'code'],
+    [/(image|video|draw|paint|picture|photo)/, 'image'],
+    [/^(delegate_task|send_message)$|agent/, 'agents'],
+    [/skill/, 'skill'],
+    [/(create_tool|search_tools|update_tool)/, 'tool'],
+    [/(search_chats|view_chat|channel)/, 'chats'],
+    [/(email|mail|inbox|draft|reply_to|forward|contact|identit|out_of_office|sender)/, 'mail'],
+    [/task/, 'tasks'],
+    [/(timestamp|time|date)/, 'timer'],
+    [/(search|find|lookup|query)/, 'search']
+  ];
+  function classify(name, type) {
+    const n = String(name || '').toLowerCase();
+    for (const [rx, act] of TOOL_RULES) if (rx.test(n)) return act;
+    return /external|mcp|openapi|server/.test(String(type || '')) ? 'plug' : 'tool';
+  }
+
+  /* ================================================================
+     SHA-256 (tiny, synchronous). Used to compare the signed-in person
+     with the admin's allow-lists, which are published only as hashes.
+     ================================================================ */
+  function sha256(text) {
+    const K = [0x428a2f98, 0x71374491, 0xb5c0fbcf, 0xe9b5dba5, 0x3956c25b, 0x59f111f1, 0x923f82a4, 0xab1c5ed5, 0xd807aa98, 0x12835b01, 0x243185be, 0x550c7dc3, 0x72be5d74, 0x80deb1fe, 0x9bdc06a7, 0xc19bf174,
+      0xe49b69c1, 0xefbe4786, 0x0fc19dc6, 0x240ca1cc, 0x2de92c6f, 0x4a7484aa, 0x5cb0a9dc, 0x76f988da, 0x983e5152, 0xa831c66d, 0xb00327c8, 0xbf597fc7, 0xc6e00bf3, 0xd5a79147, 0x06ca6351, 0x14292967,
+      0x27b70a85, 0x2e1b2138, 0x4d2c6dfc, 0x53380d13, 0x650a7354, 0x766a0abb, 0x81c2c92e, 0x92722c85, 0xa2bfe8a1, 0xa81a664b, 0xc24b8b70, 0xc76c51a3, 0xd192e819, 0xd6990624, 0xf40e3585, 0x106aa070,
+      0x19a4c116, 0x1e376c08, 0x2748774c, 0x34b0bcb5, 0x391c0cb3, 0x4ed8aa4a, 0x5b9cca4f, 0x682e6ff3, 0x748f82ee, 0x78a5636f, 0x84c87814, 0x8cc70208, 0x90befffa, 0xa4506ceb, 0xbef9a3f7, 0xc67178f2];
+    const bytes = new TextEncoder().encode(text);
+    const len = bytes.length, words = new Uint32Array(((len + 9 + 63) >> 6) << 4);
+    for (let i = 0; i < len; i++) words[i >> 2] |= bytes[i] << (24 - (i % 4) * 8);
+    words[len >> 2] |= 0x80 << (24 - (len % 4) * 8);
+    words[words.length - 1] = len * 8;
+    const H = [0x6a09e667, 0xbb67ae85, 0x3c6ef372, 0xa54ff53a, 0x510e527f, 0x9b05688c, 0x1f83d9ab, 0x5be0cd19];
+    const W = new Uint32Array(64);
+    const r = (x, n) => (x >>> n) | (x << (32 - n));
+    for (let o = 0; o < words.length; o += 16) {
+      for (let t = 0; t < 64; t++) {
+        if (t < 16) W[t] = words[o + t];
+        else {
+          const a = W[t - 15], b = W[t - 2];
+          W[t] = (W[t - 16] + (r(a, 7) ^ r(a, 18) ^ (a >>> 3)) + W[t - 7] + (r(b, 17) ^ r(b, 19) ^ (b >>> 10))) | 0;
+        }
+      }
+      let [a, b, c, d, e, f, g, h] = H;
+      for (let t = 0; t < 64; t++) {
+        const t1 = (h + (r(e, 6) ^ r(e, 11) ^ r(e, 25)) + ((e & f) ^ (~e & g)) + K[t] + W[t]) | 0;
+        const t2 = ((r(a, 2) ^ r(a, 13) ^ r(a, 22)) + ((a & b) ^ (a & c) ^ (b & c))) | 0;
+        h = g; g = f; f = e; e = (d + t1) | 0; d = c; c = b; b = a; a = (t1 + t2) | 0;
+      }
+      H[0] = (H[0] + a) | 0; H[1] = (H[1] + b) | 0; H[2] = (H[2] + c) | 0; H[3] = (H[3] + d) | 0;
+      H[4] = (H[4] + e) | 0; H[5] = (H[5] + f) | 0; H[6] = (H[6] + g) | 0; H[7] = (H[7] + h) | 0;
+    }
+    return H.map(x => (x >>> 0).toString(16).padStart(8, '0')).join('');
+  }
+  const idHash = value => sha256('owui-pets:v2:' + String(value || '').trim().toLowerCase());
+  function accessOf(me, groups) {
+    const A = CONFIG.access || { mode: 'everyone' };
+    const mine = new Set([idHash(me.id), idHash(me.email)]);
+    for (const g of groups) { mine.add(idHash(g.id)); mine.add(idHash(g.name)); }
+    const hit = list => (list || []).some(h => mine.has(h));
+    if (hit(A.blocked)) return { pets: false, custom: false };
+    const allowed = A.mode !== 'selected' || (A.roles || []).includes(String(me.role || '')) || hit(A.users) || hit(A.groups);
+    const custom = allowed && CONFIG.allowCustom && (!(A.custom || []).length || hit(A.custom));
+    return { pets: allowed, custom };
+  }
+
+  /* ================================================================
+     State
+     ================================================================ */
   const PHOTO = /^data:image\/(png|webp|jpeg);base64,[A-Za-z0-9+/]+=*$/;
   const clean = (s, n) => String(s == null ? '' : s).replace(/[\u0000-\u001f\u007f\u2028\u2029]/g, ' ').replace(/\s+/g, ' ').trim().slice(0, n);
-  const DEFAULT_PREFS = () => ({ bubbles: true, motion: true, place: CONFIG.place === 'corner' ? 'corner' : 'composer', x: 0.86 });
+  const TALK = ['often', 'normal', 'rare', 'never'];
+  const SIZES = { small: 46, medium: 58, large: 70 };
+  const DEFAULT_PREFS = () => ({ bubbles: CONFIG.bubbles ? 'normal' : 'never', motion: true, place: CONFIG.place === 'corner' ? 'corner' : 'composer', x: 0.86,
+    size: 'medium', walk: true, sleep: true, activity: true, errors: true, notices: true, nickname: '' });
+  let access = { pets: false, custom: false };
   function sanitizePet(p) {
     if (!p || typeof p !== 'object') return null;
     if (p.kind === 'builtin' && AVAILABLE.includes(p.id)) return { kind: 'builtin', id: p.id };
-    if (p.kind === 'custom' && CONFIG.allowCustom) {
+    if (p.kind === 'custom' && access.custom) {
       const base = AVAILABLE.includes(p.base) ? p.base : (AVAILABLE[0] || 'renard');
       const name = clean(p.name, 24);
       if (!name) return null;
@@ -777,14 +1117,18 @@ LOADER_SCRIPT = r"""
   }
   function sanitize(raw) {
     const s = raw && typeof raw === 'object' ? raw : {};
-    const prefs = Object.assign(DEFAULT_PREFS(), {});
+    const prefs = DEFAULT_PREFS();
     const rp = s.prefs && typeof s.prefs === 'object' ? s.prefs : {};
-    if (typeof rp.bubbles === 'boolean') prefs.bubbles = rp.bubbles;
-    if (typeof rp.motion === 'boolean') prefs.motion = rp.motion;
+    if (rp.bubbles === true) prefs.bubbles = 'normal';
+    else if (rp.bubbles === false) prefs.bubbles = 'never';
+    else if (TALK.includes(rp.bubbles)) prefs.bubbles = rp.bubbles;
+    for (const k of ['motion', 'walk', 'sleep', 'activity', 'errors', 'notices']) if (typeof rp[k] === 'boolean') prefs[k] = rp[k];
     if (rp.place === 'composer' || rp.place === 'corner') prefs.place = rp.place;
     if (typeof rp.x === 'number' && rp.x >= 0 && rp.x <= 1) prefs.x = rp.x;
+    if (SIZES[rp.size]) prefs.size = rp.size;
+    prefs.nickname = clean(rp.nickname, 24);
     return {
-      v: 1,
+      v: 2,
       updatedAt: Number.isFinite(s.updatedAt) ? s.updatedAt : 0,
       chosen: s.chosen === true,
       pet: sanitizePet(s.pet),
@@ -796,7 +1140,6 @@ LOADER_SCRIPT = r"""
   let uid = '', firstName = '', token = '';
   const localKey = () => 'owui-pets:' + uid;
   const getToken = () => { try { return localStorage.getItem('token') || ''; } catch { return ''; } };
-
   function effectivePet() {
     if (state.chosen) return state.pet;
     if (CONFIG.defaultPet && AVAILABLE.includes(CONFIG.defaultPet)) return { kind: 'builtin', id: CONFIG.defaultPet };
@@ -804,8 +1147,9 @@ LOADER_SCRIPT = r"""
   }
   function petInfo(pet) {
     const sp = SPECIES[pet.kind === 'custom' ? pet.base : pet.id] || SPECIES.renard;
+    const own = pet.kind === 'custom' ? pet.name : sp.name;
     return {
-      name: pet.kind === 'custom' ? pet.name : sp.name,
+      name: (pet === effectivePet() || JSON.stringify(pet) === JSON.stringify(effectivePet())) && state.prefs.nickname ? state.prefs.nickname : own,
       role: pet.kind === 'custom' ? (pet.role || L(sp.role)) : L(sp.role),
       kind: L(sp.kind), actions: sp.actions || [], lines: L(sp.lines) || []
     };
@@ -847,13 +1191,15 @@ LOADER_SCRIPT = r"""
     else { state = local; if (local.updatedAt && (!remote || local.updatedAt > remote.updatedAt)) push(); }
   }
   window.addEventListener('storage', e => {
-    if (uid && e.key === localKey() && e.newValue) {
+    if (uid && access.pets && e.key === localKey() && e.newValue) {
       try { state = sanitize(JSON.parse(e.newValue)); render(); } catch {}
     }
   });
   window.addEventListener('online', () => { if (dirty) push(); });
 
-  /* ---------------- DOM ---------------- */
+  /* ================================================================
+     DOM
+     ================================================================ */
   const el = (tag, attrs, text) => {
     const e = D.createElement(tag);
     if (attrs) for (const k in attrs) { if (k === 'class') e.className = attrs[k]; else e.setAttribute(k, attrs[k]); }
@@ -864,40 +1210,50 @@ LOADER_SCRIPT = r"""
     paw: '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><ellipse cx="6.5" cy="10" rx="2.2" ry="2.8"/><ellipse cx="17.5" cy="10" rx="2.2" ry="2.8"/><ellipse cx="10" cy="6" rx="2.1" ry="2.7"/><ellipse cx="14" cy="6" rx="2.1" ry="2.7"/><path d="M12 11.5c-3 0-6 3.6-6 6.2 0 1.6 1.3 2.3 2.7 2.3 1.2 0 2-.6 3.3-.6s2.1.6 3.3.6c1.4 0 2.7-.7 2.7-2.3 0-2.6-3-6.2-6-6.2z"/></svg>',
     x: '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>',
     plus: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>',
-    spark: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z"/></svg>',
     swap: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 7h11l-3-3M17 17H6l3 3"/></svg>',
     chat: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" aria-hidden="true"><path d="M5 5h14v10H9l-4 4z"/></svg>',
-    move: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M4 18h16M7 14l5-8 5 8"/></svg>',
+    gear: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5.3 5.3l2.1 2.1M16.6 16.6l2.1 2.1M5.3 18.7l2.1-2.1M16.6 7.4l2.1-2.1"/></svg>',
     moon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" aria-hidden="true"><path d="M20 14A8 8 0 1110 4a6.5 6.5 0 0010 10z"/></svg>',
-    wave: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M3 12c3-4 6 4 9 0s6 4 9 0"/></svg>',
-    bye: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M5 12h14"/></svg>'
+    bye: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M3 12h4M17 12h4M12 3v4M12 17v4M6 6l2.5 2.5M15.5 15.5L18 18M6 18l2.5-2.5M15.5 8.5L18 6"/></svg>'
   };
   const icon = name => { const s = el('span'); s.innerHTML = ICON[name]; return s.firstChild; };
 
-  let petEl, hitEl, jumpEl, flipEl, fxEl, bubbleEl, menuEl, pawEl, liveEl, modalEl = null;
+  let petEl, hitEl, jumpEl, flipEl, fxEl, emoteEl, bubbleEl, menuEl, pawEl, liveEl, modalEl = null, built = false;
   function buildDom() {
+    if (built) return;
+    built = true;
     const style = el('style', { id: 'owp-style' }); style.textContent = CSS; D.head.appendChild(style);
     petEl = el('div', { id: 'owp-pet', hidden: '' });
     flipEl = el('div', { class: 'owp-flip' }); jumpEl = el('div', { class: 'owp-jump' });
     flipEl.appendChild(jumpEl); petEl.appendChild(flipEl);
     fxEl = el('div', { class: 'owp-fx', 'aria-hidden': 'true' });
-    petEl.appendChild(fxEl);
+    emoteEl = el('div', { class: 'owp-emote', hidden: '', 'aria-hidden': 'true' });
+    petEl.appendChild(fxEl); petEl.appendChild(emoteEl);
     hitEl = el('button', { class: 'owp-hit', type: 'button', 'aria-haspopup': 'menu', 'aria-expanded': 'false' });
     petEl.appendChild(hitEl);
-    bubbleEl = el('div', { id: 'owp-bubble', hidden: '', role: 'status' });
+    bubbleEl = el('div', { id: 'owp-bubble', hidden: '' });
     menuEl = el('div', { id: 'owp-menu', hidden: '', role: 'menu' });
     pawEl = el('button', { id: 'owp-paw', type: 'button', hidden: '', 'aria-label': T('paw'), title: T('paw') });
     pawEl.innerHTML = ICON.paw;
     liveEl = el('div', { class: 'owp-sr', 'aria-live': 'polite' });
     for (const n of [petEl, bubbleEl, menuEl, pawEl, liveEl]) D.body.appendChild(n);
     pawEl.addEventListener('click', () => openPicker());
-    bubbleEl.addEventListener('click', hideBubble);
+    bubbleEl.addEventListener('click', () => { const go = bubbleEl._go; hideBubble(); if (go) location.assign(go); });
     wirePointer();
+    menuKeys();
+  }
+  function teardown() {
+    if (!built) return;
+    for (const n of [petEl, bubbleEl, menuEl, pawEl, liveEl, D.getElementById('owp-style')]) if (n) n.remove();
+    if (modalEl) { modalEl.remove(); modalEl = null; }
+    built = false;
   }
 
-  /* ---------------- placement ---------------- */
+  /* ================================================================
+     Placement
+     ================================================================ */
   let place = { x: -200, y: -200, size: 58, perch: null, mode: 'composer' };
-  let route = location.pathname, hiddenReason = '';
+  let route = location.pathname;
   const narrow = () => innerWidth < 640;
   function snoozed() { try { return Number(sessionStorage.getItem('owui-pets-snooze') || 0) > now(); } catch { return false; } }
   function composerBox() {
@@ -907,24 +1263,29 @@ LOADER_SCRIPT = r"""
     if (r.width < 120 || r.height < 20 || r.bottom < 0 || r.top > innerHeight) return null;
     return r;
   }
-  function perchRange(r, size) {
-    return { min: r.left + 10, max: r.right - size - 10, center: r.left + r.width / 2 };
-  }
+  function perchRange(r, size) { return { min: r.left + 10, max: r.right - size - 10, center: r.left + r.width / 2 }; }
   function xFromRatio(range, ratio, size) {
     let x = range.min + (range.max - range.min) * ratio;
     const mid = x + size / 2, dead = 70;
     if (Math.abs(mid - range.center) < dead) x = mid < range.center ? range.center - dead - size / 2 : range.center + dead - size / 2;
     return Math.max(range.min, Math.min(range.max, x));
   }
+  function petSize(usePerch, r) {
+    let size = SIZES[state.prefs.size] || 58;
+    if (!usePerch) size -= 12;
+    if (narrow() || (r && r.width < 520)) size -= 12;
+    return Math.max(34, size);
+  }
   function layout() {
+    if (!built) return;
     const t = getToken();
     if (t !== token) { token = t; boot(); return; }
-    if (location.pathname !== route) { route = location.pathname; resetWatch(); }
+    if (location.pathname !== route) { route = location.pathname; resetWatch(); pendingChat = ''; adoptOpen = false; }
     const pet = effectivePet();
-    const blocked = !uid || /^\/(auth|s\/|error|watch)/.test(location.pathname) || (CONFIG.hideOnMobile && narrow()) || !!D.fullscreenElement;
+    const blocked = !uid || !access.pets || /^\/(auth|s\/|error|watch)/.test(location.pathname) || (CONFIG.hideOnMobile && narrow()) || !!D.fullscreenElement;
     const r = composerBox();
     const usePerch = !!r && state.prefs.place === 'composer';
-    const size = usePerch ? (r.width < 520 || narrow() ? 46 : 58) : 46;
+    const size = petSize(usePerch, r);
     const showPet = !blocked && !!pet && !snoozed();
     const showPaw = !blocked && !showPet && CONFIG.paw && !modalEl;
     petEl.hidden = !showPet;
@@ -944,7 +1305,7 @@ LOADER_SCRIPT = r"""
       const range = perchRange(r, size);
       place.perch = range; place.mode = 'composer';
       if (!walking && !dragging) place.x = xFromRatio(range, state.prefs.x, size);
-      place.y = r.top - size + 4;
+      place.y = r.top - size + Math.round(size * 0.07);
     } else {
       place.perch = null; place.mode = 'corner';
       place.x = innerWidth - size - 18;
@@ -959,73 +1320,369 @@ LOADER_SCRIPT = r"""
     petEl.style.setProperty('--owp-y', Math.round(place.y) + 'px');
   }
 
-  /* ---------------- behaviour ---------------- */
-  let base = 'idle', transient = '', transientUntil = 0, walking = false, dragging = false;
-  let typingUntil = 0, lastActivity = now(), asleep = false, generating = false;
-  let lastLen = -1, lastGrow = 0, lastMsgId = '', lastWalk = now(), nextWalkIn = 15000, lastBubble = 0, draggedAt = 0;
+  /* ================================================================
+     Activities and reactions
+     ================================================================ */
+  const acts = new Map();
+  let reaction = null;
+  let walking = false, dragging = false, typingUntil = 0, lastActivity = now(), asleep = false;
+  let lastWalk = now(), nextWalkIn = 15000, lastBubble = 0, draggedAt = 0;
   const calm = () => !state.prefs.motion || matchMedia('(prefers-reduced-motion: reduce)').matches;
-  function resetWatch() { lastLen = -1; lastMsgId = ''; lastGrow = 0; generating = false; }
-  function setTransient(name, ms) { transient = name; transientUntil = now() + ms; show(); }
+  const allowActivity = name => {
+    if (name === 'offline') return CONFIG.reactErrors && state.prefs.errors;
+    if (name === 'think' || name === 'listen' || name === 'ask') return true;
+    return CONFIG.reactActivity && state.prefs.activity;
+  };
+  function setActivity(key, name, ttl) { if (ACT[name]) acts.set(key, { name, until: now() + (ttl || 120000) }); show(); }
+  function clearActivity(key) { if (acts.delete(key)) show(); }
+  function clearActivities(prefix) { for (const k of [...acts.keys()]) if (k.startsWith(prefix)) acts.delete(k); show(); }
+  function react(anim, iconName, tone, ms, opts) {
+    reaction = { anim, icon: iconName || '', tone: tone || 'info', until: now() + (ms || 1800), pulse: !!(opts && opts.pulse) };
+    show();
+  }
+  function current() {
+    const t = now();
+    for (const [k, a] of acts) if (a.until < t) acts.delete(k);
+    if (reaction && reaction.until > t) return reaction;
+    let best = null;
+    for (const a of acts.values()) {
+      if (!allowActivity(a.name)) continue;
+      const def = ACT[a.name];
+      if (!best || def.rank > best.rank) best = def;
+    }
+    if (best) return { anim: best.anim, icon: best.icon, tone: best.tone, pulse: !!best.pulse };
+    if (walking) return { anim: 'walk' };
+    if (t < typingUntil) return { anim: 'watch' };
+    if (asleep) return { anim: 'sleep' };
+    return { anim: 'idle' };
+  }
+  let shownKey = '';
   function show() {
-    const s = transient && now() < transientUntil ? transient : (walking ? 'walk' : base);
-    if (petEl.getAttribute('data-state') !== s) {
-      petEl.setAttribute('data-state', s);
+    if (!built) return;
+    const c = current();
+    const key = c.anim + '|' + (c.icon || '') + '|' + (c.tone || '');
+    if (key !== shownKey) {
+      shownKey = key;
+      petEl.setAttribute('data-state', c.anim);
       fxEl.textContent = '';
-      const glyphs = s === 'sleep' ? ['z', 'z', 'Z'] : s === 'think' ? ['•', '•', '•'] : s === 'happy' ? ['✦', '✧', '✦'] : [];
+      const glyphs = c.anim === 'sleep' ? ['z', 'z', 'Z'] : c.anim === 'think' ? ['•', '•', '•'] : (c.anim === 'happy' || c.anim === 'celebrate') ? ['✦', '✧', '✦'] : [];
       for (const g of glyphs) fxEl.appendChild(el('span', null, g));
+      if (c.icon) {
+        emoteEl.innerHTML = emoteSvg(c.icon);
+        emoteEl.setAttribute('data-tone', c.tone || 'info');
+        emoteEl.classList.toggle('owp-pulse', !!c.pulse);
+        emoteEl.hidden = false;
+        emoteEl.style.animation = 'none'; void emoteEl.offsetWidth; emoteEl.style.animation = '';
+      } else emoteEl.hidden = true;
     }
     petEl.classList.toggle('owp-calm', calm());
   }
-  function stopButton(box) {
-    if (!box) return false;
-    for (const b of box.querySelectorAll('button')) {
-      if (b.getAttribute('aria-label') === 'Stop' || b.querySelector('path[d*="h4.874"]')) return true;
-    }
+
+  /* ---- the answer being written in the chat the person is looking at ---- */
+  const answer = { chat: '', active: false, start: 0, tools: {}, failed: [], failReason: '', sources: 0, image: false, wrote: false, error: false, tasksDone: false };
+  const startedHere = new Set(), titles = new Map();
+  let sentAt = 0, stoppedAt = 0, errorAt = 0, everSocket = false, pendingChat = '', adoptOpen = false;
+  const routeChat = () => { const m = /^\/c\/([^/?#]+)/.exec(location.pathname); return m ? decodeURIComponent(m[1]) : ''; };
+  /* Is this chat the one on screen? A new chat has no address for its first moments,
+     so a chat that starts right after a send on a page without one is adopted until
+     an address appears; after that only the address counts. */
+  function ours(chatId) {
+    if (!chatId) return false;
+    const cur = routeChat();
+    if (cur) { pendingChat = ''; adoptOpen = false; return chatId === cur; }
+    if (pendingChat) return chatId === pendingChat;
+    if (adoptOpen && now() - sentAt < 15000) { pendingChat = chatId; adoptOpen = false; return true; }
     return false;
   }
+  function markSent() { sentAt = now(); adoptOpen = !routeChat(); }
+  function startAnswer(chatId) {
+    Object.assign(answer, { chat: chatId, active: true, start: now(), tools: {}, failed: [], failReason: '', sources: 0, image: false, wrote: false, error: false, tasksDone: false });
+    if (now() - sentAt < 15000) startedHere.add(chatId);
+    reaction = null;
+    setActivity('answer', 'think', 600000);
+  }
+  function settle() { clearActivity('answer'); clearActivity('reason'); clearActivities('tool:'); clearActivities('status:'); }
+  function endAnswer(chatId) {
+    if (!answer.active || (chatId && answer.chat && chatId !== answer.chat)) return;
+    answer.active = false;
+    settle();
+    if (answer.error) return;
+    const dur = now() - answer.start;
+    const info = petInfo(effectivePet() || { kind: 'builtin', id: 'renard' });
+    if (now() - stoppedAt < 5000) { react('shrug', 'stop', 'muted', 1500); return maybeSay(T('r_stopped'), 0.5); }
+    if (answer.failed.length && CONFIG.reactErrors && state.prefs.errors) {
+      react('puzzled', 'alert', 'warn', 2600);
+      const line = answer.failed.length === 1 ? T('r_tool_failed', { tool: answer.failed[0] }) : T('r_tools_failed', { n: answer.failed.length });
+      return say(line + (answer.failReason ? ' ' + clean(answer.failReason, 110) : ''), { tone: 'warn', force: true });
+    }
+    if (answer.image) { react('celebrate', 'image', 'ok', 2400); return maybeSay(T('r_image'), 0.9); }
+    if (answer.tasksDone) { react('celebrate', 'list', 'ok', 2200); return maybeSay(T('r_tasks_done'), 0.8); }
+    if (!answer.wrote && !Object.keys(answer.tools).length && dur > 400) { react('puzzled', 'help', 'muted', 1800); return maybeSay(T('r_empty'), 0.8); }
+    if (answer.sources) react('happy', 'book', 'ok', 1900);
+    else react('happy', 'check', 'ok', 1900);
+    if (dur > 30000) return maybeSay(T('r_slow'), 0.7);
+    maybeSay(answer.sources ? T('r_sources') : pick(info.lines), 0.3);
+  }
+  function errorText(err) {
+    if (!err) return '';
+    if (typeof err === 'string') return err;
+    return String(err.content || err.message || err.detail || (err.error && (err.error.message || err.error)) || '');
+  }
+  function explain(text) {
+    const t = String(text || '').toLowerCase();
+    if (/rate.?limit|429|too many requests|quota/.test(t)) return T('e_rate');
+    if (/context.?(length|window)|too long|maximum.*tokens|token limit|max_tokens|reduce the length/.test(t)) return T('e_context');
+    if (/401|403|unauthori[sz]ed|forbidden|api.?key|permission|not allowed/.test(t)) return T('e_auth');
+    if (/model.*(not found|does not exist|unavailable)|no such model|404/.test(t)) return T('e_model');
+    if (/time.?out|timed out/.test(t)) return T('e_timeout');
+    if (/network|connect|econn|fetch failed|502|503|504|bad gateway|unreachable/.test(t)) return T('e_network');
+    const c = clean(text, 120);
+    return c ? T('e_generic', { text: c }) : T('e_unknown');
+  }
+  function onError(text, fromToast) {
+    if (now() - errorAt < 3500) return;
+    errorAt = now();
+    if (!fromToast) { answer.error = true; answer.active = false; settle(); }
+    if (!CONFIG.reactErrors || !state.prefs.errors) return;
+    react('worried', 'error', 'err', 3400);
+    say(explain(text), { tone: 'err', force: true, ms: 8000 });
+  }
+  function onResponse(ev) {
+    if (!ev || typeof ev !== 'object') return;
+    const item = ev.item || {};
+    if (ev.type === 'response.output_item.added') {
+      if (item.type === 'function_call' && !item.hidden) {
+        answer.tools[item.call_id || item.id || item.name] = item.name;
+        setActivity('tool:' + (item.call_id || item.id || item.name), classify(item.name, item.tool_type), 180000);
+      } else if (item.type === 'reasoning') setActivity('reason', 'ponder', 180000);
+      else if (item.type === 'message') answer.wrote = true;
+    } else if (ev.type === 'response.output_item.done') {
+      if (item.type === 'function_call') {
+        clearActivity('tool:' + (item.call_id || item.id || item.name));
+        if (item.status === 'failed' && !item.hidden) { answer.failed.push(clean(item.name, 40)); react('puzzled', 'alert', 'warn', 1300); }
+      } else if (item.type === 'function_call_output' && item.status === 'failed') {
+        try {
+          const raw = item.output && item.output[0] && item.output[0].text;
+          const parsed = JSON.parse(raw);
+          answer.failReason = clean(parsed && parsed.error, 120);
+        } catch {}
+      } else if (item.type === 'reasoning') clearActivity('reason');
+    }
+  }
+  function onStatus(s) {
+    if (!s || typeof s !== 'object' || s.hidden) return;
+    const key = 'status:' + clean(s.action || s.description || 'status', 40);
+    if (s.done) clearActivity(key);
+    else setActivity(key, classify(s.action || s.description, ''), 120000);
+    if (s.error && CONFIG.reactErrors && state.prefs.errors) {
+      react('puzzled', 'alert', 'warn', 2000);
+      maybeSay(T('r_toast_warn', { text: clean(s.description, 100) }), 1);
+    }
+  }
+  function hasImage(files) {
+    const list = Array.isArray(files) ? files : (files && Array.isArray(files.files) ? files.files : []);
+    return list.some(f => f && (f.type === 'image' || /^image\//.test(String(f.content_type || (f.meta && f.meta.content_type) || ''))));
+  }
+  function onEvent(p) {
+    const chatId = typeof p.chat_id === 'string' ? p.chat_id : '';
+    const d = p.data && typeof p.data === 'object' ? p.data : {};
+    const type = d.type, inner = d.data;
+    if (type === 'chat:title' && chatId && typeof inner === 'string') titles.set(chatId, clean(inner, 80));
+    if (!ours(chatId)) {
+      if (type === 'chat:active' && inner && inner.active === false && startedHere.has(chatId)) {
+        startedHere.delete(chatId);
+        if (CONFIG.notices.includes('chats') && state.prefs.notices && /^[0-9a-fA-F-]{36}$/.test(chatId)) {
+          react('happy', 'chat', 'ok', 1800);
+          say(T('n_background', { name: titles.get(chatId) || '…' }), { force: true, go: '/c/' + chatId });
+        }
+      }
+      return;
+    }
+    switch (type) {
+      case 'chat:active': if (inner && inner.active) startAnswer(chatId); else endAnswer(chatId); break;
+      case 'response:completion': onResponse(inner); break;
+      case 'chat:completion':
+        if (inner && inner.error) onError(errorText(inner.error));
+        else if (inner) {
+          if (typeof inner.content === 'string' && inner.content.trim()) answer.wrote = true;
+          if (Array.isArray(inner.sources)) answer.sources += inner.sources.length;
+          if (inner.done && answer.active && !socketOpen) endAnswer(chatId);
+        }
+        break;
+      case 'chat:message:error': onError(errorText(inner && inner.error)); break;
+      case 'status': onStatus(inner); break;
+      case 'source': case 'citation': answer.sources++; break;
+      case 'chat:message:files': case 'files': if (hasImage(inner)) answer.image = true; break;
+      case 'chat:message:tasks': {
+        const tasks = inner && Array.isArray(inner.tasks) ? inner.tasks : [];
+        setActivity('tasks', 'tasks', 2500);
+        answer.tasksDone = tasks.length > 0 && tasks.every(t => t && (t.status === 'completed' || t.status === 'cancelled'));
+        break;
+      }
+      case 'request:user_input': case 'request:elicitation': case 'confirmation': case 'input':
+        setActivity('ask', 'ask', 240000);
+        if (state.prefs.bubbles !== 'never') say(T('a_ask'), { tone: 'warn', force: true });
+        break;
+      case 'request:interaction:done': clearActivity('ask'); break;
+      case 'open_webui:context_compaction': case 'context_compaction': react('squish', 'squeeze', 'muted', 1600); maybeSay(T('a_compact'), 1); break;
+    }
+  }
+  const RELAYED = new Set(['automation.run_started', 'automation.run_completed', 'automation.run_failed', 'calendar.alert', 'retrieval.content.process_failed',
+    'note.created', 'memory.created', 'image.generated', 'image.edited', 'video.generated']);
+  function onRelay(p) {
+    if (!p || typeof p !== 'object' || !RELAYED.has(p.e) || !state.prefs.notices || !effectivePet()) return;
+    const name = clean(p.t, 60) || '…';
+    const go = typeof p.chat === 'string' && /^[0-9a-fA-F-]{36}$/.test(p.chat) ? '/c/' + p.chat : '';
+    const toolBusy = answer.active && Object.keys(answer.tools).length > 0;
+    switch (p.e) {
+      case 'automation.run_started': react('greet', 'clock', 'info', 1500); say(T('n_auto_start', { name }), { force: true }); break;
+      case 'automation.run_completed': react('happy', 'clock', 'ok', 2000); say(T('n_auto_done', { name }), { force: true, go }); break;
+      case 'automation.run_failed': react('worried', 'alert', 'err', 2600); say(T('n_auto_fail', { name }), { tone: 'err', force: true, go }); break;
+      case 'calendar.alert': {
+        const m = Number.isFinite(p.m) ? Math.max(0, Math.round(p.m)) : -1;
+        const when = m > 0 ? (lang === 'fr' ? 'dans ' + m + ' min' : 'in ' + m + ' min') : T('n_now');
+        react('alarm', 'bell', 'warn', 2600, { pulse: true });
+        say(T('n_calendar', { name, when }), { tone: 'warn', force: true, ms: 12000 });
+        break;
+      }
+      case 'retrieval.content.process_failed': react('worried', 'clip', 'err', 2400); say(T('n_file_fail', { name }), { tone: 'err', force: true }); break;
+      case 'note.created': react('happy', 'note', 'ok', 1600); if (!toolBusy) maybeSay(T('n_note', { name }), 1); break;
+      case 'memory.created': react('happy', 'brain', 'ok', 1600); maybeSay(T('n_memory'), 1); break;
+      default: if (!answer.active) { react('celebrate', 'image', 'ok', 2000); maybeSay(T('n_image'), 1); }
+    }
+  }
+  let offlineTimer = 0, wasOffline = false;
+  function handleFrame(f) {
+    if (!access.pets) return;
+    if (f && f.kind === 'open') {
+      everSocket = true;
+      clearTimeout(offlineTimer);
+      if (acts.has('socket')) { clearActivity('socket'); if (wasOffline && state.prefs.errors && CONFIG.reactErrors) { react('happy', 'check', 'ok', 1500); maybeSay(T('r_online'), 1); } }
+      wasOffline = false;
+      return;
+    }
+    if (f && f.kind === 'close') {
+      clearTimeout(offlineTimer);
+      offlineTimer = setTimeout(() => { if (!socketOpen) { wasOffline = true; setActivity('socket', 'offline', 3600000); if (state.prefs.errors && CONFIG.reactErrors) maybeSay(T('r_offline'), 1); } }, 5000);
+      return;
+    }
+    if (typeof f !== 'string') return;
+    const m = /^42\d*\[/.exec(f);
+    if (!m) return;
+    const quick = f.slice(0, 400);
+    if (f.indexOf('output_text.delta') > 0 || quick.indexOf('chat:message:delta') > 0) {
+      const id = (/"chat_id":"([^"]{1,80})"/.exec(quick) || [])[1];
+      if (ours(id)) { answer.wrote = true; if (answer.active && !acts.has('reason')) setActivity('write', 'write', 2500); }
+      return;
+    }
+    if (f.indexOf('reasoning_text.delta') > 0) {
+      const id = (/"chat_id":"([^"]{1,80})"/.exec(quick) || [])[1];
+      if (ours(id)) setActivity('reason', 'ponder', 8000);
+      return;
+    }
+    let arr;
+    try { arr = JSON.parse(f.slice(m[0].length - 1)); } catch { return; }
+    if (!Array.isArray(arr)) return;
+    if (arr[0] === 'owui-pets') return onRelay(arr[1]);
+    if (arr[0] === 'events' && arr[1] && typeof arr[1] === 'object') onEvent(arr[1]);
+  }
+
+  /* ---- page signals: toasts, uploads, microphone, network, stop, send ---- */
+  let toastHost = null, toastObserver = null;
+  function watchToasts() {
+    const host = D.querySelector('[data-sonner-toaster]');
+    if (!host || host === toastHost) return;
+    toastHost = host;
+    if (toastObserver) toastObserver.disconnect();
+    toastObserver = new MutationObserver(list => {
+      for (const m of list) for (const n of m.addedNodes) {
+        if (!(n instanceof Element) || !n.matches('[data-sonner-toast]')) continue;
+        const type = n.getAttribute('data-type'), text = clean(n.textContent, 160);
+        if (type === 'error') onError(text, true);
+        else if (type === 'warning' && CONFIG.reactErrors && state.prefs.errors) { react('puzzled', 'alert', 'warn', 1800); maybeSay(T('r_toast_warn', { text }), 1); }
+        else if (type === 'success') react('happy', 'check', 'ok', 1200);
+      }
+    });
+    toastObserver.observe(host, { childList: true, subtree: true });
+  }
+  function onFiles(count) {
+    if (!count || !effectivePet() || !access.pets) return;
+    react('sniff', 'clip', 'info', 1800);
+    maybeSay(count === 1 ? T('r_upload') : T('r_uploads', { n: count }), 0.6);
+  }
+  D.addEventListener('change', e => {
+    const t = e.target;
+    if (t && t.type === 'file' && t.files && t.files.length && !(t.closest && t.closest('.owp-modal'))) onFiles(t.files.length);
+  }, true);
+  D.addEventListener('drop', e => {
+    const n = e.dataTransfer && e.dataTransfer.files ? e.dataTransfer.files.length : 0;
+    if (n && !(e.target.closest && e.target.closest('.owp-modal'))) onFiles(n);
+  }, true);
+  D.addEventListener('paste', e => {
+    const n = e.clipboardData && e.clipboardData.files ? e.clipboardData.files.length : 0;
+    if (n && e.target.closest && e.target.closest('#chat-input')) onFiles(n);
+  }, true);
+  window.addEventListener('offline', () => { if (!access.pets) return; wasOffline = true; setActivity('net', 'offline', 3600000); if (state.prefs.errors && CONFIG.reactErrors) maybeSay(T('r_offline'), 1); });
+  window.addEventListener('online', () => { if (!access.pets) return; if (acts.has('net')) { clearActivity('net'); if (state.prefs.errors && CONFIG.reactErrors) { react('happy', 'check', 'ok', 1500); maybeSay(T('r_online'), 1); } } });
+  const isStop = b => b && (b.getAttribute('aria-label') === 'Stop' || !!b.querySelector('path[d*="h4.874"]'));
+  D.addEventListener('click', e => {
+    const b = e.target && e.target.closest ? e.target.closest('button') : null;
+    if (!b) return;
+    if (isStop(b)) stoppedAt = now();
+    if (b.id === 'send-message-button') markSent();
+  }, true);
+  D.addEventListener('keydown', e => {
+    const inBox = e.target && e.target.closest && e.target.closest('#chat-input, textarea');
+    if (!inBox) return;
+    typingUntil = now() + 2400;
+    if (e.key === 'Enter' && !e.shiftKey && !e.isComposing) markSent();
+  }, true);
+  D.addEventListener('input', e => { if (e.target && e.target.closest && e.target.closest('#chat-input, textarea')) typingUntil = now() + 2400; }, true);
+
+  /* ---- fallback when Open WebUI's socket isn't visible (polling transport, or opened before this script) ---- */
+  let lastLen = -1, lastGrow = 0, lastMsgId = '', domAnswering = false, watchRoute = location.pathname;
+  function resetWatch() { lastLen = -1; lastMsgId = ''; lastGrow = 0; domAnswering = false; }
+  function stopButton(box) { if (!box) return false; for (const b of box.querySelectorAll('button')) if (isStop(b)) return true; return false; }
   function lastMessage() {
     const all = D.querySelectorAll('[id^="message-"]');
-    for (let i = all.length - 1; i >= 0; i--) {
-      const id = all[i].id;
-      if (id !== 'message-input-container' && !id.startsWith('message-input') && id !== 'messages-container') return all[i];
-    }
+    for (let i = all.length - 1; i >= 0; i--) { const id = all[i].id; if (!id.startsWith('message-input') && id !== 'messages-container') return all[i]; }
     return null;
   }
-  let watchRoute = location.pathname;
-  function watchChat() {
+  function watchDom() {
+    if (socketOpen && everSocket) return;
     if (location.pathname !== watchRoute) { watchRoute = location.pathname; resetWatch(); return; }
-    const box = D.getElementById('message-input-container');
-    const msg = lastMessage();
-    const t = now();
+    const msg = lastMessage(), t = now();
     if (msg) {
       const len = msg.textContent.length;
       if (msg.id === lastMsgId && lastLen >= 0 && len !== lastLen) lastGrow = t;
       if (msg.id !== lastMsgId && lastMsgId && lastLen >= 0) lastGrow = t;
       lastMsgId = msg.id; lastLen = len;
     } else { lastMsgId = ''; lastLen = -1; }
-    const was = generating;
-    generating = stopButton(box) || (t - lastGrow < 1600 && lastGrow > 0);
-    if (was && !generating) {
-      setTransient('happy', 1900);
-      maybeSay(pick(petInfo(effectivePet() || { kind: 'builtin', id: 'renard' }).lines), 0.3);
-    }
-    if (!asleep && t - lastActivity > CONFIG.sleepAfter * 60000 && !generating) asleep = true;
-    base = generating ? 'think' : t < typingUntil ? 'watch' : asleep ? 'sleep' : 'idle';
+    const busy = stopButton(D.getElementById('message-input-container')) || (lastGrow > 0 && t - lastGrow < 1600);
+    if (busy && !domAnswering) { domAnswering = true; startAnswer(routeChat() || 'dom'); answer.wrote = true; }
+    else if (!busy && domAnswering) { domAnswering = false; endAnswer(''); }
   }
+
+  /* ================================================================
+     Waking, sleeping, walking
+     ================================================================ */
   const pick = arr => arr && arr.length ? arr[Math.floor(Math.random() * arr.length)] : '';
   function wake() {
     lastActivity = now();
-    if (asleep) { asleep = false; base = 'idle'; if (!petEl.hidden) { setTransient('greet', 900); } }
+    if (asleep) { asleep = false; if (built && !petEl.hidden) react('greet', '', '', 900); }
   }
-  for (const type of ['pointermove', 'pointerdown', 'keydown', 'wheel', 'touchstart']) {
-    window.addEventListener(type, wake, { passive: true, capture: true });
+  for (const type of ['pointermove', 'pointerdown', 'keydown', 'wheel', 'touchstart']) window.addEventListener(type, wake, { passive: true, capture: true });
+  function tick() {
+    if (!built || D.hidden || !uid || !access.pets) return;
+    watchDom();
+    if (micTracks > 0) setActivity('mic', 'listen', 3000); else if (acts.has('mic')) clearActivity('mic');
+    if (!asleep && state.prefs.sleep && now() - lastActivity > CONFIG.sleepAfter * 60000 && !answer.active && !acts.size) asleep = true;
+    if (asleep && !state.prefs.sleep) asleep = false;
+    show(); maybeWalk(); flushPending(); watchToasts();
   }
-  D.addEventListener('keydown', e => { if (e.target && e.target.closest && e.target.closest('#chat-input, textarea')) typingUntil = now() + 2400; }, true);
-  D.addEventListener('input', e => { if (e.target && e.target.closest && e.target.closest('#chat-input, textarea')) typingUntil = now() + 2400; }, true);
-
   function maybeWalk() {
-    if (petEl.hidden || walking || dragging || !menuEl.hidden || modalEl || calm() || narrow()) return;
-    if (base !== 'idle' || (transient && now() < transientUntil)) return;
+    if (petEl.hidden || walking || dragging || !menuEl.hidden || modalEl || calm() || narrow() || !state.prefs.walk) return;
+    if (current().anim !== 'idle') return;
     if (!place.perch || now() - lastWalk < nextWalkIn || now() - draggedAt < 60000) return;
     lastWalk = now(); nextWalkIn = 14000 + Math.random() * 18000;
     if (Math.random() < 0.45) return;
@@ -1041,27 +1698,38 @@ LOADER_SCRIPT = r"""
     petEl.style.setProperty('--owp-walk', ms + 'ms');
     petEl.classList.add('owp-walking');
     place.x = toX; apply();
-    setTimeout(() => {
-      petEl.classList.remove('owp-walking');
-      walking = false; state.prefs.x = target; writeLocal(); show();
-    }, ms + 40);
+    setTimeout(() => { petEl.classList.remove('owp-walking'); walking = false; state.prefs.x = target; writeLocal(); show(); }, ms + 40);
   }
 
-  /* ---------------- bubbles ---------------- */
+  /* ================================================================
+     Speech bubbles
+     ================================================================ */
   let bubbleTimer = 0;
-  function say(text, ms = 6500) {
-    if (!text || petEl.hidden) return;
+  const talkFactor = () => ({ often: 0.35, normal: 1, rare: 3 })[state.prefs.bubbles] || 1;
+  function say(text, opts) {
+    const o = opts || {};
+    if (!text || !built || petEl.hidden || modalEl) return;
+    if (state.prefs.bubbles === 'never' && !o.always) return;
+    if (!CONFIG.bubbles && !o.force && !o.always) return;
     bubbleEl.textContent = text;
+    bubbleEl._go = '';
+    if (o.go && /^\/c\/[0-9a-fA-F-]{36}$/.test(o.go)) {
+      bubbleEl._go = o.go;
+      bubbleEl.appendChild(el('span', { class: 'owp-bact' }, T('n_open') + ' →'));
+    }
+    bubbleEl.classList.toggle('owp-action', !!bubbleEl._go);
+    bubbleEl.setAttribute('data-tone', o.tone || 'info');
+    bubbleEl.setAttribute('role', o.tone === 'err' ? 'alert' : 'status');
     bubbleEl.hidden = false;
-    liveEl.textContent = text;
+    announce(text);
     lastBubble = now();
     placeBubble();
     clearTimeout(bubbleTimer);
-    bubbleTimer = setTimeout(hideBubble, ms);
+    bubbleTimer = setTimeout(hideBubble, o.ms || 6500);
   }
   function maybeSay(text, chance) {
-    if (!CONFIG.bubbles || !state.prefs.bubbles || !menuEl.hidden || modalEl) return;
-    if (now() - lastBubble < CONFIG.bubbleInterval * 60000) return;
+    if (!CONFIG.bubbles || state.prefs.bubbles === 'never' || !menuEl || !menuEl.hidden || modalEl) return;
+    if (now() - lastBubble < CONFIG.bubbleInterval * 60000 * talkFactor()) return;
     if (Math.random() > chance) return;
     say(text);
   }
@@ -1076,17 +1744,20 @@ LOADER_SCRIPT = r"""
   }
   function greet() {
     const pet = effectivePet();
-    if (!pet || !CONFIG.bubbles || !state.prefs.bubbles) return;
+    if (!pet || !CONFIG.bubbles || state.prefs.bubbles === 'never') return;
     const today = new Date().toLocaleDateString('sv-SE');
     if (state.lastGreet === today) return;
     state.lastGreet = today; writeLocal(); push();
     const hr = new Date().getHours();
     const key = hr < 12 ? 'hello_morning' : hr < 18 ? 'hello_afternoon' : 'hello_evening';
     const who = firstName ? ' ' + firstName : '';
-    setTimeout(() => { setTransient('greet', 900); say(T(key, { name: who }) + ' ' + pick(petInfo(pet).lines)); }, 900);
+    setTimeout(() => { react('greet', '', '', 900); say(T(key, { name: who }) + ' ' + pick(petInfo(pet).lines)); }, 900);
   }
+  function announce(text) { if (!liveEl) return; liveEl.textContent = ''; setTimeout(() => { liveEl.textContent = text; }, 50); }
 
-  /* ---------------- pointer, keyboard ---------------- */
+  /* ================================================================
+     Pointer and keyboard on the pet
+     ================================================================ */
   function wirePointer() {
     let startX = 0, startPetX = 0, moved = false, pid = null;
     hitEl.addEventListener('pointerdown', e => {
@@ -1130,14 +1801,14 @@ LOADER_SCRIPT = r"""
     });
   }
 
-  /* ---------------- menu ---------------- */
-  let menuReturn = null;
+  /* ================================================================
+     Menu
+     ================================================================ */
   function toggleMenu(fromKeyboard) { if (menuEl.hidden) openMenu(fromKeyboard); else closeMenu(); }
-  function menuItem(label, iconName, onClick, extra) {
+  function menuItem(label, iconName, onClick) {
     const b = el('button', { class: 'owp-mi', type: 'button', role: 'menuitem' });
     if (iconName) b.appendChild(icon(iconName));
     b.appendChild(el('span', null, label));
-    if (extra) b.appendChild(el('span', { class: 'owp-k' }, extra));
     b.addEventListener('click', e => { e.stopPropagation(); onClick(); });
     return b;
   }
@@ -1162,13 +1833,10 @@ LOADER_SCRIPT = r"""
       }
       menuEl.appendChild(el('div', { class: 'owp-sep' }));
     }
+    menuEl.appendChild(menuItem(T('settings'), 'gear', () => { closeMenu(); openSettings(); }));
     menuEl.appendChild(menuItem(T('change'), 'swap', () => { closeMenu(); openPicker(); }));
-    if (CONFIG.bubbles) menuEl.appendChild(menuItem(state.prefs.bubbles ? T('bubbles_on') : T('bubbles_off'), 'wave', () => { save(s => { s.prefs.bubbles = !s.prefs.bubbles; }); openMenu(true); }));
-    menuEl.appendChild(menuItem(state.prefs.motion ? T('motion_on') : T('motion_off'), 'spark', () => { save(s => { s.prefs.motion = !s.prefs.motion; }); openMenu(true); }));
-    menuEl.appendChild(menuItem(state.prefs.place === 'composer' ? T('place_composer') : T('place_corner'), 'move', () => { save(s => { s.prefs.place = s.prefs.place === 'composer' ? 'corner' : 'composer'; }); openMenu(true); }));
-    menuEl.appendChild(menuItem(T('nap'), 'moon', () => { closeMenu(); say(T('snoozed'), 1400); setTimeout(() => { try { sessionStorage.setItem('owui-pets-snooze', String(now() + 3600000)); } catch {} layout(); }, 1200); }));
+    menuEl.appendChild(menuItem(T('nap'), 'moon', () => { closeMenu(); say(T('snoozed'), { ms: 1400, always: true }); setTimeout(() => { try { sessionStorage.setItem('owui-pets-snooze', String(now() + 3600000)); } catch {} layout(); }, 1200); }));
     menuEl.appendChild(menuItem(T('remove'), 'bye', () => { closeMenu(); save(s => { s.chosen = true; s.pet = null; }); announce(T('removed')); }));
-    if (menuEl.hidden) menuReturn = D.activeElement;
     menuEl.hidden = false;
     hitEl.setAttribute('aria-expanded', 'true');
     placeMenu();
@@ -1180,7 +1848,6 @@ LOADER_SCRIPT = r"""
     menuEl.hidden = true;
     hitEl.setAttribute('aria-expanded', 'false');
     if (hadFocus) { try { hitEl.focus({ preventScroll: true }); } catch {} }
-    menuReturn = null;
   }
   function placeMenu() {
     const w = menuEl.offsetWidth, h = menuEl.offsetHeight;
@@ -1190,7 +1857,6 @@ LOADER_SCRIPT = r"""
     if (y < 8) y = Math.min(innerHeight - h - 8, place.y + place.size + 8);
     menuEl.style.left = Math.round(x) + 'px'; menuEl.style.top = Math.round(Math.max(8, y)) + 'px';
   }
-  menuKeys();
   function menuKeys() {
     D.addEventListener('keydown', e => {
       if (!menuEl || menuEl.hidden) return;
@@ -1199,15 +1865,16 @@ LOADER_SCRIPT = r"""
       if (e.key === 'Escape') { e.preventDefault(); closeMenu(); hitEl.focus(); }
       else if (e.key === 'ArrowDown') { e.preventDefault(); (items[i + 1] || items[0]).focus(); }
       else if (e.key === 'ArrowUp') { e.preventDefault(); (items[i - 1] || items[items.length - 1]).focus(); }
-      else if (e.key === 'Tab' && menuEl.contains(D.activeElement)) { closeMenu(); }
+      else if (e.key === 'Tab' && menuEl.contains(D.activeElement)) closeMenu();
     }, true);
     D.addEventListener('pointerdown', e => {
       if (menuEl && !menuEl.hidden && !menuEl.contains(e.target) && !petEl.contains(e.target)) closeMenu();
     }, true);
   }
-  function announce(text) { liveEl.textContent = ''; setTimeout(() => { liveEl.textContent = text; }, 50); }
 
-  /* ---------------- prompts into the message box ---------------- */
+  /* ================================================================
+     Prompts into the message box (never sent)
+     ================================================================ */
   function insertPrompt(text) {
     const ed = D.getElementById('chat-input');
     if (!ed) {
@@ -1241,16 +1908,15 @@ LOADER_SCRIPT = r"""
     setTimeout(() => insertPrompt(text), 300);
   }
 
-  /* ---------------- picker ---------------- */
-  function openPicker() {
-    if (modalEl) return;
+  /* ================================================================
+     Dialogs (picker and settings share one modal frame)
+     ================================================================ */
+  function openModal(label) {
+    if (modalEl) return null;
     closeMenu(); hideBubble();
     const returnTo = D.activeElement;
-    const current = effectivePet();
-    let selected = current && current.kind === 'builtin' ? current.id : (current ? 'custom' : '');
-    let draft = current && current.kind === 'custom' ? Object.assign({}, current) : { kind: 'custom', base: AVAILABLE[0] || 'renard', name: '', role: '', color: '' };
     modalEl = el('div', { class: 'owp-modal', role: 'presentation' });
-    const dlg = el('div', { class: 'owp-dialog', role: 'dialog', 'aria-modal': 'true', 'aria-label': T('picker_label') });
+    const dlg = el('div', { class: 'owp-dialog', role: 'dialog', 'aria-modal': 'true', 'aria-label': label });
     modalEl.appendChild(dlg);
     D.body.appendChild(modalEl);
     layout();
@@ -1268,20 +1934,12 @@ LOADER_SCRIPT = r"""
         const f = [...dlg.querySelectorAll('button,input,[tabindex="0"]')].filter(n => !n.disabled && n.offsetParent !== null);
         if (!f.length) return;
         const i = f.indexOf(D.activeElement);
-        if (e.shiftKey && (i <= 0)) { e.preventDefault(); f[f.length - 1].focus(); }
+        if (e.shiftKey && i <= 0) { e.preventDefault(); f[f.length - 1].focus(); }
         else if (!e.shiftKey && (i === f.length - 1 || i < 0)) { e.preventDefault(); f[0].focus(); }
       }
     };
     D.addEventListener('keydown', onKey, true);
     modalEl.addEventListener('pointerdown', e => { if (e.target === modalEl) close(); });
-
-    const adopt = pet => {
-      const isNew = JSON.stringify(pet) !== JSON.stringify(effectivePet());
-      try { sessionStorage.removeItem('owui-pets-snooze'); } catch {}
-      save(s => { s.chosen = true; s.pet = pet; s.lastGreet = new Date().toLocaleDateString('sv-SE'); });
-      close();
-      if (pet && isNew) { setTimeout(() => { setTransient('greet', 900); if (CONFIG.bubbles && state.prefs.bubbles) say(T('adopted', { name: petInfo(pet).name })); }, 250); }
-    };
     const header = (title, sub) => {
       const h = el('div', { class: 'owp-dhead' });
       const t = el('div', { style: 'min-width:0' });
@@ -1292,7 +1950,87 @@ LOADER_SCRIPT = r"""
       dlg.setAttribute('aria-labelledby', 'owp-dtitle');
       return h;
     };
+    return { dlg, close, header };
+  }
 
+  function openSettings() {
+    const pet = effectivePet();
+    if (!pet) return;
+    const m = openModal(T('settings_label'));
+    if (!m) return;
+    const { dlg, close, header } = m;
+    const draw = () => {
+      dlg.textContent = '';
+      dlg.appendChild(header(T('s_title', { name: petInfo(pet).name }), T('s_sub')));
+      const wrap = el('div', { class: 'owp-settings' });
+      const group = title => { const g = el('div', { class: 'owp-sgroup' }); g.appendChild(el('h3', null, title)); wrap.appendChild(g); return g; };
+      const row = (g, label, hint, control) => {
+        const r = el('div', { class: 'owp-srow' });
+        const t = el('span'); t.appendChild(el('b', null, label)); if (hint) t.appendChild(el('small', null, hint));
+        r.appendChild(t); r.appendChild(control); g.appendChild(r); return r;
+      };
+      const toggle = (key, label) => {
+        const b = el('button', { class: 'owp-switch', type: 'button', role: 'switch', 'aria-checked': String(!!state.prefs[key]), 'aria-label': label, 'data-pref': key });
+        b.addEventListener('click', () => { save(s => { s.prefs[key] = !s.prefs[key]; }); b.setAttribute('aria-checked', String(!!state.prefs[key])); });
+        return b;
+      };
+      const seg = (key, options, label) => {
+        const s = el('div', { class: 'owp-seg', role: 'radiogroup', 'aria-label': label, 'data-pref': key });
+        for (const [value, text] of options) {
+          const b = el('button', { type: 'button', role: 'radio', 'aria-checked': String(state.prefs[key] === value), 'data-value': value }, text);
+          b.addEventListener('click', () => { save(st => { st.prefs[key] = value; }); for (const n of s.children) n.setAttribute('aria-checked', String(n.dataset.value === value)); });
+          s.appendChild(b);
+        }
+        return s;
+      };
+      const look = group(T('s_look'));
+      const nick = el('input', { type: 'text', maxlength: '24', autocomplete: 'off', placeholder: pet.kind === 'custom' ? pet.name : (SPECIES[pet.id] || SPECIES.renard).name, 'aria-label': T('s_nick'), style: 'width:min(220px,100%);height:32px;padding:0 10px;border-radius:9px;border:1px solid var(--owp-line);background:var(--owp-surface);color:var(--owp-text);font:inherit;font-size:13.5px' });
+      nick.value = state.prefs.nickname || '';
+      nick.addEventListener('change', () => save(s => { s.prefs.nickname = clean(nick.value, 24); }));
+      row(look, T('s_nick'), T('s_nick_hint'), nick);
+      row(look, T('s_size'), '', seg('size', [['small', T('s_small')], ['medium', T('s_medium')], ['large', T('s_large')]], T('s_size')));
+      row(look, T('s_place'), '', seg('place', [['composer', T('s_composer')], ['corner', T('s_corner')]], T('s_place')));
+      const beh = group(T('s_behaviour'));
+      if (CONFIG.bubbles) row(beh, T('s_talk'), '', seg('bubbles', [['often', T('s_often')], ['normal', T('s_normal')], ['rare', T('s_rare')], ['never', T('s_never')]], T('s_talk')));
+      row(beh, T('s_walk'), T('s_walk_hint'), toggle('walk', T('s_walk')));
+      row(beh, T('s_sleep'), T('s_sleep_hint'), toggle('sleep', T('s_sleep')));
+      row(beh, T('s_motion'), T('s_motion_hint'), toggle('motion', T('s_motion')));
+      const rx = group(T('s_reactions'));
+      if (CONFIG.reactActivity) row(rx, T('s_activity'), T('s_activity_hint'), toggle('activity', T('s_activity')));
+      if (CONFIG.reactErrors) row(rx, T('s_errors'), T('s_errors_hint'), toggle('errors', T('s_errors')));
+      if (CONFIG.notices.length) row(rx, T('s_notices'), T('s_notices_hint'), toggle('notices', T('s_notices')));
+      if (!rx.querySelector('.owp-srow')) rx.remove();
+      dlg.appendChild(wrap);
+      const foot = el('div', { class: 'owp-dfoot' });
+      const reset = el('button', { class: 'owp-link', type: 'button' }, T('s_reset'));
+      reset.addEventListener('click', () => { save(s => { const x = s.prefs.x; s.prefs = DEFAULT_PREFS(); s.prefs.x = x; }); draw(); });
+      const done = el('button', { class: 'owp-btn owp-primary', type: 'button' }, T('s_done'));
+      done.addEventListener('click', close);
+      foot.appendChild(reset); foot.appendChild(el('div', { class: 'owp-spacer' })); foot.appendChild(done);
+      dlg.appendChild(foot);
+      const first = dlg.querySelector('input,button.owp-switch,.owp-seg button');
+      if (first) first.focus({ preventScroll: true });
+    };
+    draw();
+  }
+
+  /* ================================================================
+     Picker
+     ================================================================ */
+  function openPicker() {
+    const current = effectivePet();
+    let selected = current && current.kind === 'builtin' ? current.id : (current ? 'custom' : '');
+    let draft = current && current.kind === 'custom' ? Object.assign({}, current) : { kind: 'custom', base: AVAILABLE[0] || 'renard', name: '', role: '', color: '' };
+    const m = openModal(T('picker_label'));
+    if (!m) return;
+    const { dlg, close, header } = m;
+    const adopt = pet => {
+      const isNew = JSON.stringify(pet) !== JSON.stringify(effectivePet());
+      try { sessionStorage.removeItem('owui-pets-snooze'); } catch {}
+      save(s => { s.chosen = true; s.pet = pet; s.lastGreet = new Date().toLocaleDateString('sv-SE'); });
+      close();
+      if (pet && isNew) { setTimeout(() => { react('greet', 'sparkle', 'ok', 1200); say(T('adopted', { name: petInfo(pet).name })); }, 250); }
+    };
     function gridView() {
       dlg.textContent = '';
       dlg.appendChild(header(T('pick_title'), T('pick_sub')));
@@ -1317,7 +2055,7 @@ LOADER_SCRIPT = r"""
         card.addEventListener('dblclick', () => adopt({ kind: 'builtin', id }));
         cards.push(card); grid.appendChild(card);
       }
-      if (CONFIG.allowCustom && AVAILABLE.length) {
+      if (access.custom && AVAILABLE.length) {
         const card = el('button', { class: 'owp-card', type: 'button', role: 'radio', 'data-id': 'custom' });
         const mine = sanitizePet(draft);
         if (mine && selected === 'custom') {
@@ -1458,11 +2196,15 @@ LOADER_SCRIPT = r"""
     } finally { URL.revokeObjectURL(url); }
   }
 
-  /* ---------------- render & loop ---------------- */
+
+  /* ================================================================
+     Render, loops, boot
+     ================================================================ */
   let lastPetKey = '';
   function render() {
+    if (!built) return;
     const pet = effectivePet();
-    const key = JSON.stringify(pet);
+    const key = JSON.stringify(pet) + '|' + state.prefs.nickname;
     if (pet && key !== lastPetKey) {
       paint(jumpEl, pet);
       hitEl.setAttribute('aria-label', T('pet_label', { name: petInfo(pet).name }));
@@ -1475,47 +2217,62 @@ LOADER_SCRIPT = r"""
   let loopTimer = 0, layoutTimer = 0;
   function startLoops() {
     clearInterval(loopTimer); clearInterval(layoutTimer);
-    loopTimer = setInterval(() => {
-      if (D.hidden || !uid) return;
-      watchChat(); show(); maybeWalk(); flushPending();
-    }, 700);
-    layoutTimer = setInterval(() => { if (!D.hidden) layout(); }, 400);
+    loopTimer = setInterval(tick, 700);
+    layoutTimer = setInterval(() => { if (!D.hidden && built) layout(); else if (!built && getToken() !== token) { token = getToken(); boot(); } }, 400);
   }
-  D.addEventListener('visibilitychange', () => { if (petEl) petEl.classList.toggle('owp-paused', D.hidden); if (!D.hidden) { wake(); layout(); } });
-  window.addEventListener('resize', () => { if (petEl) layout(); }, { passive: true });
+  D.addEventListener('visibilitychange', () => { if (!built) return; petEl.classList.toggle('owp-paused', D.hidden); if (!D.hidden) { wake(); layout(); } });
+  window.addEventListener('resize', () => { if (built) layout(); }, { passive: true });
   window.addEventListener('keydown', e => {
-    if (e.altKey && e.shiftKey && (e.key === 'P' || e.key === 'p' || e.code === 'KeyP') && uid) { e.preventDefault(); openPicker(); }
+    if (e.altKey && e.shiftKey && (e.key === 'P' || e.key === 'p' || e.code === 'KeyP') && uid && access.pets) { e.preventDefault(); openPicker(); }
   }, true);
-
+  const needsGroups = () => {
+    const A = CONFIG.access || {};
+    return A.mode === 'selected' || (A.blocked || []).length > 0 || (A.custom || []).length > 0;
+  };
   let booting = 0;
   async function boot() {
     const run = ++booting;
-    uid = ''; firstName = '';
-    if (petEl) { petEl.hidden = true; pawEl.hidden = true; hideBubble(); closeMenu(); }
+    uid = ''; firstName = ''; access = { pets: false, custom: false };
+    frameSink = null;
+    if (built) { petEl.hidden = true; pawEl.hidden = true; hideBubble(); closeMenu(); }
     if (!token) return;
-    try {
-      const me = await api('GET', '/api/v1/auths/');
-      if (run !== booting || !me || !me.id) return;
-      uid = String(me.id);
-      firstName = clean(String(me.name || '').split(' ')[0], 24);
-    } catch { return; }
+    let me;
+    try { me = await api('GET', '/api/v1/auths/'); } catch { return; }
+    if (run !== booting || !me || !me.id) return;
+    let groups = [];
+    if (needsGroups()) {
+      try { const g = await api('GET', '/api/v1/users/groups?include_inherited=true'); groups = Array.isArray(g) ? g.filter(x => x && x.id) : []; } catch {}
+      if (run !== booting) return;
+    }
+    access = accessOf(me, groups);
+    if (!access.pets) { teardown(); frameQueue.length = 0; return; }
+    uid = String(me.id);
+    firstName = clean(String(me.name || '').split(' ')[0], 24);
+    buildDom();
     await loadState();
     if (run !== booting) return;
     lastPetKey = '';
     render();
+    frameSink = handleFrame;
+    while (frameQueue.length) handleFrame(frameQueue.shift());
     greet();
-    if (!state.chosen && !effectivePet() && CONFIG.invite && CONFIG.paw) {
-      setTimeout(() => { if (!state.chosen && !modalEl) { pawEl.classList.add('owp-invite'); } }, 1200);
-    }
   }
   function start() {
     if (!D.body) { D.addEventListener('DOMContentLoaded', start, { once: true }); return; }
-    buildDom();
     token = getToken();
     startLoops();
     boot();
   }
-  window.__owuiChatPetsDebug = { get state() { return JSON.parse(JSON.stringify(state)); }, get mode() { return petEl && petEl.getAttribute('data-state'); }, openPicker: () => openPicker(), say: t => say(String(t)) };
+  window.__owuiChatPetsDebug = {
+    get state() { return JSON.parse(JSON.stringify(state)); },
+    get mode() { return built ? petEl.getAttribute('data-state') : null; },
+    get emote() { return built && !emoteEl.hidden ? emoteEl.getAttribute('data-tone') + ':' + [...emoteEl.querySelectorAll('path,circle,rect')].length : ''; },
+    get access() { return Object.assign({}, access); },
+    get activities() { return [...acts.values()].map(a => a.name); },
+    get socket() { return { open: socketOpen, ever: everSocket }; },
+    openPicker: () => openPicker(), openSettings: () => openSettings(),
+    frame: f => handleFrame(f), react: (a, i, t) => react(a, i, t, 3000)
+  };
   start();
 })();
 """
@@ -1526,11 +2283,42 @@ LOADER_SCRIPT = r"""
 # ===========================================================================
 
 PET_IDS = ("hibou", "ecureuil", "berger", "renard", "chat", "tortue")
+NOTICE_KINDS = ("automations", "calendar", "files", "notes", "memories", "images", "chats")
+# Server events forwarded to the person they concern, and the notice kind each belongs to.
+RELAYED_EVENTS = {
+    "automation.run_started": "automations",
+    "automation.run_completed": "automations",
+    "automation.run_failed": "automations",
+    "calendar.alert": "calendar",
+    "retrieval.content.process_failed": "files",
+    "note.created": "notes",
+    "memory.created": "memories",
+    "image.generated": "images",
+    "image.edited": "images",
+    "video.generated": "images",
+}
+UUID_RE = _re.compile(r"^[0-9a-fA-F-]{36}$")
 
 
 def _clean_text(value: Any, limit: int) -> str:
     text = _re.sub(r"[\x00-\x1f\x7f\u2028\u2029]", " ", str(value or ""))
     return _re.sub(r"\s+", " ", text).strip()[:limit]
+
+
+def _items(raw: Any) -> list:
+    """Comma- or line-separated values, trimmed and lower-cased, without duplicates."""
+    out = []
+    for part in _re.split(r"[,\n;]+", str(raw or "")):
+        part = part.strip().lower()
+        if part and part not in out:
+            out.append(part)
+    return out[:500]
+
+
+def _hash_id(value: str) -> str:
+    """The browser compares the signed-in person against these hashes, so the
+    admin's lists of people and groups are never published in clear."""
+    return _hashlib.sha256(("owui-pets:v2:" + str(value).strip().lower()).encode("utf-8")).hexdigest()
 
 
 def _parse_actions(raw: str) -> dict:
@@ -1581,6 +2369,15 @@ class Event:
         default_position: Literal["composer", "corner"] = Field(default="composer", description="Where pets sit by default: on top of the message box, or in the bottom-right corner. Each person can change it.")
         hide_on_mobile: bool = Field(default=False, description="Hide pets on screens narrower than 640 px.")
         language: Literal["auto", "en", "fr"] = Field(default="auto", description="Language of the pet's words. 'auto' follows each person's Open WebUI language.")
+        access_mode: Literal["everyone", "selected"] = Field(default="everyone", description="Who gets a pet: 'everyone', or only the roles, groups and people listed below ('selected').")
+        allowed_roles: str = Field(default="user,admin", description="With 'selected': roles that get pets (user, admin, pending), separated by commas.")
+        allowed_groups: str = Field(default="", description="With 'selected': groups that get pets, by name or ID, separated by commas. Members of sub-groups count.")
+        allowed_users: str = Field(default="", description="With 'selected': people who get pets, by email or user ID, separated by commas.")
+        blocked_users: str = Field(default="", description="People or groups who never get a pet, by email, user ID, group name or group ID. Wins over everything else.")
+        custom_pets_for: str = Field(default="", description="Who may make their own pet, by email, user ID, group name or group ID. Empty: everyone who has a pet (if allow_custom_pets is on).")
+        react_to_activity: bool = Field(default=True, description="Pets show what the AI is doing: web search, documents, notes, memory, tasks, calendar, automations, code, images, skills, sub-agents and other tools.")
+        react_to_errors: bool = Field(default=True, description="Pets react to errors, failed tools, warnings and lost connections, and explain them in plain words.")
+        notices: str = Field(default=",".join(NOTICE_KINDS), description="What pets announce on their own: automations, calendar (reminders), files (unreadable uploads), notes, memories, images, chats (an answer ready in another chat). Empty: nothing.")
 
     LOADER_BLOCK_START = "// owui-chat-pets:start"
     LOADER_BLOCK_END = "// owui-chat-pets:end"
@@ -1591,6 +2388,7 @@ class Event:
         Event.instance = self
         self._fragment_key = None
         self._fragment = ""
+        self._access_cache: dict = {}
         reload_bootstrap()
 
     def _config(self) -> dict:
@@ -1613,6 +2411,17 @@ class Event:
             "place": v.default_position,
             "hideOnMobile": bool(v.hide_on_mobile),
             "language": v.language,
+            "reactActivity": bool(v.react_to_activity),
+            "reactErrors": bool(v.react_to_errors),
+            "notices": [k for k in NOTICE_KINDS if k in _items(v.notices)],
+            "access": {
+                "mode": v.access_mode,
+                "roles": [r for r in ("user", "admin", "pending") if r in _items(v.allowed_roles)],
+                "groups": sorted(_hash_id(x) for x in _items(v.allowed_groups)),
+                "users": sorted(_hash_id(x) for x in _items(v.allowed_users)),
+                "blocked": sorted(_hash_id(x) for x in _items(v.blocked_users)),
+                "custom": sorted(_hash_id(x) for x in _items(v.custom_pets_for)),
+            },
         }
 
     def _loader_fragment(self) -> str:
@@ -1645,6 +2454,74 @@ class Event:
     ) -> None:
         if __app__ is not None:
             await reload_on_event(__app__, event, __event_name__)
+        try:
+            await self._relay(event or {}, __event_name__ or (event or {}).get("event", ""))
+        except Exception as exc:  # a pet must never break Open WebUI's event dispatch
+            logging.getLogger("chat_pets").debug("relay skipped: %s", type(exc).__name__)
+
+    # ---------------------------------------------------------------- relay
+
+    @staticmethod
+    def _user_of(event: dict) -> str:
+        data = event.get("data") if isinstance(event.get("data"), dict) else {}
+        actor = event.get("actor") if isinstance(event.get("actor"), dict) else {}
+        uid = data.get("user_id") or (actor.get("id") if actor.get("type") == "user" else "")
+        return str(uid or "")
+
+    @staticmethod
+    def _payload(name: str, event: dict) -> dict:
+        data = event.get("data") if isinstance(event.get("data"), dict) else {}
+        title = data.get("name") or data.get("title") or data.get("filename") or data.get("file_name") or ""
+        out = {"e": name, "t": _clean_text(title, 60)}
+        chat = str(data.get("chat_id") or "")
+        if UUID_RE.match(chat):
+            out["chat"] = chat
+        if name == "calendar.alert" and isinstance(data.get("minutes_until"), (int, float)):
+            out["m"] = max(0, min(int(data["minutes_until"]), 1440))
+        return out
+
+    async def _allowed(self, user_id: str) -> bool:
+        """The server's own access check: notices only reach people who may have a pet."""
+        cached = self._access_cache.get(user_id)
+        if cached and cached[0] > _time.monotonic():
+            return cached[1]
+        from open_webui.models.groups import Groups
+        from open_webui.models.users import Users
+
+        user = await Users.get_user_by_id(user_id)
+        allowed = False
+        if user is not None:
+            groups = await Groups.get_groups_by_member_id(user_id, include_inherited=True)
+            mine = {str(user_id).lower(), str(getattr(user, "email", "") or "").lower()}
+            for group in groups or []:
+                mine.add(str(getattr(group, "id", "")).lower())
+                mine.add(str(getattr(group, "name", "")).lower())
+            v = self.valves
+            if mine & set(_items(v.blocked_users)):
+                allowed = False
+            elif v.access_mode == "everyone":
+                allowed = True
+            else:
+                allowed = (
+                    str(getattr(user, "role", "")).lower() in _items(v.allowed_roles)
+                    or bool(mine & set(_items(v.allowed_users)))
+                    or bool(mine & set(_items(v.allowed_groups)))
+                )
+        if len(self._access_cache) > 5000:
+            self._access_cache.clear()
+        self._access_cache[user_id] = (_time.monotonic() + 60, allowed)
+        return allowed
+
+    async def _relay(self, event: dict, name: str) -> None:
+        kind = RELAYED_EVENTS.get(name)
+        if not kind or kind not in _items(self.valves.notices):
+            return
+        user_id = self._user_of(event)
+        if not user_id or not await self._allowed(user_id):
+            return
+        from open_webui.socket.main import sio
+
+        await sio.emit("owui-pets", self._payload(name, event), room=f"user:{user_id}")
 
 
 def register(app: Any) -> None:

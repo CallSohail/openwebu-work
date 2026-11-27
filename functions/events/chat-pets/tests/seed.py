@@ -1,6 +1,6 @@
 """Seed a throwaway Open WebUI for the Chat Pets browser tests.
 
-    python ../chat-inspector/tests/fake_model.py 9999 &
+    python tests/fake_model.py 9999 &
     python tests/seed.py http://127.0.0.1:8080 chat_pets.py > seed.json
     node tests/e2e.mjs seed.json [screenshot-folder]
 
@@ -40,6 +40,8 @@ admin = call("POST", "/api/v1/auths/signup", body={"name": "Sohail Admin", "emai
 admin_token = admin["token"]
 for model_id in ("fake-gpt-4o", "fake-mini"):
     call("POST", "/api/v1/models/create", admin_token, {"id": model_id, "base_model_id": None, "name": model_id, "meta": {}, "params": {}, "access_grants": PUBLIC, "is_active": True})
+call("POST", "/api/v1/models/create", admin_token, {"id": "fake-agent", "base_model_id": "fake-gpt-4o", "name": "Fake agent", "meta": {"capabilities": {"builtin_tools": True}},
+                                                    "params": {"function_calling": "native"}, "access_grants": PUBLIC, "is_active": True})
 call("POST", "/api/v1/functions/create", admin_token, {"id": "chat_pets", "name": "Chat Pets", "content": open(SOURCE, encoding="utf-8").read(), "meta": {"description": "Chat Pets"}})
 call("POST", "/api/v1/functions/id/chat_pets/toggle", admin_token)
 
@@ -49,4 +51,7 @@ for key, name, email in (("user", "Marie Etudiante", "user@example.test"), ("oth
     signed = call("POST", "/api/v1/auths/signin", body={"email": email, "password": PASSWORD})
     users[key] = {"token": signed["token"], "id": signed["id"], "name": name}
 
-json.dump({"base": BASE, "admin": {"token": admin_token, "id": admin["id"]}, **users}, sys.stdout)
+group = call("POST", "/api/v1/groups/create", admin_token, {"name": "Pet testers", "description": "Chat Pets browser tests"})
+call("POST", f"/api/v1/groups/id/{group['id']}/users/add", admin_token, {"user_ids": [users["user"]["id"]]})
+
+json.dump({"base": BASE, "group": {"id": group["id"], "name": "Pet testers"}, "admin": {"token": admin_token, "id": admin["id"]}, **users}, sys.stdout)
