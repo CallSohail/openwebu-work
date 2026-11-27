@@ -1,6 +1,6 @@
 # Partage (Zimbra) for Open WebUI
 
-An Open WebUI Tool that lets the model work in a person's Zimbra mailbox, calendar, task list and address book: Partage (Renater) at Université d'Évry Paris-Saclay, or any Zimbra 8.8+ server with the SOAP API on. Each person connects with their own Partage address and password. The tool asks the person in the browser before it sends anything, deletes anything, or changes their calendar, filters or settings. Results can also appear as visual cards in the chat.
+An Open WebUI Tool that lets the model work in a person's Zimbra mailbox, calendar, task list and address book: Partage (Renater), or any Zimbra 8.8+ server with the SOAP API on. Each person connects with their own Partage address and password. The tool asks the person in the browser before it sends anything, deletes anything, or changes their calendar, filters or settings. Results can also appear as visual cards in the chat.
 
 Tested against Open WebUI 0.13.5. It needs Open WebUI 0.13.0 or later, and only `requests`, `pydantic` and `fastapi`, which Open WebUI already ships.
 
@@ -37,10 +37,10 @@ Tested against Open WebUI 0.13.5. It needs Open WebUI 0.13.0 or later, and only 
 ### New in 11.0
 
 - **Tasks:** list (open, overdue, done), create with a due date, priority, notes and reminder, update or complete, delete.
-- **Mail filters:** create sorting rules ("emails from JumpServer go to Notifications"), list them, enable, disable or delete them, and optionally apply a new rule to the inbox.
+- **Mail filters:** create sorting rules ("emails from the ticketing tool go to Notifications"), list them, enable, disable or delete them, and optionally apply a new rule to the inbox.
 - **Blocked and allowed senders:** the anti-spam lists, by address or domain.
 - **Rooms:** `find_rooms` lists bookable rooms with capacity and shows which are free. `create_calendar_event(room=...)` books one.
-- **Shared and delegated access:** see what others share with you, add it to your folders, and read a delegated mailbox (`mailbox="secretariat@univ-evry.fr"`) in mail, calendar, tasks and analytics.
+- **Shared and delegated access:** see what others share with you, add it to your folders, and read a delegated mailbox (`mailbox="secretariat@exemple.fr"`) in mail, calendar, tasks and analytics.
 - **Better sending:** files attached in the chat as email attachments, send-later, high or low priority, read receipts, and the user's Partage signature when they haven't typed one.
 - **Personal contacts and lists:** create, update and delete contacts, with duplicate detection, and see the members of a distribution list.
 - **Visual cards:** inbox, search results, a single email, analytics, agenda, free slots, tasks, quota, and a help card listing what's new. Clicking an item fills in the next question in the message box.
@@ -85,7 +85,7 @@ When a card is shown, the model still gets the full text result. It is told the 
 
 | Valve | Default | Purpose |
 | --- | --- | --- |
-| `zimbra_server` | `https://partage.univ-evry.fr` | Server base URL |
+| `zimbra_server` | `https://partage.renater.fr` | Server base URL |
 | `default_login_domain`, `allowed_login_domains` | empty | Bare-username domain, and who may connect |
 | `verify_tls`, `ca_bundle_path`, `allow_insecure_http` | on, empty, off | Transport |
 | `connect_timeout`, `request_timeout`, `max_retries`, `retry_backoff_seconds` | 10, 60, 3, 0.75 | Network |

@@ -1,7 +1,7 @@
 """
 title: Chat Pets
 description: A companion that lives on Open WebUI's message box, the way ChatGPT's pets do. Each person picks one of six animals or makes their own. It follows what the AI does live (web search, documents, notes, memory, tasks, calendar, automations, code, images, skills, sub-agents), reacts to errors, warnings and lost connections, announces automations and calendar reminders, and offers shortcuts for its job. Admins choose who gets a pet by role, group or person.
-author: Muhammad Sohail
+author: CallSohail
 version: 2.0.0
 license: MIT
 required_open_webui_version: 0.13.0

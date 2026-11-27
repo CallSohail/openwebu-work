@@ -370,7 +370,7 @@ def run_node(code):
 @pytest.mark.skipif(shutil.which("node") is None, reason="Node.js is not installed")
 def test_browser_hash_matches_the_server(plugin):
     sha = js_function(plugin.LOADER_SCRIPT, "  function sha256(text) {", "  const idHash = ")
-    samples = ["", "abc", "Enseignants", "marie.curie@univ-evry.fr", "Équipe Évry — Ω", "x" * 55, "y" * 56, "z" * 200, "  Mixed Case Group  "]
+    samples = ["", "abc", "Enseignants", "marie.curie@exemple.fr", "Équipe Été — Ω", "x" * 55, "y" * 56, "z" * 200, "  Mixed Case Group  "]
     out = run_node(sha + "\nconst v = " + json.dumps(samples) + ";\nconsole.log(JSON.stringify(v.map(x => sha256('owui-pets:v2:' + x.trim().toLowerCase()))));")
     assert out == [plugin._hash_id(x) for x in samples]
     assert plugin._hash_id("abc") == hashlib.sha256(b"owui-pets:v2:abc").hexdigest()
@@ -379,12 +379,12 @@ def test_browser_hash_matches_the_server(plugin):
 def test_access_lists_are_published_only_as_hashes(served):
     _, event, _, client = served
     event.valves = event.Valves(access_mode="selected", allowed_roles="admin, pending, root", allowed_groups="Enseignants, 7a1b",
-                                allowed_users="Marie.Curie@univ-evry.fr", blocked_users="spam@x.org", custom_pets_for="Design team")
+                                allowed_users="Marie.Curie@exemple.fr", blocked_users="spam@x.org", custom_pets_for="Design team")
     text = client.get("/static/loader.js").text
     access = config_of(text)["access"]
     assert access["mode"] == "selected" and access["roles"] == ["admin", "pending"]
     assert plugin_hash(event, "enseignants") in access["groups"] and len(access["groups"]) == 2
-    assert access["users"] == [plugin_hash(event, "marie.curie@univ-evry.fr")]
+    assert access["users"] == [plugin_hash(event, "marie.curie@exemple.fr")]
     for secret in ("Enseignants", "Marie.Curie", "marie.curie", "spam@x.org", "Design team"):
         assert secret not in text
 
@@ -472,7 +472,7 @@ class FakeSio:
 
 @pytest.fixture()
 def relay(plugin, monkeypatch):
-    users = {"u1": types.SimpleNamespace(id="u1", email="Marie@Evry.fr", role="user"), "u2": types.SimpleNamespace(id="u2", email="paul@evry.fr", role="admin")}
+    users = {"u1": types.SimpleNamespace(id="u1", email="Marie@Exemple.fr", role="user"), "u2": types.SimpleNamespace(id="u2", email="paul@exemple.fr", role="admin")}
     groups = {"u1": [types.SimpleNamespace(id="g1", name="Enseignants")], "u2": []}
 
     async def get_user_by_id(uid):
@@ -505,7 +505,7 @@ def fire(event, name, **fields):
 
 def test_relay_sends_a_minimal_notice_to_the_right_person(relay):
     _, event, sio = relay
-    fire(event, "automation.run_completed", actor={"id": "u1", "type": "user", "email": "Marie@Evry.fr"},
+    fire(event, "automation.run_completed", actor={"id": "u1", "type": "user", "email": "Marie@Exemple.fr"},
          data={"name": "Daily digest <b>", "chat_id": "7ca9e2c1-313c-410e-8e33-0d8e5467260e", "prompt": "secret prompt"})
     assert sio.sent == [("owui-pets", {"e": "automation.run_completed", "t": "Daily digest <b>", "chat": "7ca9e2c1-313c-410e-8e33-0d8e5467260e"}, "user:u1")]
 
@@ -535,11 +535,11 @@ def test_relay_follows_the_notice_valve(relay):
 
 @pytest.mark.parametrize("valves,expected", [
     ({"access_mode": "everyone"}, {"u1", "u2"}),
-    ({"access_mode": "everyone", "blocked_users": "marie@evry.fr"}, {"u2"}),
+    ({"access_mode": "everyone", "blocked_users": "marie@exemple.fr"}, {"u2"}),
     ({"access_mode": "everyone", "blocked_users": "enseignants"}, {"u2"}),
     ({"access_mode": "selected", "allowed_roles": "admin"}, {"u2"}),
     ({"access_mode": "selected", "allowed_roles": "", "allowed_groups": "ENSEIGNANTS"}, {"u1"}),
-    ({"access_mode": "selected", "allowed_roles": "", "allowed_users": "paul@evry.fr"}, {"u2"}),
+    ({"access_mode": "selected", "allowed_roles": "", "allowed_users": "paul@exemple.fr"}, {"u2"}),
     ({"access_mode": "selected", "allowed_roles": "", "allowed_groups": "g1", "blocked_users": "u1"}, set()),
 ])
 def test_relay_only_reaches_people_who_may_have_a_pet(relay, valves, expected):

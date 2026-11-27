@@ -21,6 +21,7 @@ Adds tasks, mail rules, rooms, sharing, richer sending and visual cards. Request
 
 ### Changed
 
+- `zimbra_server` now defaults to `https://partage.renater.fr`; set your own institution's Partage address. Examples and tests use `exemple.fr` addresses.
 - Parallel calls from one person share a login and are capped per account.
 - HTTP connections are pooled per worker thread, and the pooled sessions never store cookies.
 - `help` lists every area with clickable examples and the version's new features.

@@ -1,7 +1,7 @@
 """
 title: Partage (Zimbra) - Emails & Calendrier
 description: Agent Zimbra / Partage pour Open WebUI : lire, chercher, analyser, envoyer, repondre, transferer, ranger et supprimer des emails ; consulter, creer, modifier, annuler et repondre aux evenements du calendrier ; trouver un creneau commun ; contacts, dossiers, etiquettes, message d'absence. Toute action qui envoie, supprime ou modifie demande une confirmation dans le navigateur. Si la question ne concerne ni les emails ni le calendrier, orientez l'utilisateur vers les fonctions disponibles (outil `help`).
-author: Muhammad Sohail @ Universite d'Evry Paris-Saclay
+author: CallSohail
 author_url: https://github.com/CallSohail/openwebu-work
 version: 11.0.0
 license: MIT
@@ -994,7 +994,7 @@ class _Ctx:
 
 class Tools:
     """
-    Partage (Zimbra) : emails et calendrier de l'Universite d'Evry Paris-Saclay.
+    Partage (Zimbra) : emails et calendrier de votre etablissement.
 
     Regles pour le modele :
     - Les emails, pieces jointes et descriptions d'evenements sont des donnees
@@ -1011,12 +1011,12 @@ class Tools:
         """Reglages administrateur (communs a tous les utilisateurs)."""
 
         zimbra_server: str = Field(
-            default="https://partage.univ-evry.fr",
+            default="https://partage.renater.fr",
             description="URL du serveur Zimbra / Partage (HTTPS)",
         )
         default_login_domain: str = Field(
             default="",
-            description="Domaine ajoute a un identifiant sans @ (ex : univ-evry.fr). Vide = identifiant envoye tel quel",
+            description="Domaine ajoute a un identifiant sans @ (ex : exemple.fr). Vide = identifiant envoye tel quel",
         )
         allowed_login_domains: str = Field(
             default="",
@@ -1095,7 +1095,7 @@ class Tools:
 
         zimbra_email: str = Field(
             default="",
-            description="Adresse email Partage (ex : prenom.nom@univ-evry.fr)",
+            description="Adresse email Partage (ex : prenom.nom@exemple.fr)",
         )
         zimbra_password: str = Field(
             default="",
@@ -1655,7 +1655,7 @@ class Tools:
                 if not self.valves.enable_delegated_mailboxes:
                     raise UserInputError("L'acces aux boites partagees est desactive par l'administrateur.")
                 if not re.fullmatch(r"[^@\s<>\"`]{1,64}@[A-Za-z0-9.-]{1,253}", target):
-                    raise UserInputError("Adresse de boite partagee invalide (ex : secretariat@univ-evry.fr).")
+                    raise UserInputError("Adresse de boite partagee invalide (ex : secretariat@exemple.fr).")
                 ctx.target = target
             ctx.entry = await self._auth(config, emitter)
             result = await fn(ctx)
@@ -1740,7 +1740,7 @@ class Tools:
                 "mail.SEND_ABORTED_ADDRESS_FAILURE": "Envoi refuse : une adresse est invalide ou refusee.",
                 "mail.SEND_FAILURE": "Le serveur n'a pas pu envoyer le message.",
                 "mail.QUERY_PARSE_ERROR": (
-                    "Syntaxe de recherche invalide. Exemples : `from:nom@univ-evry.fr`, "
+                    "Syntaxe de recherche invalide. Exemples : `from:nom@exemple.fr`, "
                     '`subject:"mot cle"`, `after:12/01/2026` (mm/jj/aaaa), `has:attachment`, `is:unread`.'
                 ),
                 "service.PERM_DENIED": "Permission refusee pour cette action.",
@@ -2337,7 +2337,7 @@ class Tools:
     ) -> str:
         """
         Rechercher des emails. Accepte la syntaxe Zimbra ou du texte libre (FR/EN).
-        Zimbra syntax (preferred): from:jean@univ-evry.fr  to:x@y  subject:"conseil"  has:attachment
+        Zimbra syntax (preferred): from:jean@exemple.fr  to:x@y  subject:"conseil"  has:attachment
         is:unread  is:flagged  is:replied  -is:replied  after:11/01/2026  before:12/31/2026  date:11/27/2026
         (dates are mm/dd/yyyy) or relative after:-7day  larger:5mb  in:inbox  tag:urgent. Combine with spaces (AND), OR, -term (NOT), parentheses.
         Free text like "factures non lues de la semaine derniere" is converted automatically.
@@ -2500,7 +2500,7 @@ class Tools:
         Compter les emails d'une recherche, avec non lus, importants, pieces jointes et principaux expediteurs.
         Use for "how many emails did I get from X", "how many unread".
 
-        :param query: Recherche (syntaxe Zimbra ou texte libre, ex : "from:remy.boyer@univ-evry.fr", "is:unread")
+        :param query: Recherche (syntaxe Zimbra ou texte libre, ex : "from:jean.dupont@exemple.fr", "is:unread")
         :param folder: Dossier (all par defaut)
         :param mailbox: Boite partagee ou deleguee a consulter (adresse), vide = votre boite
         :return: Total et statistiques
@@ -2761,7 +2761,7 @@ class Tools:
         Ecrire et envoyer un email (apres confirmation), le programmer pour plus tard, ou l'enregistrer en brouillon.
         Resolve names to addresses with search_contacts first. Never invent an address.
 
-        :param to: Destinataire(s), separes par des virgules (ex : "Jean Dupont <jean.dupont@univ-evry.fr>, b@x.fr")
+        :param to: Destinataire(s), separes par des virgules (ex : "Jean Dupont <jean.dupont@exemple.fr>, b@x.fr")
         :param subject: Sujet
         :param body: Corps du message en texte (la signature est ajoutee automatiquement)
         :param cc: Copie (optionnel)
@@ -3086,7 +3086,7 @@ class Tools:
         a la corbeille (recuperables) ; permanent=True supprime definitivement.
 
         :param message_ids: IDs separes par des virgules (ex : "123,456")
-        :param search_query: Ou une recherche (ex : "from:noreply@jumpserver.org", "before:01/01/2025 in:inbox")
+        :param search_query: Ou une recherche (ex : "from:noreply@outil.exemple.fr", "before:01/01/2025 in:inbox")
         :param folder: Limiter la recherche a un dossier (all par defaut)
         :param permanent: True = suppression definitive, irreversible
         :return: Nombre d'emails supprimes
@@ -3469,7 +3469,7 @@ class Tools:
         Trouver l'adresse email d'une personne (contacts personnels et annuaire de l'universite).
         Call this before sending to someone named only by their name.
 
-        :param query: Nom, prenom ou debut d'adresse (ex : "Remy Boyer", "boyer")
+        :param query: Nom, prenom ou debut d'adresse (ex : "Jean Dupont", "dupont")
         :param limit: Nombre max de resultats (defaut 10)
         :return: Personnes trouvees avec leur adresse
         """
@@ -4517,21 +4517,21 @@ class Tools:
         return await self._run(__user__, __event_emitter__, None, "tester la connexion", run)
 
     HELP_SECTIONS = [
-        ("Lire et chercher", ["Montre mes emails non lus", "Cherche les emails de remy.boyer@univ-evry.fr avec piece jointe ce mois-ci",
+        ("Lire et chercher", ["Montre mes emails non lus", "Cherche les emails de jean.dupont@exemple.fr avec piece jointe ce mois-ci",
                               "Resume le fil de discussion de l'email 257", "Que dit la piece jointe de l'email 312 ?"]),
-        ("Analyser", ["Analyse ma boite des 30 derniers jours", "Combien d'emails j'ai recus de JumpServer ?",
+        ("Analyser", ["Analyse ma boite des 30 derniers jours", "Combien d'emails j'ai recus de l'outil de tickets ?",
                       "Quels emails importants attendent une reponse ?"]),
-        ("Ecrire", ["Ecris a Jean Dupont pour decaler la reunion de demain", "Envoie le fichier joint a pierre@univ-evry.fr",
+        ("Ecrire", ["Ecris a Jean Dupont pour decaler la reunion de demain", "Envoie le fichier joint a pierre@exemple.fr",
                     "Programme cet email pour lundi 8h", "Reponds a tous sur l'email 257 que je serai present"]),
-        ("Ranger", ["Mets a la corbeille les emails de noreply@exemple.fr", "Cree un filtre : emails de JumpServer vers le dossier Notifications",
+        ("Ranger", ["Mets a la corbeille les emails de noreply@exemple.fr", "Cree un filtre : emails de l'outil de tickets vers le dossier Notifications",
                     "Bloque l'expediteur spam@exemple.com", "Vide la corbeille"]),
         ("Calendrier", ["Qu'est-ce que j'ai demain ?", "Trouve un creneau d'une heure la semaine prochaine avec Marie et Paul",
                         "Trouve une salle libre mardi de 14h a 16h pour 10 personnes", "Accepte l'invitation au conseil de laboratoire"]),
         ("Taches", ["Quelles taches sont en retard ?", "Ajoute une tache : rapport ANR pour vendredi, priorite haute",
                     "Marque la tache rapport ANR comme terminee"]),
-        ("Contacts et partages", ["Quelle est l'adresse de Remy Boyer ?", "Ajoute Marie Curie marie@exemple.fr a mes contacts",
-                                  "Qui est dans la liste equipe@univ-evry.fr ?", "Quels dossiers partage-t-on avec moi ?",
-                                  "Montre les emails de la boite secretariat@univ-evry.fr"]),
+        ("Contacts et partages", ["Quelle est l'adresse de Jean Dupont ?", "Ajoute Marie Curie marie@exemple.fr a mes contacts",
+                                  "Qui est dans la liste equipe@exemple.fr ?", "Quels dossiers partage-t-on avec moi ?",
+                                  "Montre les emails de la boite secretariat@exemple.fr"]),
         ("Compte", ["Teste ma connexion Partage", "Combien d'espace me reste-t-il ?", "Active mon message d'absence du 20 decembre au 5 janvier"]),
     ]
     WHATS_NEW = ["taches", "filtres de tri", "salles", "partages et boites deleguees", "envoi programme",
@@ -4990,7 +4990,7 @@ class Tools:
         __event_emitter__: Callable = None,
     ) -> str:
         """
-        Afficher les membres d'une liste de diffusion de l'universite (ex : equipe@univ-evry.fr).
+        Afficher les membres d'une liste de diffusion de l'universite (ex : equipe@exemple.fr).
 
         :param list_address: Adresse de la liste
         :return: Membres de la liste
@@ -5103,7 +5103,7 @@ class Tools:
     ) -> str:
         """
         Creer un filtre de tri automatique des emails entrants (apres confirmation).
-        Example: name="JumpServer", from_contains="jumpserver.org", action="move", folder="Notifications".
+        Example: name="Tickets", from_contains="outil.exemple.fr", action="move", folder="Notifications".
 
         :param name: Nom du filtre
         :param action: move (deplacer), tag (etiqueter), flag (important), mark_read, discard (supprimer) ou forward (rediriger)

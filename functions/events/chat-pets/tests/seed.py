@@ -36,7 +36,7 @@ def call(method, path, token=None, body=None):
         raise SystemExit(f"{method} {path}: HTTP {error.code} {error.read()[:300]!r}")
 
 
-admin = call("POST", "/api/v1/auths/signup", body={"name": "Sohail Admin", "email": "admin@example.test", "password": PASSWORD})
+admin = call("POST", "/api/v1/auths/signup", body={"name": "Test Admin", "email": "admin@example.test", "password": PASSWORD})
 admin_token = admin["token"]
 for model_id in ("fake-gpt-4o", "fake-mini"):
     call("POST", "/api/v1/models/create", admin_token, {"id": model_id, "base_model_id": None, "name": model_id, "meta": {}, "params": {}, "access_grants": PUBLIC, "is_active": True})
