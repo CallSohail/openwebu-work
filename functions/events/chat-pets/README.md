@@ -110,7 +110,7 @@ The choice is saved in the person's Open WebUI account, under its own `owui_pets
 | `blocked_users` | empty | People or groups who never get a pet, by email, user ID, group name or group ID. Wins over everything. |
 | `custom_pets_for` | empty | Who may make their own pet, by email, user ID, group name or group ID. Empty: everyone who has a pet. |
 
-With `selected`, a person gets a pet if their role is listed, **or** they are in a listed group, **or** they are listed themselves, and they are not blocked. For example, to give pets only to the "Students" group and one teacher: `access_mode = selected`, `allowed_roles` empty, `allowed_groups = Students`, `allowed_users = teacher@univ.fr`.
+With `selected`, a person gets a pet if their role is listed, **or** they are in a listed group, **or** they are listed themselves, and they are not blocked. For example, to give pets only to the "Students" group and one teacher: `access_mode = selected`, `allowed_roles` empty, `allowed_groups = Students`, `allowed_users = teacher@exemple.fr`.
 
 The lists are sent to the browser as salted SHA-256 hashes, never as names or emails. The browser hides the pet from people who aren't allowed, but that is a convenience, not a lock: everything the server sends (the notices) is checked on the server, against the person's real role and groups, before it leaves.
 
