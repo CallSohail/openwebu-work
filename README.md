@@ -1,6 +1,6 @@
 # Open WebUI Extensions
 
-Thirteen extensions for [Open WebUI](https://github.com/open-webui/open-webui), built for a university deployment and written so anyone can install them. Some change how answers look, some add whole new tabs and panels, and one lets people build small features for themselves by describing them.
+Fifteen extensions for [Open WebUI](https://github.com/open-webui/open-webui), built for a university deployment and written so anyone can install them. Some change how answers look, some add whole new tabs and panels, and one lets people build small features for themselves by describing them.
 
 Every extension is a single Python file you paste into Open WebUI. Each folder has its own README, a changelog, tests, and a diagram of how it works. Read the code before you install anything: Open WebUI runs it on your server.
 
@@ -20,11 +20,11 @@ Open WebUI gives plugins four places to run, and this repository uses all of the
 
 Filters sit in the chat pipeline. They see the request on its way to the model (`inlet`), each chunk as it streams back (`stream`), and the finished answer (`outlet`). Rich Responses, Rich Visuals, Study Mode and Artifacts mode work this way.
 
-Tools are functions the model decides to call. Generative UI, the Email Composer and the RAGFlow connector are Tools. The first two answer with an HTML embed, which Open WebUI shows in a sandboxed iframe inside the answer.
+Tools are functions the model decides to call. Generative UI, the Email Composer, the RAGFlow connector and the Partage (Zimbra) agent are Tools. Generative UI, the Email Composer and the Partage agent answer with HTML embeds, which Open WebUI shows in a sandboxed iframe inside the answer.
 
 Actions are buttons under an answer. Quick Actions is one.
 
-Event functions react to things that happen on the server: a sign-up, a login, a settings change. Secure Onboarding uses them to build a welcome chat. The browser features (Chat Inspector, Gallery, Files, Artifacts and Mods) use them differently. They publish a script through [Classic298's Shared Assets Protocol](https://github.com/Classic298/open-webui-plugins/tree/main/shared-assets-protocol), which Open WebUI loads on every page from `/static/loader.js`. That script then works in the browser with the signed-in person's own access, through Open WebUI's normal API. These five add no server routes of their own, and they can sit side by side because they share that one loader.
+Event functions react to things that happen on the server: a sign-up, a login, a settings change. Secure Onboarding uses them to build a welcome chat. The browser features (Chat Inspector, Gallery, Files, Artifacts, Mods and Pets) use them differently. They publish a script through [Classic298's Shared Assets Protocol](https://github.com/Classic298/open-webui-plugins/tree/main/shared-assets-protocol), which Open WebUI loads on every page from `/static/loader.js`. That script then works in the browser with the signed-in person's own access, through Open WebUI's normal API. These six add no server routes of their own, and they can sit side by side because they share that one loader.
 
 ## Extensions
 
@@ -33,11 +33,13 @@ Event functions react to things that happen on the server: a sign-up, a login, a
 | [Generative UI](tools/generative-ui/) | Tool + Filter | 1.2.0 | Interactive cards in answers: charts, tables, calculators, checklists, comparisons, timelines, diagrams, maps, live weather. The model writes a JSON spec; the Tool validates it and renders it. |
 | [Rich Email Composer](tools/email-composer/) | Tool | 1.0.0 | An editable email card in the chat, with formatting, recipient checks, *Ask for changes*, copy, `.eml` export and a hand-off to the person's own mail app. |
 | [RAGFlow Advanced Connector](tools/ragflow/) | Tool | 3.0.0 | Retrieval from RAGFlow: datasets, multi-query search, document search and knowledge graphs, with sources. |
+| [Partage (Zimbra)](tools/partage-zimbra/) | Tool | 11.0.0 | Email, calendar, tasks and contacts in Zimbra / Partage: read, search, analyse, send (with chat files, send-later), filters, rooms, shared mailboxes, invitations and free-slot finding, with visual cards. Every send, delete or change asks the person first. |
 | [Rich Responses](functions/filters/rich-responses/) | Filter | 1.0.1 | Works out what kind of answer is wanted (explain, compare, how-to, ...), asks the model for a matching structure, and adds icons to headings as they stream. |
 | [Rich Visuals](functions/filters/rich-visuals/) | Filter | 1.1.0 | Real icons in Open WebUI 0.13.4's built-in Visualization: the model places `[[icon:thermometer]]` tokens and the filter turns them, and any emojis, into SVG icons in the visual's text, never in its scripts. Greetings are left alone and it emits no events. |
 | [Study Mode](functions/filters/study-mode/) | Filter | 1.1.0 | Guided learning and Socratic tutoring, with interactive quizzes built from hidden data in the answer. |
 | [Quick Actions](functions/actions/quick-actions/) | Action | 3.0.1 | A menu under each answer: rewrite, humanize, verify and more, plus actions people and teams define themselves. English and French. |
 | [Secure Dynamic Onboarding](functions/events/secure-onboarding/) | Event | 9.3.0 | One pinned welcome chat per person, showing only what they are allowed to use, in English, French, Spanish or Catalan, kept up to date as permissions change. |
+| [Chat Pets](functions/events/chat-pets/) | Event | 2.0.0 | A ChatGPT-style companion on the message box. People pick one of six animals or make their own. It acts out what the AI is doing (web search, notes, memory, code, images, skills, tools), explains errors in plain words, announces automations, calendar reminders and answers ready in other chats, and has its own settings. Admins choose who gets one by role, group or person. |
 | [Chat Inspector](functions/events/chat-inspector/) | Event | 1.2.0 | *Context* in the chat menu: how full the model's context window is, what fills it, and every tool call, fitted to the model's own token count. |
 | [Chat Gallery](functions/events/chat-gallery/) | Event | 1.1.0 | A Gallery tab with every image in the chat and in the person's files: zoom, generation details, zip, delete. A maintained fork of @G30's Chat Gallery. |
 | [Chat Files](functions/events/chat-files/) | Event | 2.0.0 | A Files tab with every document in the chat and in the person's account, as a list or a grid, with previews, rename, delete and zip. |

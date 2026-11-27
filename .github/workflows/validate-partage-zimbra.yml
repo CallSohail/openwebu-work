@@ -1,0 +1,35 @@
+name: Validate Partage Zimbra
+
+on:
+  push:
+    paths:
+      - "tools/partage-zimbra/**"
+      - ".github/workflows/validate-partage-zimbra.yml"
+  pull_request:
+    paths:
+      - "tools/partage-zimbra/**"
+      - ".github/workflows/validate-partage-zimbra.yml"
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install test dependencies
+        run: python -m pip install --upgrade pip requests pydantic fastapi pytest pyflakes
+
+      - name: Compile and lint Tool
+        run: |
+          python -m py_compile tools/partage-zimbra/partage.py
+          python -m pyflakes tools/partage-zimbra/partage.py tools/partage-zimbra/test_partage.py
+
+      - name: Run regression tests
+        run: pytest -q tools/partage-zimbra/test_partage.py
