@@ -54,6 +54,13 @@ events/
 │   ├── chat_gallery.py
 │   ├── screenshots/
 │   └── tests/
+├── chat-pets/
+│   ├── README.md
+│   ├── ARCHITECTURE.md
+│   ├── CHANGELOG.md
+│   ├── chat_pets.py
+│   ├── screenshots/
+│   └── tests/
 └── secure-onboarding/
     ├── README.md
     ├── CHANGELOG.md
@@ -70,6 +77,12 @@ events/
 ```
 
 ## Included Event Functions
+
+### Chat Pets 1.0.0
+
+A companion that lives on the message box, like ChatGPT's pets. Each person chooses one of six animals (mail, notes, tasks, research, calendar, study) or makes their own with a name, colour and photo. The pet watches you type, thinks while the model answers, cheers when it's done, wanders and naps. Its menu offers shortcuts that fill the message box without sending. The choice follows the person across devices.
+
+See [chat-pets/README.md](chat-pets/README.md) and [chat-pets/CHANGELOG.md](chat-pets/CHANGELOG.md).
 
 ### Secure Dynamic Onboarding 9.3.0
 
